@@ -24,7 +24,7 @@ go get go.coder.com/slog
 
 ## Example
 
-```
+```go
 testlog.Info(t, "my message here",
     slog.F("field_name", "something or the other"),
     slog.F("some_map", map[string]interface{}{
