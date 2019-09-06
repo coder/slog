@@ -3,9 +3,10 @@ package slog
 import (
 	"context"
 	"fmt"
-	"go.coder.com/slog/internal/skipctx"
 	"log"
 	"strings"
+
+	"go.coder.com/slog/internal/skipctx"
 )
 
 // Stdlib creates a standard library logger from the given logger.

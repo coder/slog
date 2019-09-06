@@ -2,12 +2,14 @@ package slog_test
 
 import (
 	"context"
+	"io"
+	"testing"
+
+	"golang.org/x/xerrors"
+
 	"go.coder.com/slog"
 	"go.coder.com/slog/stderrlog"
 	"go.coder.com/slog/testlog"
-	"golang.org/x/xerrors"
-	"io"
-	"testing"
 )
 
 func TestExampleStderr(t *testing.T) {

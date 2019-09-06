@@ -2,11 +2,12 @@ package slog
 
 import (
 	"fmt"
-	"golang.org/x/xerrors"
 	"io"
 	"reflect"
 	"runtime"
 	"testing"
+
+	"golang.org/x/xerrors"
 )
 
 func Test_reflectValue(t *testing.T) {

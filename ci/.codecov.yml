@@ -1,0 +1,10 @@
+comment: off
+coverage:
+  status:
+    # Prevent small changes in coverage from failing CI.
+    project:
+      default:
+        threshold: 10
+    patch:
+      default:
+        threshold: 50

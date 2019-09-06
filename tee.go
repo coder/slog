@@ -2,8 +2,9 @@ package slog
 
 import (
 	"context"
-	"go.coder.com/slog/internal/skipctx"
 	"os"
+
+	"go.coder.com/slog/internal/skipctx"
 )
 
 // Tee enables logging to multiple loggers.

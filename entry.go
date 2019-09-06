@@ -3,11 +3,13 @@ package slog
 import (
 	"context"
 	"fmt"
-	"go.coder.com/slog/internal/skipctx"
-	"go.opencensus.io/trace"
 	"path/filepath"
 	"runtime"
 	"time"
+
+	"go.opencensus.io/trace"
+
+	"go.coder.com/slog/internal/skipctx"
 )
 
 type entry struct {

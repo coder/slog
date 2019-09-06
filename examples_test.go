@@ -2,10 +2,11 @@ package slog_test
 
 import (
 	"context"
+	"testing"
+
 	"go.coder.com/slog"
 	"go.coder.com/slog/stderrlog"
 	"go.coder.com/slog/testlog"
-	"testing"
 )
 
 func Example_stderr() {

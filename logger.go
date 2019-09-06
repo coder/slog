@@ -24,7 +24,6 @@ type logger struct {
 	// This is specifically a pointer because we use the logger as a value
 	// to make the With functions simpler as the outer logger is shallow
 	// cloned automatically.
-	// (nhooyr): I wonder if this is really necessary.
 	mu *sync.Mutex
 	w  io.Writer
 	l  parsedFields

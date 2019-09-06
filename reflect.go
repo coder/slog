@@ -2,11 +2,11 @@ package slog
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"reflect"
 	"strings"
 
 	"github.com/fatih/camelcase"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/xerrors"
 )
 

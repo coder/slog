@@ -1,10 +1,11 @@
 // Package testlog is a helper around slog.Test().
-package testlog
+package testlog // import "go.coder.com/slog/testlog"
 
 import (
 	"context"
-	"go.coder.com/slog"
 	"testing"
+
+	"go.coder.com/slog"
 )
 
 var ctx = context.Background()

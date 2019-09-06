@@ -2,8 +2,9 @@ package slog
 
 import (
 	"context"
-	"go.opencensus.io/trace"
 	"reflect"
+
+	"go.opencensus.io/trace"
 )
 
 type level string

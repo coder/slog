@@ -1,13 +1,14 @@
 // Package stderrlog is a helper for logging to stderr.
 // It will also set the stdlib log package to log to stderr.
-package stderrlog
+package stderrlog // import "go.coder.com/slog/stderrlog"
 
 import (
 	"context"
-	"go.coder.com/slog"
-	"go.coder.com/slog/internal/skipctx"
 	"log"
 	"os"
+
+	"go.coder.com/slog"
+	"go.coder.com/slog/internal/skipctx"
 )
 
 var stderrLogger = slog.Make(os.Stderr)
