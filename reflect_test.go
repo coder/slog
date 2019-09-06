@@ -25,15 +25,31 @@ func Test_reflectValue(t *testing.T) {
 			out: fieldList{
 				fieldMap{
 					{"msg", fieldString("wrap msg")},
-					{"loc", fieldString(location(0, -6))},
+					{"loc", fieldString(testLocation(0, -6))},
 					{"fun", fieldString("go.coder.com/slog.Test_reflectValue")},
 				},
 				fieldMap{
 					{"msg", fieldString("hi")},
-					{"loc", fieldString(location(0, -10))},
+					{"loc", fieldString(testLocation(0, -10))},
 					{"fun", fieldString("go.coder.com/slog.Test_reflectValue")},
 				},
 				fieldString("EOF"),
+			},
+		},
+		{
+			name: "logTag",
+			in: struct {
+				a string `log:"-"`
+				b string `log:"hi"`
+				c string `log:"f"`
+			}{
+				"a",
+				"b",
+				"c",
+			},
+			out: fieldMap{
+				{"hi", fieldString("b")},
+				{"f", fieldString("c")},
 			},
 		},
 	}
@@ -51,7 +67,7 @@ func Test_reflectValue(t *testing.T) {
 	}
 }
 
-func location(skip int, lineOffset int) string {
+func testLocation(skip int, lineOffset int) string {
 	_, file, line, ok := runtime.Caller(skip + 1)
 	if !ok {
 		panicf("failed to get caller information with skip %v", skip)

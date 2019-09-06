@@ -49,6 +49,15 @@ func (f fieldMap) append(key string, val fieldValue) fieldMap {
 	})
 }
 
+func (f fieldMap) appendFields(f2 fieldMap) fieldMap {
+	if len(f2) == 0 {
+		return f
+	}
+
+	f = f.clone()
+	return append(f, f2...)
+}
+
 // sort sorts the fields by name.
 // Only used when the fields represent a map to ensure
 // stable key order.

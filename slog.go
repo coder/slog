@@ -2,28 +2,7 @@ package slog
 
 import (
 	"context"
-	"fmt"
-	"testing"
 )
-
-// field represents a log field.
-type field struct {
-	// name represents the name of the object.
-	name string
-
-	// Value can be a string, bool, int, float64, []interface{} or []field.
-	value fieldValue
-}
-
-// TODO implement.
-type Field interface {
-	LogKey() string
-	Value
-}
-
-type Value interface {
-	LogValue() (value interface{}, err error)
-}
 
 type Logger interface {
 	// Debug means a potentially noisy log.
@@ -46,37 +25,75 @@ type Logger interface {
 	With(fields ...interface{}) Logger
 }
 
-// Special keys in the logger's fields.
-const (
-	// Component represents the component a log is being logged for.
-	// If there is already a component set, it will be joined by ".".
-	// E.g. if the component is currently "my_component" and then later
-	// the component "my_pkg" is set, then the final component will be
-	// "my_component.my_pkg".
-	// The component must be of type string.
-	Component = "component"
+// field represents a log field.
+type field struct {
+	name  string
+	value fieldValue
+}
 
-	// Error is the standard key used for logging a Go error value.
-	Error = "error"
-)
+type Field interface {
+	LogKey() string
+	Value
+}
+
+type Value interface {
+	LogValue() interface{}
+}
+
+type ValueFunc func() interface{}
+
+func (fn ValueFunc) LogValue() interface{} {
+	return fn()
+}
+
+type componentField string
+
+// Component represents the component a log is being logged for.
+// If there is already a component set, it will be joined by ".".
+// E.g. if the component is currently "my_component" and then later
+// the component "my_pkg" is set, then the final component will be
+// "my_component.my_pkg".
+func Component(name string) interface{} {
+	return componentField(name)
+}
+
+type errorField struct {
+	name string
+	err  error
+}
+
+func (e errorField) LogKey() string {
+	return e.name
+}
+
+func (e errorField) LogValue() interface{} {
+	return e.err
+}
+
+// Error is the standard key used for logging a Go error value.
+func Error(err error) Field {
+	return errorField{
+		name: "error",
+		err:  err,
+	}
+}
+
+type loggerKey struct{}
+
+func withContext(ctx context.Context, l parsedFields) context.Context {
+	return context.WithValue(ctx, loggerKey{}, l)
+}
+
+func fromContext(ctx context.Context) parsedFields {
+	l, _ := ctx.Value(loggerKey{}).(parsedFields)
+	return l
+}
 
 // With returns a context that contains the given fields.
 // Any logs written with the provided context will contain
 // the given fields.
 func With(ctx context.Context, fields ...interface{}) context.Context {
-	panic("TODO")
-}
-
-func Stderr() Logger {
-	panic("TODO")
-}
-
-func Test(t *testing.T) Logger {
-	panic("TODO")
-}
-
-func panicf(f string, v ...interface{}) {
-	f = "slog: " + f
-	s := fmt.Sprintf(f, v...)
-	panic(s)
+	l := fromContext(ctx)
+	l = l.withFields(fields)
+	return withContext(ctx, l)
 }

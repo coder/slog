@@ -64,7 +64,7 @@ func (y *consoleMarshaller) marshal(v fieldValue) {
 				y.line()
 			}
 
-			y.s(quoteMapKey(f.name) + ":")
+			y.s(quote(f.name) + ":")
 
 			y.marshalSub(f.value, true)
 		}
@@ -121,9 +121,10 @@ func (y *consoleMarshaller) marshalSub(v fieldValue, isParentMap bool) {
 	}
 }
 
-// quoteMapKey quotes a string so that it is suitable
-// as a key for a map.
-func quoteMapKey(key string) string {
+// quotes quotes a string so that it is suitable
+// as a key for a map or in general some output that
+// cannot span multiple lines or have weird characters.
+func quote(key string) string {
 	// strconv.Quote does not quote an empty string so we need this.
 	if key == "" {
 		return `""`

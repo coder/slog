@@ -94,7 +94,7 @@ func reflectFieldValue(rv reflect.Value) fieldValue {
 	case reflect.Struct:
 		typ := rv.Type()
 
-		f := make(fieldMap, typ.NumField())
+		f := make(fieldMap, 0, typ.NumField())
 
 		for i := 0; i < typ.NumField(); i++ {
 			ft := typ.Field(i)
@@ -109,7 +109,12 @@ func reflectFieldValue(rv reflect.Value) fieldValue {
 			}
 
 			v := reflectFieldValue(fv)
-			f = f.append(snakecase(ft.Name), v)
+			name := ft.Tag.Get("log")
+			if name == "" {
+				name = snakecase(ft.Name)
+			}
+			f = f.append(name, v)
+
 		}
 
 		return f
