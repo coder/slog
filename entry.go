@@ -85,7 +85,7 @@ func (ent entry) String() string {
 type entryConfig struct {
 	level  level
 	msg    string
-	fields []interface{}
+	fields []Field
 	skip   int
 }
 

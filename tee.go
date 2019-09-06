@@ -18,31 +18,31 @@ type multiLogger struct {
 	loggers []Logger
 }
 
-func (l multiLogger) Debug(ctx context.Context, msg string, fields ...interface{}) {
+func (l multiLogger) Debug(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, levelDebug, msg, fields)
 }
 
-func (l multiLogger) Info(ctx context.Context, msg string, fields ...interface{}) {
+func (l multiLogger) Info(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, levelInfo, msg, fields)
 }
 
-func (l multiLogger) Warn(ctx context.Context, msg string, fields ...interface{}) {
+func (l multiLogger) Warn(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, levelWarn, msg, fields)
 }
 
-func (l multiLogger) Error(ctx context.Context, msg string, fields ...interface{}) {
+func (l multiLogger) Error(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, levelError, msg, fields)
 }
 
-func (l multiLogger) Critical(ctx context.Context, msg string, fields ...interface{}) {
+func (l multiLogger) Critical(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, levelCritical, msg, fields)
 }
 
-func (l multiLogger) Fatal(ctx context.Context, msg string, fields ...interface{}) {
+func (l multiLogger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, levelDebug, msg, fields)
 }
 
-func (l multiLogger) log(ctx context.Context, level level, msg string, fields []interface{}) {
+func (l multiLogger) log(ctx context.Context, level level, msg string, fields []Field) {
 	ctx = skipctx.With(ctx, 2)
 	for _, l := range l.loggers {
 		switch level {
@@ -64,11 +64,11 @@ func (l multiLogger) log(ctx context.Context, level level, msg string, fields []
 	}
 }
 
-func (l multiLogger) With(fields ...interface{}) Logger {
+func (l multiLogger) With(fields ...Field) Logger {
 	loggers2 := make([]Logger, len(l.loggers))
 
 	for i, l := range l.loggers {
-		loggers2[i] = l.With(fields)
+		loggers2[i] = l.With(fields...)
 	}
 
 	return multiLogger{

@@ -11,16 +11,16 @@ import (
 func Example_stderr() {
 	ctx := context.Background()
 	stderrlog.Info(ctx, "my message here",
-		"field_name", "something or the other",
-		"some_map", map[string]string{
+		slog.F("field_name", "something or the other"),
+		slog.F("some_map", map[string]string{
 			"nested_fields": "wowow",
-		},
-		"some slice", []interface{}{
+		}),
+		slog.F("some slice", []interface{}{
 			1,
 			"foof",
 			"bar",
 			true,
-		},
+		}),
 		slog.Component("test"),
 	)
 }
@@ -30,16 +30,20 @@ func Example_test() {
 	var t *testing.T
 
 	testlog.Info(t, "my message here",
-		"field_name", "something or the other",
-		"some_map", map[string]interface{}{
+		slog.F("field_name", "something or the other"),
+		slog.F("some_map", map[string]interface{}{
 			"nested_fields": "wowow",
-		},
-		"some slice", []interface{}{
+		}),
+		slog.F("some slice", []interface{}{
 			1,
 			"foof",
 			"bar",
 			true,
-		},
+		}),
 		slog.Component("test"),
+
+		slog.F("name", slog.ValueFunc(func() interface{} {
+			return "wow"
+		})),
 	)
 }

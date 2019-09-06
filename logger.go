@@ -32,37 +32,37 @@ type logger struct {
 	skip int
 }
 
-func (sl logger) Debug(ctx context.Context, msg string, fields ...interface{}) {
+func (sl logger) Debug(ctx context.Context, msg string, fields ...Field) {
 	sl.log(ctx, levelDebug, msg, fields)
 }
 
-func (sl logger) Info(ctx context.Context, msg string, fields ...interface{}) {
+func (sl logger) Info(ctx context.Context, msg string, fields ...Field) {
 	sl.log(ctx, levelInfo, msg, fields)
 }
 
-func (sl logger) Warn(ctx context.Context, msg string, fields ...interface{}) {
+func (sl logger) Warn(ctx context.Context, msg string, fields ...Field) {
 	sl.log(ctx, levelWarn, msg, fields)
 }
 
-func (sl logger) Error(ctx context.Context, msg string, fields ...interface{}) {
+func (sl logger) Error(ctx context.Context, msg string, fields ...Field) {
 	sl.log(ctx, levelError, msg, fields)
 }
 
-func (sl logger) Critical(ctx context.Context, msg string, fields ...interface{}) {
+func (sl logger) Critical(ctx context.Context, msg string, fields ...Field) {
 	sl.log(ctx, levelCritical, msg, fields)
 }
 
-func (sl logger) Fatal(ctx context.Context, msg string, fields ...interface{}) {
+func (sl logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	sl.log(ctx, levelFatal, msg, fields)
 	os.Exit(1)
 }
 
-func (sl logger) With(fields ...interface{}) Logger {
+func (sl logger) With(fields ...Field) Logger {
 	sl.l = sl.l.withFields(fields)
 	return sl
 }
 
-func (sl logger) log(ctx context.Context, sev level, msg string, fields []interface{}) {
+func (sl logger) log(ctx context.Context, sev level, msg string, fields []Field) {
 	ent := sl.l.entry(ctx, entryConfig{
 		level:  sev,
 		msg:    msg,

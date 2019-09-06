@@ -27,42 +27,42 @@ type testLogger struct {
 	p      parsedFields
 }
 
-func (tl testLogger) Debug(ctx context.Context, msg string, fields ...interface{}) {
+func (tl testLogger) Debug(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
 	tl.log(ctx, levelDebug, msg, fields)
 }
 
-func (tl testLogger) Info(ctx context.Context, msg string, fields ...interface{}) {
+func (tl testLogger) Info(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
 	tl.log(ctx, levelInfo, msg, fields)
 }
 
-func (tl testLogger) Warn(ctx context.Context, msg string, fields ...interface{}) {
+func (tl testLogger) Warn(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
 	tl.log(ctx, levelWarn, msg, fields)
 }
 
-func (tl testLogger) Error(ctx context.Context, msg string, fields ...interface{}) {
+func (tl testLogger) Error(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
 	tl.log(ctx, levelError, msg, fields)
 }
 
-func (tl testLogger) Critical(ctx context.Context, msg string, fields ...interface{}) {
+func (tl testLogger) Critical(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
 	tl.log(ctx, levelCritical, msg, fields)
 }
 
-func (tl testLogger) Fatal(ctx context.Context, msg string, fields ...interface{}) {
+func (tl testLogger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
 	tl.log(ctx, levelFatal, msg, fields)
 }
 
-func (tl testLogger) With(fields ...interface{}) Logger {
+func (tl testLogger) With(fields ...Field) Logger {
 	tl.p = tl.p.withFields(fields)
 	return tl
 }
 
-func (tl testLogger) log(ctx context.Context, level level, msg string, fields []interface{}) {
+func (tl testLogger) log(ctx context.Context, level level, msg string, fields []Field) {
 	tl.tb.Helper()
 
 	ent := tl.p.entry(ctx, entryConfig{
