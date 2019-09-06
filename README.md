@@ -69,7 +69,7 @@ See [#9](https://github.com/cdr/slog/issues/9)
 
 https://github.com/uber-go/zap
 
-See [#6][https://github.com/cdr/slog/issues/6]
+See [#6](https://github.com/cdr/slog/issues/6).
 
 ## Contributing
 
