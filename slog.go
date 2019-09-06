@@ -1,9 +1,29 @@
-package log
+package slog
 
 import (
 	"context"
+	"fmt"
 	"testing"
 )
+
+// field represents a log field.
+type field struct {
+	// name represents the name of the object.
+	name string
+
+	// Value can be a string, bool, int, float64, []interface{} or []field.
+	value fieldValue
+}
+
+// TODO implement.
+type Field interface {
+	LogKey() string
+	Value
+}
+
+type Value interface {
+	LogValue() (value interface{}, err error)
+}
 
 type Logger interface {
 	// Debug means a potentially noisy log.
@@ -28,22 +48,16 @@ type Logger interface {
 
 // Special keys in the logger's fields.
 const (
-	// Use this as the key of a field that represents the ID of
-	// of something you want to filter the logs by.
-	// For stackdriver, it will be used in the ID field of the
-	// log operation field to make filtration faster.
-	// The ID must be of type string.
-	ID = "id"
-
-	// Use to set the component a log is being logged for.
+	// Component represents the component a log is being logged for.
 	// If there is already a component set, it will be joined by ".".
 	// E.g. if the component is currently "my_component" and then later
 	// the component "my_pkg" is set, then the final component will be
 	// "my_component.my_pkg".
 	// The component must be of type string.
-	// For stackdriver, it will be used in the producer field of
-	// the log operation field.
 	Component = "component"
+
+	// Error is the standard key used for logging a Go error value.
+	Error = "error"
 )
 
 // With returns a context that contains the given fields.
@@ -59,4 +73,10 @@ func Stderr() Logger {
 
 func Test(t *testing.T) Logger {
 	panic("TODO")
+}
+
+func panicf(f string, v ...interface{}) {
+	f = "slog: " + f
+	s := fmt.Sprintf(f, v...)
+	panic(s)
 }
