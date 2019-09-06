@@ -26,10 +26,13 @@ type parsedFields struct {
 
 func parseFields(fields []Field) parsedFields {
 	var l parsedFields
-	l.fields = make(fieldMap, len(fields))
+	l.fields = make(fieldMap, 0, len(fields))
 
-	for i := 0; i < len(fields); i++ {
-		f := fields[i]
+	for _, f := range fields {
+		if s, ok := f.(componentField); ok {
+			l.appendComponent(string(s))
+			continue
+		}
 		l = l.appendField(f.LogKey(), f.LogValue())
 	}
 
