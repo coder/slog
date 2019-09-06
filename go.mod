@@ -10,7 +10,6 @@ require (
 	go.coder.com/go-tools v0.0.0-20190317003359-0c6a35b74a16
 	go.opencensus.io v0.22.1
 	golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3
-	golang.org/x/tools v0.0.0-20190311212946-11955173bddd
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
 	gotest.tools/gotestsum v0.3.5
 	mvdan.cc/sh v2.6.4+incompatible

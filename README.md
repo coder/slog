@@ -5,7 +5,7 @@
 [![Codecov](https://img.shields.io/codecov/c/github/cdr/slog.svg?color=success)](https://codecov.io/gh/cdr/slog)
 [![CI](https://img.shields.io/circleci/build/github/cdr/slog?label=ci)](https://github.com/cdr/slog/commits/master)
 
-slog is a minimal and idiomatic structured logging library for Go.
+slog is a minimal structured logging library for Go.
 
 ## Install
 
