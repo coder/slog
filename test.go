@@ -5,10 +5,15 @@ import (
 	"testing"
 )
 
+// TestOptions represents the options for the logger returned
+// by Test.
 type TestOptions struct {
+	// IgnoreErrors causes the test logger to not fatal the test
+	// on Fatal and not error the test on Error or Critical.
 	IgnoreErrors bool
 }
 
+// Test creates a Logger that writes logs to tb.
 func Test(tb testing.TB, opts *TestOptions) Logger {
 	if opts == nil {
 		opts = &TestOptions{}

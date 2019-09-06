@@ -4,6 +4,7 @@ import (
 	"context"
 )
 
+// Logger is the core interface for logging.
 type Logger interface {
 	// Debug means a potentially noisy log.
 	Debug(ctx context.Context, msg string, fields ...Field)
@@ -31,17 +32,26 @@ type field struct {
 	value fieldValue
 }
 
+// Field represents a log field.
 type Field interface {
 	LogKey() string
 	Value
 }
 
+// Value represents a log value.
+// The value returned will be logged.
+// Your own types can implement this interface to
+// override their logging appearance.
 type Value interface {
 	LogValue() interface{}
 }
 
+// ValueFunc is a function that computes its logging
+// representation. Use it to override the logging
+// representation of a structure inline.
 type ValueFunc func() interface{}
 
+// LogValue implements Value.
 func (fn ValueFunc) LogValue() interface{} {
 	return fn()
 }
