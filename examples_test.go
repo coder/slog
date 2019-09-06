@@ -28,16 +28,16 @@ func Example_stderr() {
 		})),
 	)
 
-	// test_test.go:38: Sep 06 14:04:33.028 [INFO]: my_message_here
+	// test_test.go:17: Sep 06 14:33:34.677 [INFO] (test): my_message_here
 	//	field_name: something or the other
 	//	some_map:
 	//	  nested_fields: wowow
 	//	error:
 	//	  - msg: wrap2
-	//	    loc: /Users/nhooyr/src/cdr/slog/test_test.go:43
+	//	    loc: /Users/nhooyr/src/cdr/slog/test_test.go:22
 	//	    fun: go.coder.com/slog_test.TestExampleStderr
 	//	  - msg: wrap1
-	//	    loc: /Users/nhooyr/src/cdr/slog/test_test.go:44
+	//	    loc: /Users/nhooyr/src/cdr/slog/test_test.go:23
 	//	    fun: go.coder.com/slog_test.TestExampleStderr
 	//	  - EOF
 	//	name: wow
@@ -66,16 +66,16 @@ func Example_test() {
 	)
 
 	// --- PASS: TestExampleTest (0.00s)
-	//    test_test.go:16: Sep 06 14:04:08.947 [INFO]: my_message_here
+	//    test_test.go:38: Sep 06 14:33:52.628 [INFO] (test): my_message_here
 	//        field_name: something or the other
 	//        some_map:
 	//          nested_fields: wowow
 	//        error:
 	//          - msg: wrap2
-	//            loc: /Users/nhooyr/src/cdr/slog/test_test.go:21
+	//            loc: /Users/nhooyr/src/cdr/slog/test_test.go:43
 	//            fun: go.coder.com/slog_test.TestExampleTest
 	//          - msg: wrap1
-	//            loc: /Users/nhooyr/src/cdr/slog/test_test.go:22
+	//            loc: /Users/nhooyr/src/cdr/slog/test_test.go:44
 	//            fun: go.coder.com/slog_test.TestExampleTest
 	//          - EOF
 	//        name: wow

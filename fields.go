@@ -30,7 +30,7 @@ func parseFields(fields []Field) parsedFields {
 
 	for _, f := range fields {
 		if s, ok := f.(componentField); ok {
-			l.appendComponent(string(s))
+			l = l.appendComponent(string(s))
 			continue
 		}
 		l = l.appendField(f.LogKey(), f.LogValue())
