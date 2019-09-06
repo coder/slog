@@ -1,4 +1,4 @@
-# websocket
+# slog
 
 [![GoDoc](https://godoc.org/go.coder.com/slog?status.svg)](https://godoc.org/go.coder.com/slog)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/cdr/slog?color=critical&sort=semver)](https://github.com/cdr/slog/releases)
