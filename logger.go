@@ -6,78 +6,22 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	"go.coder.com/slog/internal/console"
+	"go.coder.com/slog/slogcore"
 )
 
-// Make creates a logger that writes logs to w.
-func Make(w io.Writer) Logger {
-	return makeLogger(w)
+func Stderr() Logger {
+	return Make(HumanSink(os.Stderr))
 }
 
-func makeLogger(w io.Writer) logger {
-	return logger{
-		mu: &sync.Mutex{},
-		w:  w,
-	}
-}
-
-type logger struct {
-	// This is specifically a pointer because we use the logger as a value
-	// to make the With functions simpler as the outer logger is shallow
-	// cloned automatically.
-	mu *sync.Mutex
+type writerSink struct {
+	mu sync.Mutex
 	w  io.Writer
-	l  parsedFields
-
-	skip int
 }
 
-func (sl logger) Debug(ctx context.Context, msg string, fields ...Field) {
-	sl.log(ctx, levelDebug, msg, fields)
-}
-
-func (sl logger) Info(ctx context.Context, msg string, fields ...Field) {
-	sl.log(ctx, levelInfo, msg, fields)
-}
-
-func (sl logger) Warn(ctx context.Context, msg string, fields ...Field) {
-	sl.log(ctx, levelWarn, msg, fields)
-}
-
-func (sl logger) Error(ctx context.Context, msg string, fields ...Field) {
-	sl.log(ctx, levelError, msg, fields)
-}
-
-func (sl logger) Critical(ctx context.Context, msg string, fields ...Field) {
-	sl.log(ctx, levelCritical, msg, fields)
-}
-
-func (sl logger) Fatal(ctx context.Context, msg string, fields ...Field) {
-	sl.log(ctx, levelFatal, msg, fields)
-	os.Exit(1)
-}
-
-func (sl logger) With(fields ...Field) Logger {
-	sl.l = sl.l.withFields(fields)
-	return sl
-}
-
-func (sl logger) log(ctx context.Context, sev level, msg string, fields []Field) {
-	ent := sl.l.entry(ctx, entryConfig{
-		level:  sev,
-		msg:    msg,
-		fields: fields,
-		skip:   2,
-	})
-
-	sl.write(ent)
-
-	if ent.level == levelFatal {
-		os.Exit(1)
-	}
-}
-
-func (sl logger) write(ent entry) {
-	s := ent.String()
+func (w *writerSink) WriteLogEntry(ent slogcore.Entry) {
+	s := console.Entry(ent)
 	lines := strings.Split(s, "\n")
 
 	fieldsLines := lines[1:]
@@ -90,12 +34,75 @@ func (sl logger) write(ent entry) {
 
 	s = strings.Join(lines, "\n")
 
-	sl.writeString(s + "\n")
+	w.writeString(s + "\n")
 }
 
-func (sl logger) writeString(s string) {
-	sl.mu.Lock()
-	defer sl.mu.Unlock()
+func (w *writerSink) writeString(s string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	io.WriteString(sl.w, s)
+	io.WriteString(w.w, s)
+}
+
+func HumanSink(w io.Writer) Sink {
+	return &writerSink{
+		w: w,
+	}
+}
+
+// Make creates a logger that writes logs to sink.
+func Make(sink Sink) Logger {
+	return logger{
+		sink: sink,
+	}
+}
+
+type logger struct {
+	sink Sink
+	l    parsedFields
+}
+
+func (sl logger) Debug(ctx context.Context, msg string, fields ...Field) {
+	sl.log(ctx, slogcore.Debug, msg, fields)
+}
+
+func (sl logger) Info(ctx context.Context, msg string, fields ...Field) {
+	sl.log(ctx, slogcore.Info, msg, fields)
+}
+
+func (sl logger) Warn(ctx context.Context, msg string, fields ...Field) {
+	sl.log(ctx, slogcore.Warn, msg, fields)
+}
+
+func (sl logger) Error(ctx context.Context, msg string, fields ...Field) {
+	sl.log(ctx, slogcore.Error, msg, fields)
+}
+
+func (sl logger) Critical(ctx context.Context, msg string, fields ...Field) {
+	sl.log(ctx, slogcore.Critical, msg, fields)
+}
+
+func (sl logger) Fatal(ctx context.Context, msg string, fields ...Field) {
+	sl.log(ctx, slogcore.Fatal, msg, fields)
+	os.Exit(1)
+}
+
+func (sl logger) With(fields ...Field) Logger {
+	sl.l = sl.l.withFields(fields)
+	return sl
+}
+
+func (sl logger) log(ctx context.Context, level slogcore.Level, msg string, fields []Field) {
+	ent := sl.l.entry(ctx, entryParams{
+		level:  level,
+		msg:    msg,
+		fields: fields,
+		skip:   2,
+	})
+
+	sl.sink.WriteLogEntry(ent)
+
+	if ent.Level == slogcore.Fatal {
+		os.Exit(1)
+	}
 }

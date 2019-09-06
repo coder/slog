@@ -3,6 +3,9 @@ package slog
 import (
 	"context"
 	"testing"
+
+	"go.coder.com/slog/internal/console"
+	"go.coder.com/slog/slogcore"
 )
 
 // TestOptions represents the options for the logger returned
@@ -34,32 +37,32 @@ type testLogger struct {
 
 func (tl testLogger) Debug(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
-	tl.log(ctx, levelDebug, msg, fields)
+	tl.log(ctx, slogcore.Debug, msg, fields)
 }
 
 func (tl testLogger) Info(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
-	tl.log(ctx, levelInfo, msg, fields)
+	tl.log(ctx, slogcore.Info, msg, fields)
 }
 
 func (tl testLogger) Warn(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
-	tl.log(ctx, levelWarn, msg, fields)
+	tl.log(ctx, slogcore.Warn, msg, fields)
 }
 
 func (tl testLogger) Error(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
-	tl.log(ctx, levelError, msg, fields)
+	tl.log(ctx, slogcore.Error, msg, fields)
 }
 
 func (tl testLogger) Critical(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
-	tl.log(ctx, levelCritical, msg, fields)
+	tl.log(ctx, slogcore.Critical, msg, fields)
 }
 
 func (tl testLogger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	tl.tb.Helper()
-	tl.log(ctx, levelFatal, msg, fields)
+	tl.log(ctx, slogcore.Fatal, msg, fields)
 }
 
 func (tl testLogger) With(fields ...Field) Logger {
@@ -67,10 +70,10 @@ func (tl testLogger) With(fields ...Field) Logger {
 	return tl
 }
 
-func (tl testLogger) log(ctx context.Context, level level, msg string, fields []Field) {
+func (tl testLogger) log(ctx context.Context, level slogcore.Level, msg string, fields []Field) {
 	tl.tb.Helper()
 
-	ent := tl.p.entry(ctx, entryConfig{
+	ent := tl.p.entry(ctx, entryParams{
 		level:  level,
 		msg:    msg,
 		fields: fields,
@@ -82,28 +85,28 @@ func (tl testLogger) log(ctx context.Context, level level, msg string, fields []
 		// But we do want the function name.
 		// However, if the test package is being used with the stdlib log adapter, then we do want
 		// the line/file number because we cannot put t.Helper calls in stdlib log.
-		ent.file = ""
-		ent.line = 0
+		ent.File = ""
+		ent.Line = 0
 	}
 
 	tl.write(ent)
 }
 
-func (tl testLogger) write(ent entry) {
+func (tl testLogger) write(ent slogcore.Entry) {
 	tl.tb.Helper()
 
-	s := ent.String()
+	s := console.Entry(ent)
 
-	switch ent.level {
-	case levelDebug, levelInfo, levelWarn:
+	switch ent.Level {
+	case slogcore.Debug, slogcore.Info, slogcore.Warn:
 		tl.tb.Log(s)
-	case levelError, levelCritical:
+	case slogcore.Error, slogcore.Critical:
 		if tl.opts.IgnoreErrors {
 			tl.tb.Log(s)
 		} else {
 			tl.tb.Error(s)
 		}
-	case levelFatal:
+	case slogcore.Fatal:
 		if tl.opts.IgnoreErrors {
 			panicf("cannot fatal in tests when IgnoreErrors option is set")
 		}

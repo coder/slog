@@ -2,7 +2,14 @@ package slog
 
 import (
 	"context"
+
+	"go.coder.com/slog/slogcore"
 )
+
+// Sink is the destination of a Logger.
+type Sink interface {
+	WriteLogEntry(e slogcore.Entry)
+}
 
 // Logger is the core interface for logging.
 type Logger interface {
@@ -26,12 +33,6 @@ type Logger interface {
 	With(fields ...Field) Logger
 }
 
-// field represents a log field.
-type field struct {
-	name  string
-	value fieldValue
-}
-
 // Field represents a log field.
 type Field interface {
 	LogKey() string
@@ -44,16 +45,6 @@ type Field interface {
 // override their logging appearance.
 type Value interface {
 	LogValue() interface{}
-}
-
-// ValueFunc is a function that computes its logging
-// representation. Use it to override the logging
-// representation of a structure inline.
-type ValueFunc func() interface{}
-
-// LogValue implements Value.
-func (fn ValueFunc) LogValue() interface{} {
-	return fn()
 }
 
 type componentField string
