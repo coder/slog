@@ -186,9 +186,15 @@ func (p *xerrorPrinter) Detail() bool {
 }
 
 func (p *xerrorPrinter) fields() Value {
-	return String(fmt.Sprintf(`%v
-%v
-  %v`, p.msg, p.function, p.loc))
+	var m Map
+	m = m.Append("msg", String(p.msg))
+	if p.function != "" {
+		m = m.Append("fun", String(p.function))
+	}
+	if p.loc != "" {
+		m = m.Append("loc", String(p.loc))
+	}
+	return m
 }
 
 // The value passed in must implement xerrors.Formatter.

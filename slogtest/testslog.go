@@ -1,5 +1,5 @@
 // Package testslog is a helper around slog.Test().
-package testslog // import "go.coder.com/slog/testslog"
+package slogtest // import "go.coder.com/slog/testslog"
 
 import (
 	"context"

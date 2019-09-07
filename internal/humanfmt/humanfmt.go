@@ -2,9 +2,9 @@ package humanfmt
 
 import (
 	"fmt"
-	"github.com/fatih/color"
 	"path/filepath"
 
+	"github.com/fatih/color"
 	"go.opencensus.io/trace"
 
 	"go.coder.com/slog/slogcore"

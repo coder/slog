@@ -2,11 +2,12 @@ package slog
 
 import (
 	"context"
-	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"os"
 	"strings"
 	"sync"
+
+	"golang.org/x/crypto/ssh/terminal"
 
 	"go.coder.com/slog/internal/humanfmt"
 	"go.coder.com/slog/slogcore"

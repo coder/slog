@@ -7,13 +7,13 @@ import (
 	"golang.org/x/xerrors"
 
 	"go.coder.com/slog"
-	"go.coder.com/slog/testslog"
+	"go.coder.com/slog/slogtest"
 )
 
 func TestExampleTest(t *testing.T) {
 	t.Parallel()
 
-	testslog.Info(t, "my message here",
+	slogtest.Info(t, "my message here",
 		slog.F("field_name", "something or the other"),
 		slog.F("some_map", map[string]interface{}{
 			"nested_fields": "wowow",

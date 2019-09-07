@@ -1,6 +1,6 @@
 // Package skipctx contains helpers to put the frame skip level
-// into the context. Used by stderrlog and testslog helpers to
-// skip one more frame level.
+// into the context.
+// TODO needs to be removed at some point, skip does not need to be in Context.
 package skipctx
 
 import (

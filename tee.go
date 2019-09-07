@@ -9,7 +9,7 @@ import (
 )
 
 // Tee enables logging to multiple loggers.
-// Does not support the logger returned by Test.
+// Does not support loggers returned from Test at the moment.
 func Tee(loggers ...Logger) Logger {
 	return multiLogger{
 		loggers: loggers,
