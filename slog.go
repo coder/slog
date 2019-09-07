@@ -2,14 +2,7 @@ package slog
 
 import (
 	"context"
-
-	"go.coder.com/slog/slogcore"
 )
-
-// Sink is the destination of a Logger.
-type Sink interface {
-	WriteLogEntry(e slogcore.Entry)
-}
 
 // Logger is the core interface for logging.
 type Logger interface {

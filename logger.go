@@ -11,16 +11,12 @@ import (
 	"go.coder.com/slog/slogcore"
 )
 
-func Stderr() Logger {
-	return Make(HumanSink(os.Stderr))
-}
-
-type writerSink struct {
+type humanSink struct {
 	mu sync.Mutex
 	w  io.Writer
 }
 
-func (w *writerSink) WriteLogEntry(ent slogcore.Entry) {
+func (w *humanSink) WriteLogEntry(ent slogcore.Entry) {
 	s := humanfmt.Entry(ent)
 	lines := strings.Split(s, "\n")
 
@@ -37,28 +33,28 @@ func (w *writerSink) WriteLogEntry(ent slogcore.Entry) {
 	w.writeString(s + "\n")
 }
 
-func (w *writerSink) writeString(s string) {
+func (w *humanSink) writeString(s string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	io.WriteString(w.w, s)
 }
 
-func HumanSink(w io.Writer) Sink {
-	return &writerSink{
+func Human(w io.Writer) Logger {
+	return Make(&humanSink{
 		w: w,
-	}
+	})
 }
 
 // Make creates a logger that writes logs to sink.
-func Make(sink Sink) Logger {
+func Make(sink slogcore.Sink) Logger {
 	return logger{
 		sink: sink,
 	}
 }
 
 type logger struct {
-	sink Sink
+	sink slogcore.Sink
 	l    parsedFields
 }
 

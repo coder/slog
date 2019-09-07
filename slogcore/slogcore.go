@@ -8,6 +8,11 @@ import (
 	"go.opencensus.io/trace"
 )
 
+// Sink is the destination of a Logger.
+type Sink interface {
+	WriteLogEntry(e Entry)
+}
+
 type Level string
 
 const (
