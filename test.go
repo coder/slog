@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"go.coder.com/slog/internal/console"
+	"go.coder.com/slog/internal/humanfmt"
 	"go.coder.com/slog/slogcore"
 )
 
@@ -95,7 +95,7 @@ func (tl testLogger) log(ctx context.Context, level slogcore.Level, msg string, 
 func (tl testLogger) write(ent slogcore.Entry) {
 	tl.tb.Helper()
 
-	s := console.Entry(ent)
+	s := humanfmt.Entry(ent)
 
 	switch ent.Level {
 	case slogcore.Debug, slogcore.Info, slogcore.Warn:

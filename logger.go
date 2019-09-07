@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"go.coder.com/slog/internal/console"
+	"go.coder.com/slog/internal/humanfmt"
 	"go.coder.com/slog/slogcore"
 )
 
@@ -21,7 +21,7 @@ type writerSink struct {
 }
 
 func (w *writerSink) WriteLogEntry(ent slogcore.Entry) {
-	s := console.Entry(ent)
+	s := humanfmt.Entry(ent)
 	lines := strings.Split(s, "\n")
 
 	fieldsLines := lines[1:]

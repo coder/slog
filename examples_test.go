@@ -4,14 +4,14 @@ import (
 	"testing"
 
 	"go.coder.com/slog"
-	"go.coder.com/slog/testlog"
+	"go.coder.com/slog/testslog"
 )
 
 func Example_test() {
 	// Nil here but would be provided by the testing framework.
 	var t *testing.T
 
-	testlog.Info(t, "my message here",
+	testslog.Info(t, "my message here",
 		slog.F("field_name", "something or the other"),
 		slog.F("some_map", map[string]interface{}{
 			"nested_fields": "wowow",
