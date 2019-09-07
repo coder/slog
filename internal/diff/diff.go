@@ -1,4 +1,4 @@
-package slog
+package diff
 
 import (
 	"reflect"
@@ -8,7 +8,7 @@ import (
 
 // https://github.com/google/go-cmp/issues/40#issuecomment-328615283
 // Copied from https://github.com/nhooyr/websocket/blob/1b874731eab56c69c8bb3ebf8a029020c7863fc9/cmp_test.go
-func cmpDiff(exp, act interface{}) string {
+func Diff(exp, act interface{}) string {
 	return cmp.Diff(exp, act, deepAllowUnexported(exp, act))
 }
 

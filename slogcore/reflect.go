@@ -1,4 +1,4 @@
-package slog
+package slogcore
 
 import (
 	"fmt"
@@ -10,9 +10,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// pbval is called from within the logger to convert each field value
-// into a field.
-func reflectFieldValue(rv reflect.Value) fieldValue {
+// Reflect takes an interface v and converts it to a loggable
+// structured Value via reflection.
+func Reflect(v interface{}) Value {
+	return reflectValue(reflect.ValueOf(v))
+}
+
+func reflectValue(rv reflect.Value) Value {
 	if !rv.IsValid() {
 		// reflect.ValueOf(nil).IsValid == false
 		return nil
@@ -24,21 +28,24 @@ func reflectFieldValue(rv reflect.Value) fieldValue {
 	// the error variable always does not implement the Value interface
 	// but does implement Error. With this, we check the concrete value instead.
 	if rv.Kind() == reflect.Interface {
-		return reflectFieldValue(rv.Elem())
+		return reflectValue(rv.Elem())
 	}
 
 	typ := rv.Type()
 	switch {
-	case implements(typ, (*Value)(nil)):
+	// Not referenced directly to avoid import cycle.
+	case implements(typ, (*interface {
+		LogValue() interface{}
+	})(nil)):
 		m := rv.MethodByName("LogValue")
 		lv := m.Call(nil)
-		return reflectFieldValue(lv[0])
+		return reflectValue(lv[0])
 	case implements(typ, (*xerrors.Formatter)(nil)):
 		return extractErrorChain(rv)
 	case implements(typ, (*error)(nil)):
 		m := rv.MethodByName("Error")
 		s := m.Call(nil)
-		return fieldString(s[0].String())
+		return String(s[0].String())
 	case implements(typ, (*fmt.Stringer)(nil)):
 		if implements(typ, (*proto.Message)(nil)) {
 			// We do not want a flat string for protobufs.
@@ -48,7 +55,7 @@ func reflectFieldValue(rv reflect.Value) fieldValue {
 		}
 		m := rv.MethodByName("String")
 		s := m.Call(nil)
-		return fieldString(s[0].String())
+		return String(s[0].String())
 	}
 
 	switch rv.Kind() {
@@ -60,41 +67,41 @@ func reflectFieldValue(rv reflect.Value) fieldValue {
 
 	if typ == reflect.TypeOf((func() interface{})(nil)) {
 		lv := rv.Call(nil)
-		return reflectFieldValue(lv[0])
+		return reflectValue(lv[0])
 	}
 
 	switch rv.Kind() {
 	case reflect.String:
-		return fieldString(rv.String())
+		return String(rv.String())
 	case reflect.Bool:
-		return fieldBool(rv.Bool())
+		return Bool(rv.Bool())
 	case reflect.Float32, reflect.Float64:
-		return fieldFloat(rv.Float())
+		return Float(rv.Float())
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		return fieldInt(rv.Int())
+		return Int(rv.Int())
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return fieldUint(rv.Uint())
+		return Uint(rv.Uint())
 	case reflect.Ptr:
-		return reflectFieldValue(rv.Elem())
+		return reflectValue(rv.Elem())
 	case reflect.Slice, reflect.Array:
-		list := make(fieldList, rv.Len())
+		list := make(List, rv.Len())
 
 		for i := 0; i < rv.Len(); i++ {
-			list[i] = reflectFieldValue(rv.Index(i))
+			list[i] = reflectValue(rv.Index(i))
 		}
 		return list
 	case reflect.Map:
-		f := make(fieldMap, 0, rv.Len())
+		f := make(Map, 0, rv.Len())
 		for _, k := range rv.MapKeys() {
 			mv := rv.MapIndex(k)
-			f = f.append(fmt.Sprintf("%v", k), reflectFieldValue(mv))
+			f = f.Append(fmt.Sprintf("%v", k), reflectValue(mv))
 		}
-		f.sort()
+		f.Sort()
 		return f
 	case reflect.Struct:
 		typ := rv.Type()
 
-		f := make(fieldMap, 0, typ.NumField())
+		f := make(Map, 0, typ.NumField())
 
 		for i := 0; i < typ.NumField(); i++ {
 			ft := typ.Field(i)
@@ -108,18 +115,18 @@ func reflectFieldValue(rv reflect.Value) fieldValue {
 				continue
 			}
 
-			v := reflectFieldValue(fv)
+			v := reflectValue(fv)
 			name := ft.Tag.Get("log")
 			if name == "" {
 				name = snakecase(ft.Name)
 			}
-			f = f.append(name, v)
+			f = f.Append(name, v)
 
 		}
 
 		return f
 	default:
-		return fieldString(fmt.Sprintf("%v", rv))
+		return String(fmt.Sprintf("%v", rv))
 	}
 }
 
@@ -178,21 +185,15 @@ func (p *xerrorPrinter) Detail() bool {
 	return true
 }
 
-func (p *xerrorPrinter) fields() fieldMap {
-	f := fieldMap{}
-	f = f.append("msg", fieldString(p.msg))
-	if p.loc != "" {
-		f = f.append("loc", fieldString(p.loc))
-	}
-	if p.function != "" {
-		f = f.append("fun", fieldString(p.function))
-	}
-	return f
+func (p *xerrorPrinter) fields() Value {
+	return String(fmt.Sprintf(`%v
+%v
+  %v`, p.msg, p.function, p.loc))
 }
 
 // The value passed in must implement xerrors.Formatter.
-func extractErrorChain(rv reflect.Value) fieldList {
-	errs := fieldList{}
+func extractErrorChain(rv reflect.Value) List {
+	errs := List{}
 
 	formatError := func(p xerrors.Printer) error {
 		m := rv.MethodByName("FormatError")
@@ -215,8 +216,14 @@ func extractErrorChain(rv reflect.Value) fieldList {
 				}
 				continue
 			}
-			errs = append(errs, reflectFieldValue(reflect.ValueOf(err)))
+			errs = append(errs, reflectValue(reflect.ValueOf(err)))
 		}
 		return errs
 	}
+}
+
+func panicf(f string, v ...interface{}) {
+	f = "slogcore: " + f
+	s := fmt.Sprintf(f, v...)
+	panic(s)
 }

@@ -14,7 +14,6 @@ import (
 // All logs will be logged at the Info level and the given ctx
 // will be passed to the logger's Info method, thereby logging
 // all fields and tracing info in the context.
-// TODO test support
 func Stdlib(ctx context.Context, l Logger) *log.Logger {
 	ctx = skipctx.With(ctx, 4)
 

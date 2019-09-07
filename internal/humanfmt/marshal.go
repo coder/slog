@@ -1,8 +1,10 @@
-package slog
+package humanfmt
 
 import (
 	"strconv"
 	"strings"
+
+	"go.coder.com/slog/slogcore"
 )
 
 // consoleMarshaller marshals a fieldValue into a human readable format.
@@ -11,9 +13,9 @@ type consoleMarshaller struct {
 	indentstr string
 }
 
-func marshalFields(v fieldMap) string {
+func Fields(m slogcore.Map) string {
 	var y consoleMarshaller
-	y.marshal(v)
+	y.marshal(m)
 	return y.out.String()
 }
 
@@ -41,40 +43,40 @@ func (y *consoleMarshaller) unindent() {
 	y.indentstr = y.indentstr[:len(y.indentstr)-2]
 }
 
-func (y *consoleMarshaller) marshal(v fieldValue) {
+func (y *consoleMarshaller) marshal(v slogcore.Value) {
 	switch v := v.(type) {
-	case fieldString:
+	case slogcore.String:
 		// Ensures indentation.
 		y.indent()
 		// Replaces every newline with a newline plus the correct indentation.
 		y.s(strings.ReplaceAll(string(v), "\n", "\n"+y.indentstr))
 		y.unindent()
-	case fieldBool:
+	case slogcore.Bool:
 		y.s(strconv.FormatBool(bool(v)))
-	case fieldFloat:
+	case slogcore.Float:
 		y.s(strconv.FormatFloat(float64(v), 'f', -1, 64))
-	case fieldInt:
+	case slogcore.Int:
 		y.s(strconv.FormatInt(int64(v), 10))
-	case fieldUint:
+	case slogcore.Uint:
 		y.s(strconv.FormatUint(uint64(v), 10))
-	case fieldMap:
+	case slogcore.Map:
 		for i, f := range v {
 			if i > 0 {
 				// Add newline before every field except first.
 				y.line()
 			}
 
-			y.s(quote(f.name) + ":")
+			y.s(quote(f.Name) + ":")
 
-			y.marshalSub(f.value, true)
+			y.marshalSub(f.Value, true)
 		}
-	case fieldList:
+	case slogcore.List:
 		y.indent()
 		for _, v := range v {
 			y.line()
 			y.s("-")
 
-			if _, ok := v.(fieldList); !ok {
+			if _, ok := v.(slogcore.List); !ok {
 				// Non list values begin with the -.
 				y.s(" ")
 			}
@@ -88,9 +90,9 @@ func (y *consoleMarshaller) marshal(v fieldValue) {
 	}
 }
 
-func (y *consoleMarshaller) marshalSub(v fieldValue, isParentMap bool) {
+func (y *consoleMarshaller) marshalSub(v slogcore.Value, isParentMap bool) {
 	switch v := v.(type) {
-	case fieldMap:
+	case slogcore.Map:
 		if isParentMap && len(v) == 0 {
 			// Nothing to output for this field. Without this line, we get additional newlines due to below code as
 			// the map field is expected to start on the next line given it is in a parentMap.
@@ -106,7 +108,7 @@ func (y *consoleMarshaller) marshalSub(v fieldValue, isParentMap bool) {
 			// it with the `-` of the list.
 			y.line()
 		}
-	case fieldList:
+	case slogcore.List:
 	default:
 		if isParentMap {
 			// Non map and non list values in structs begin on the same line with a space between the key and value.
@@ -116,7 +118,7 @@ func (y *consoleMarshaller) marshalSub(v fieldValue, isParentMap bool) {
 
 	y.marshal(v)
 
-	if _, ok := v.(fieldMap); ok {
+	if _, ok := v.(slogcore.Map); ok {
 		y.unindent()
 	}
 }

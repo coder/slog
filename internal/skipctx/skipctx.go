@@ -1,5 +1,5 @@
 // Package skipctx contains helpers to put the frame skip level
-// into the context. Used by stderrlog and testlog helpers to
+// into the context. Used by stderrlog and testslog helpers to
 // skip one more frame level.
 package skipctx
 

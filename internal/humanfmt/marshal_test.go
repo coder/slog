@@ -1,8 +1,10 @@
-package slog
+package humanfmt
 
 import (
-	"reflect"
 	"testing"
+
+	"go.coder.com/slog/internal/diff"
+	"go.coder.com/slog/slogcore"
 )
 
 func Test_marshalFields(t *testing.T) {
@@ -114,10 +116,10 @@ dsamkld`,
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			v := reflectFieldValue(reflect.ValueOf(tc.in))
-			actOut := marshalFields(v.(fieldMap))
+			v := slogcore.Reflect(tc.in)
+			actOut := Fields(v.(slogcore.Map))
 			t.Logf("yaml:\n%v", actOut)
-			if diff := cmpDiff(tc.out, actOut); diff != "" {
+			if diff := diff.Diff(tc.out, actOut); diff != "" {
 				t.Fatalf("unexpected output: %v", diff)
 			}
 		})

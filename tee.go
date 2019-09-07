@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"go.coder.com/slog/internal/skipctx"
+	"go.coder.com/slog/slogcore"
 )
 
 // Tee enables logging to multiple loggers.
@@ -20,47 +21,47 @@ type multiLogger struct {
 }
 
 func (l multiLogger) Debug(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, levelDebug, msg, fields)
+	l.log(ctx, slogcore.Debug, msg, fields)
 }
 
 func (l multiLogger) Info(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, levelInfo, msg, fields)
+	l.log(ctx, slogcore.Info, msg, fields)
 }
 
 func (l multiLogger) Warn(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, levelWarn, msg, fields)
+	l.log(ctx, slogcore.Warn, msg, fields)
 }
 
 func (l multiLogger) Error(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, levelError, msg, fields)
+	l.log(ctx, slogcore.Error, msg, fields)
 }
 
 func (l multiLogger) Critical(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, levelCritical, msg, fields)
+	l.log(ctx, slogcore.Critical, msg, fields)
 }
 
 func (l multiLogger) Fatal(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, levelDebug, msg, fields)
+	l.log(ctx, slogcore.Fatal, msg, fields)
 }
 
-func (l multiLogger) log(ctx context.Context, level level, msg string, fields []Field) {
+func (l multiLogger) log(ctx context.Context, level slogcore.Level, msg string, fields []Field) {
 	ctx = skipctx.With(ctx, 2)
 	for _, l := range l.loggers {
 		switch level {
-		case levelDebug:
+		case slogcore.Debug:
 			l.Debug(ctx, msg, fields...)
-		case levelInfo:
+		case slogcore.Info:
 			l.Info(ctx, msg, fields...)
-		case levelWarn:
+		case slogcore.Warn:
 			l.Warn(ctx, msg, fields...)
-		case levelError:
+		case slogcore.Error:
 			l.Error(ctx, msg, fields...)
-		case levelCritical, levelFatal:
+		case slogcore.Critical, slogcore.Fatal:
 			l.Critical(ctx, msg, fields...)
 		}
 	}
 
-	if level == levelFatal {
+	if level == slogcore.Fatal {
 		os.Exit(1)
 	}
 }
