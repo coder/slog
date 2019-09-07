@@ -2,6 +2,7 @@ package slog
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"go.coder.com/slog/internal/humanfmt"
@@ -92,10 +93,12 @@ func (tl testLogger) log(ctx context.Context, level slogcore.Level, msg string, 
 	tl.write(ent)
 }
 
+var stderrColor = isTTY(os.Stderr)
+
 func (tl testLogger) write(ent slogcore.Entry) {
 	tl.tb.Helper()
 
-	s := humanfmt.Entry(ent)
+	s := humanfmt.Entry(ent, stderrColor)
 
 	switch ent.Level {
 	case slogcore.Debug, slogcore.Info, slogcore.Warn:

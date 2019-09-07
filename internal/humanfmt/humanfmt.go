@@ -2,6 +2,7 @@ package humanfmt
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"path/filepath"
 
 	"go.opencensus.io/trace"
@@ -9,12 +10,21 @@ import (
 	"go.coder.com/slog/slogcore"
 )
 
-func Entry(ent slogcore.Entry) string {
+func Entry(ent slogcore.Entry, enableColor bool) string {
 	var ents string
 	if ent.File != "" {
 		ents += fmt.Sprintf("%v:%v: ", filepath.Base(ent.File), ent.Line)
 	}
-	ents += fmt.Sprintf("%v [%v]", ent.Time.Format(timestampMilli), ent.Level)
+	ents += fmt.Sprintf("%v [", ent.Time.Format(timestampMilli))
+
+	if enableColor {
+		cl := levelColor(ent.Level)
+		ents += color.New(cl).Sprint(ent.Level)
+	} else {
+		ents += string(ent.Level)
+	}
+
+	ents += "]"
 
 	if ent.Component != "" {
 		ents += fmt.Sprintf(" (%v)", quote(ent.Component))
@@ -65,7 +75,19 @@ func stringFields(ent slogcore.Entry) string {
 const timestampMilli = "Jan 02 15:04:05.000"
 
 func panicf(f string, v ...interface{}) {
-	f = "slogcore: " + f
+	f = "humanfmt: " + f
 	s := fmt.Sprintf(f, v...)
 	panic(s)
+}
+
+func levelColor(level slogcore.Level) color.Attribute {
+	switch level {
+	case slogcore.Debug, slogcore.Info:
+		return color.FgBlue
+	case slogcore.Warn:
+		return color.FgYellow
+	case slogcore.Error, slogcore.Critical, slogcore.Fatal:
+		return color.FgRed
+	}
+	panic("humanfmt: unexpected level: " + string(level))
 }

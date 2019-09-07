@@ -2,6 +2,7 @@ package slog
 
 import (
 	"context"
+	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"os"
 	"strings"
@@ -12,13 +13,14 @@ import (
 )
 
 type humanSink struct {
-	mu sync.Mutex
-	w  io.Writer
+	mu    sync.Mutex
+	w     io.Writer
+	color bool
 }
 
-func (w *humanSink) WriteLogEntry(ent slogcore.Entry) {
-	s := humanfmt.Entry(ent)
-	lines := strings.Split(s, "\n")
+func (s *humanSink) WriteLogEntry(ent slogcore.Entry) {
+	str := humanfmt.Entry(ent, s.color)
+	lines := strings.Split(str, "\n")
 
 	fieldsLines := lines[1:]
 	for i, line := range fieldsLines {
@@ -28,21 +30,29 @@ func (w *humanSink) WriteLogEntry(ent slogcore.Entry) {
 		fieldsLines[i] = "\t" + line
 	}
 
-	s = strings.Join(lines, "\n")
+	str = strings.Join(lines, "\n")
 
-	w.writeString(s + "\n")
+	s.writeString(str + "\n")
 }
 
-func (w *humanSink) writeString(s string) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+func (s *humanSink) writeString(str string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	io.WriteString(w.w, s)
+	io.WriteString(s.w, str)
+}
+
+func isTTY(w io.Writer) bool {
+	f, ok := w.(interface {
+		Fd() uintptr
+	})
+	return ok && terminal.IsTerminal(int(f.Fd()))
 }
 
 func Human(w io.Writer) Logger {
 	return Make(&humanSink{
-		w: w,
+		w:     w,
+		color: isTTY(w),
 	})
 }
 
