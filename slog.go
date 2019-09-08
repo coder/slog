@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"go.opencensus.io/trace"
-
-	"go.coder.com/slog/internal/skipctx"
 )
 
 // Field represents a log field.
@@ -157,6 +155,7 @@ func Make(s Sink) Logger {
 			},
 		},
 		testingHelper: func() {},
+		skip:          2,
 	}
 	l.SetLevel(LevelDebug)
 
@@ -178,6 +177,7 @@ type Logger struct {
 	testingHelper func()
 
 	sinks []sink
+	skip  int
 }
 
 func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
@@ -239,7 +239,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 			level:  level,
 			msg:    msg,
 			fields: fields,
-			skip:   2,
+			skip:   l.skip,
 		})
 
 		s.sink.LogEntry(ctx, ent)
@@ -324,7 +324,7 @@ func (l parsedFields) entry(ctx context.Context, params entryParams) Entry {
 		Fields:      l.fields,
 	}
 
-	file, line, fn, ok := location(params.skip + 1 + skipctx.From(ctx))
+	file, line, fn, ok := location(params.skip + 1)
 	if ok {
 		ent.File = file
 		ent.Line = line

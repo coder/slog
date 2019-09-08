@@ -5,7 +5,6 @@ import (
 	"log"
 	"strings"
 
-	"go.coder.com/slog/internal/skipctx"
 	"go.coder.com/slog/internal/stdlibctx"
 )
 
@@ -19,7 +18,8 @@ import (
 // to the Writer on the logger returned by this function.
 // See the example.
 func Stdlib(ctx context.Context, l Logger) *log.Logger {
-	ctx = skipctx.With(ctx, 4)
+	l.skip += 4
+
 	ctx = stdlibctx.With(ctx)
 
 	w := &stdlogWriter{

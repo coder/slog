@@ -1,6 +1,7 @@
 package slogtest_test
 
 import (
+	"context"
 	"io"
 	"strconv"
 	"testing"
@@ -43,4 +44,10 @@ func TestExampleTest(t *testing.T) {
 			meow{3},
 		)),
 	)
+
+	l := slogtest.Make(t, nil).With(
+		slog.F("hi", "anmol"),
+	)
+	stdlibLog := slog.Stdlib(context.Background(), l)
+	stdlibLog.Println("stdlib")
 }
