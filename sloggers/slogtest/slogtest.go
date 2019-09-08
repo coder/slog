@@ -12,14 +12,14 @@ import (
 )
 
 // TestOptions represents the options for the logger returned
-// by Test.
+// by Make.
 type TestOptions struct {
 	// IgnoreErrors causes the test logger to not fatal the test
 	// on Fatal and not error the test on Error or Critical.
 	IgnoreErrors bool
 }
 
-// Test creates a Logger that writes logs to tb in a human readable format.
+// Make creates a Logger that writes logs to tb in a human readable format.
 func Make(tb testing.TB, opts *TestOptions) slog.Logger {
 	if opts == nil {
 		opts = &TestOptions{}

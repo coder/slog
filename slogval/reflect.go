@@ -12,22 +12,19 @@ import (
 	"go.coder.com/slog"
 )
 
+// Reflect uses reflection to convert the slice of fields into a ordered
+// map that uses only the primitive value types defined in this package.
 func Reflect(fs []slog.Field) Map {
 	var m Map
 	for _, f := range fs {
-		m = m.Append(f.LogKey(), reflectValue(reflect.ValueOf(f.LogValue())))
+		m = m.appendVal(f.LogKey(), reflectValue(reflect.ValueOf(f.LogValue())))
 	}
 	return m
 }
 
-// TODO
-func ReflectMap() {
+// PureReflect is like reflect but only uses
+func PureReflect(v interface{}) {
 	panic("TODO")
-}
-
-// TODO remove later.
-func ReflectUnsafe(v interface{}) Value {
-	return reflectValue(reflect.ValueOf(v))
 }
 
 func reflectValue(rv reflect.Value) Value {
@@ -99,7 +96,7 @@ func reflectValue(rv reflect.Value) Value {
 				f := rv.Index(i)
 				key := f.MethodByName("LogKey").Call(nil)[0].String()
 				val := f.MethodByName("LogValue").Call(nil)[0]
-				m = m.Append(key, reflectValue(val))
+				m = m.appendVal(key, reflectValue(val))
 			}
 			return m
 		}
@@ -112,9 +109,9 @@ func reflectValue(rv reflect.Value) Value {
 		m := make(Map, 0, rv.Len())
 		for _, k := range rv.MapKeys() {
 			mv := rv.MapIndex(k)
-			m = m.Append(fmt.Sprintf("%v", k), reflectValue(mv))
+			m = m.appendVal(fmt.Sprintf("%v", k), reflectValue(mv))
 		}
-		m.Sort()
+		m.sort()
 		return m
 	case reflect.Struct:
 		typ := rv.Type()
@@ -138,7 +135,7 @@ func reflectValue(rv reflect.Value) Value {
 			if name == "" {
 				name = snakecase(ft.Name)
 			}
-			f = f.Append(name, v)
+			f = f.appendVal(name, v)
 
 		}
 

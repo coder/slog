@@ -86,8 +86,8 @@ func fromContext(ctx context.Context) parsedFields {
 }
 
 // Context returns a context that contains the given fields.
-// Any logs written with the provided context will contain
-// the given fields.
+// Any logs written with the provided context will have
+// the given logs prepended.
 // It will append to any fields already in ctx.
 func Context(ctx context.Context, fields ...Field) context.Context {
 	l := fromContext(ctx)
@@ -95,6 +95,8 @@ func Context(ctx context.Context, fields ...Field) context.Context {
 	return withContext(ctx, l)
 }
 
+// Entry represents the structure of a log entry.
+// It is the argument to the sink when logging.
 type Entry struct {
 	Time time.Time
 
@@ -112,8 +114,10 @@ type Entry struct {
 	Fields []Field
 }
 
+// Level represents a log level.
 type Level int
 
+// The supported log levels.
 const (
 	LevelDebug Level = iota
 	LevelInfo
@@ -171,6 +175,8 @@ type sink struct {
 	pl    parsedFields
 }
 
+// Logger allows logging a ordered slice of fields
+// to an underlying set of sinks.
 type Logger struct {
 	testingHelper func()
 
@@ -183,36 +189,45 @@ func (l Logger) clone() Logger {
 	return l
 }
 
+// Debug logs the msg and fields at LevelDebug.
 func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
 	l.log(ctx, LevelDebug, msg, fields)
 }
 
+// Info logs the msg and fields at LevelInfo.
 func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
 	l.log(ctx, LevelInfo, msg, fields)
 }
 
+// Warn logs the msg and fields at LevelWarn.
 func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
 	l.log(ctx, LevelWarn, msg, fields)
 }
 
+// Error logs the msg and fields at LevelError.
 func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
 	l.log(ctx, LevelError, msg, fields)
 }
 
+// Critical logs the msg and fields at LevelCritical.
 func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
 	l.log(ctx, LevelCritical, msg, fields)
 }
 
+// Fatal logs the msg and fields at LevelFatal.
 func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
 	l.log(ctx, LevelFatal, msg, fields)
 }
 
+// With returns a Logger that prepends the given fields on every
+// logged entry.
+// It will append to any fields already in the Logger.
 func (l Logger) With(fields ...Field) Logger {
 	l = l.clone()
 	for i, s := range l.sinks {

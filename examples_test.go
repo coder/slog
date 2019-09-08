@@ -1,9 +1,10 @@
 package slog_test
 
 import (
-	"golang.org/x/xerrors"
 	"io"
 	"testing"
+
+	"golang.org/x/xerrors"
 
 	"go.coder.com/slog"
 	"go.coder.com/slog/sloggers/slogtest"

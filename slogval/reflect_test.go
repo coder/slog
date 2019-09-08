@@ -1,15 +1,15 @@
-package slogval_test
+package slogval
 
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"runtime"
 	"testing"
 
 	"golang.org/x/xerrors"
 
 	"go.coder.com/slog/internal/diff"
-	"go.coder.com/slog/slogval"
 )
 
 func TestReflect(t *testing.T) {
@@ -18,23 +18,23 @@ func TestReflect(t *testing.T) {
 	testCases := []struct {
 		name string
 		in   interface{}
-		out  slogval.Value
+		out  Value
 	}{
 		{
 			name: "xerror",
 			in: xerrors.Errorf("wrap msg: %w",
 				xerrors.Errorf("hi: %w", io.EOF),
 			),
-			out: slogval.List{
-				slogval.String(`wrap msg
-go.coder.com/slog/slogval_test.TestReflect
+			out: List{
+				String(`wrap msg
+go.coder.com/slog/slogval.TestReflect
   ` + testLocation(0, -6),
 				),
-				slogval.String(`hi
-go.coder.com/slog/slogval_test.TestReflect
+				String(`hi
+go.coder.com/slog/slogval.TestReflect
   ` + testLocation(0, -9),
 				),
-				slogval.String("EOF"),
+				String("EOF"),
 			},
 		},
 		{
@@ -48,9 +48,9 @@ go.coder.com/slog/slogval_test.TestReflect
 				"b",
 				"c",
 			},
-			out: slogval.Map{
-				{"hi", slogval.String("b")},
-				{"f", slogval.String("c")},
+			out: Map{
+				{"hi", String("b")},
+				{"f", String("c")},
 			},
 		},
 		{
@@ -64,15 +64,15 @@ go.coder.com/slog/slogval_test.TestReflect
 				"b",
 				"c",
 			},
-			out: slogval.Map{
-				{"hi", slogval.String("b")},
-				{"f", slogval.String("c")},
+			out: Map{
+				{"hi", String("b")},
+				{"f", String("c")},
 			},
 		},
 		{
 			name: "LogValue",
 			in:   myStruct{},
-			out:  slogval.String("hi"),
+			out:  String("hi"),
 		},
 	}
 
@@ -81,7 +81,7 @@ go.coder.com/slog/slogval_test.TestReflect
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			actOut := slogval.ReflectUnsafe(tc.in)
+			actOut := reflectValue(reflect.ValueOf(tc.in))
 			if diff := diff.Diff(tc.out, actOut); diff != "" {
 				t.Fatalf("unexpected output: %v", diff)
 			}

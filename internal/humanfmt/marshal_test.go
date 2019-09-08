@@ -3,6 +3,7 @@ package humanfmt
 import (
 	"testing"
 
+	"go.coder.com/slog"
 	"go.coder.com/slog/internal/diff"
 	"go.coder.com/slog/slogval"
 )
@@ -12,60 +13,60 @@ func Test_marshalFields(t *testing.T) {
 
 	testCases := []struct {
 		name string
-		in   map[string]interface{}
+		in   []slog.Field
 		out  string
 	}{
 		{
 			name: "stringWithNewlines",
-			in: map[string]interface{}{
-				"a": `hi
+			in: slog.Map(
+				slog.F("a", `hi
 two
-three`,
-			},
+three`),
+			),
 			out: `a: hi
   two
   three`,
 		},
 		{
 			name: "bool",
-			in: map[string]interface{}{
-				"a": false,
-			},
+			in: slog.Map(
+				slog.F("a", false),
+			),
 			out: `a: false`,
 		},
 		{
 			name: "float",
-			in: map[string]interface{}{
-				"a": 0.3,
-			},
+			in: slog.Map(
+				slog.F("a", 0.3),
+			),
 			out: `a: 0.3`,
 		},
 		{
 			name: "int",
-			in: map[string]interface{}{
-				"a": -1,
-			},
+			in: slog.Map(
+				slog.F("a", -1),
+			),
 			out: `a: -1`,
 		},
 		{
 			name: "uint",
-			in: map[string]interface{}{
-				"a": uint(3),
-			},
+			in: slog.Map(
+				slog.F("a", uint(3)),
+			),
 			out: `a: 3`,
 		},
 		{
 			name: "list",
-			in: map[string]interface{}{
-				"a": []interface{}{
-					map[string]interface{}{
-						"hi":  "hello",
-						"hi3": "hello",
-					},
+			in: slog.Map(
+				slog.F("a", []interface{}{
+					slog.Map(
+						slog.F("hi", "hello"),
+						slog.F("hi3", "hello"),
+					),
 					"3",
 					[]string{"a", "b", "c"},
 				},
-			},
+				)),
 			out: `a:
   - hi: hello
     hi3: hello
@@ -77,37 +78,37 @@ three`,
 		},
 		{
 			name: "emptyStruct",
-			in: map[string]interface{}{
-				"a": struct{}{},
-				"b": struct{}{},
-				"c": struct{}{},
-			},
+			in: slog.Map(
+				slog.F("a", struct{}{}),
+				slog.F("b", struct{}{}),
+				slog.F("c", struct{}{}),
+			),
 			out: `a:
 b:
 c:`,
 		},
 		{
 			name: "nestedMap",
-			in: map[string]interface{}{
-				"a": map[string]string{
-					"0": "hi",
+			in: slog.Map(
+				slog.F("a", map[string]string{
 					"1": "hi",
-				},
-			},
+					"0": "hi",
+				}),
+			),
 			out: `a:
   0: hi
   1: hi`,
 		},
 		{
 			name: "specialCharacterKey",
-			in: map[string]interface{}{
-				"nhooyr \tsoftware™️": "hi",
-				"\rxeow\r": `mdsla
-dsamkld`,
-			},
-			out: `"\rxeow\r": mdsla
-  dsamkld
-"nhooyr_\tsoftware™️": hi`,
+			in: slog.Map(
+				slog.F("nhooyr \tsoftware™️", "hi"),
+				slog.F("\rxeow\r", `mdsla
+dsamkld`),
+			),
+			out: `"nhooyr_\tsoftware™️": hi
+"\rxeow\r": mdsla
+  dsamkld`,
 		},
 	}
 
@@ -116,8 +117,8 @@ dsamkld`,
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			v := slogval.ReflectUnsafe(tc.in)
-			actOut := humanFields(v.(slogval.Map))
+			v := slogval.Reflect(tc.in)
+			actOut := humanFields(v)
 			t.Logf("yaml:\n%v", actOut)
 			if diff := diff.Diff(tc.out, actOut); diff != "" {
 				t.Fatalf("unexpected output: %v", diff)

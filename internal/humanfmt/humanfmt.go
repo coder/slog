@@ -52,14 +52,16 @@ func Entry(ent slog.Entry, enableColor bool) string {
 }
 
 func pinnedFields(ent slog.Entry) string {
-	pinned := slogval.Map{}
-
-	if ent.SpanContext != (trace.SpanContext{}) {
-		pinned = pinned.Append("trace", slogval.String(ent.SpanContext.TraceID.String()))
-		pinned = pinned.Append("span", slogval.String(ent.SpanContext.SpanID.String()))
+	if ent.SpanContext == (trace.SpanContext{}) {
+		return ""
 	}
 
-	return humanFields(pinned)
+	m := slog.Map(
+		slog.F("trace", ent.SpanContext.TraceID),
+		slog.F("span", ent.SpanContext.SpanID),
+	)
+
+	return humanFields(slogval.Reflect(m))
 }
 
 func stringFields(ent slog.Entry) string {
@@ -92,6 +94,7 @@ func levelColor(level slog.Level) color.Attribute {
 	panic("humanfmt: unexpected level: " + string(level))
 }
 
+// IsTTY checks whether the given writer is a *os.File TTY.
 func IsTTY(w io.Writer) bool {
 	f, ok := w.(interface {
 		Fd() uintptr

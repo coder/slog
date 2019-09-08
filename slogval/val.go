@@ -4,6 +4,7 @@ import (
 	"sort"
 )
 
+// Value represents a primitive value for structured logging.
 type Value interface {
 	// This returns the Value so that we do not need
 	// to reconstruct the field ourselves as we cannot
@@ -12,81 +13,75 @@ type Value interface {
 	isSlogCoreValue() Value
 }
 
+// Field represents a field in the Map.
 type Field struct {
 	Name  string
 	Value Value
 }
 
+// String represents a string.
 type String string
 
 func (f String) isSlogCoreValue() Value {
 	return f
 }
 
+// Int represents an integer.
 type Int int64
 
 func (f Int) isSlogCoreValue() Value {
 	return f
 }
 
+// Uint represents an unsigned integer.
 type Uint uint64
 
 func (f Uint) isSlogCoreValue() Value {
 	return f
 }
 
+// Float represents a floating point number.
 type Float float64
 
 func (f Float) isSlogCoreValue() Value {
 	return f
 }
 
+// Bool represents a boolean.
 type Bool bool
 
 func (f Bool) isSlogCoreValue() Value {
 	return f
 }
 
+// Map represents a ordered map.
 type Map []Field
 
-func (f Map) isSlogCoreValue() Value {
-	return f
+func (m Map) isSlogCoreValue() Value {
+	return m
 }
 
+// List represents a list of values.
 type List []Value
 
 func (f List) isSlogCoreValue() Value {
 	return f
 }
 
-func (f Map) Clone() Map {
-	f2 := make(Map, len(f))
-	copy(f2, f)
-	return f2
-}
-
-// TODO make sure this is used correctly.
-func (f Map) Append(key string, val Value) Map {
-	return append(f, Field{
+// appendVal appends an entry with the given key
+// and val to the map.
+func (m Map) appendVal(key string, val Value) Map {
+	return append(m, Field{
 		key,
 		val,
 	})
 }
 
-func (f Map) AppendFields(f2 Map) Map {
-	if len(f2) == 0 {
-		return f
-	}
-
-	f = f.Clone()
-	return append(f, f2...)
-}
-
 // sort sorts the fields by name.
-// Only used when the fields represent a map to ensure
+// Only used when the fields represent a Go map to ensure
 // stable key order.
-func (f Map) Sort() {
-	sort.Slice(f, func(i, j int) bool {
-		return f[i].Name < f[j].Name
+func (m Map) sort() {
+	sort.Slice(m, func(i, j int) bool {
+		return m[i].Name < m[j].Name
 	})
 }
