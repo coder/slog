@@ -3,7 +3,6 @@ package slogval
 import (
 	"fmt"
 	"io"
-	"reflect"
 	"runtime"
 	"testing"
 
@@ -12,7 +11,7 @@ import (
 	"go.coder.com/slog/internal/diff"
 )
 
-func TestReflect(t *testing.T) {
+func TestEncode(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -27,11 +26,11 @@ func TestReflect(t *testing.T) {
 			),
 			out: List{
 				String(`wrap msg
-go.coder.com/slog/slogval.TestReflect
+go.coder.com/slog/slogval.TestEncode
   ` + testLocation(0, -6),
 				),
 				String(`hi
-go.coder.com/slog/slogval.TestReflect
+go.coder.com/slog/slogval.TestEncode
   ` + testLocation(0, -9),
 				),
 				String("EOF"),
@@ -75,7 +74,7 @@ go.coder.com/slog/slogval.TestReflect
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			actOut := reflectValue(reflect.ValueOf(tc.in))
+			actOut := Encode(tc.in)
 			if diff := diff.Diff(tc.out, actOut); diff != "" {
 				t.Fatalf("unexpected output: %v", diff)
 			}

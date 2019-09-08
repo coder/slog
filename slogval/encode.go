@@ -41,7 +41,7 @@ func encode(rv reflect.Value) Value {
 	// the error variable always does not implement the Value interface
 	// but does implement Error. With this, we check the concrete value instead.
 	if rv.Kind() == reflect.Interface {
-		return reflectValue(rv.Elem())
+		return encode(rv.Elem())
 	}
 
 	typ := rv.Type()
@@ -52,7 +52,7 @@ func encode(rv reflect.Value) Value {
 	case implements(typ, (*slog.Value)(nil)):
 		m := rv.MethodByName("LogValue")
 		lv := m.Call(nil)
-		return reflectValue(lv[0])
+		return encode(lv[0])
 	case implements(typ, (*xerrors.Formatter)(nil)):
 		return extractErrorChain(rv)
 	case implements(typ, (*error)(nil)):
@@ -100,7 +100,7 @@ func reflectValue(rv reflect.Value) Value {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return Uint(rv.Uint())
 	case reflect.Ptr:
-		return reflectValue(rv.Elem())
+		return encode(rv.Elem())
 	case reflect.Slice, reflect.Array:
 		// Ordered map.
 		if typ == reflect.TypeOf([]slog.Field(nil)) {
@@ -109,20 +109,20 @@ func reflectValue(rv reflect.Value) Value {
 				f := rv.Index(i)
 				key := f.MethodByName("LogKey").Call(nil)[0].String()
 				val := f.MethodByName("LogValue").Call(nil)[0]
-				m = m.appendVal(key, reflectValue(val))
+				m = m.appendVal(key, encode(val))
 			}
 			return m
 		}
 		list := make(List, rv.Len())
 		for i := 0; i < rv.Len(); i++ {
-			list[i] = reflectValue(rv.Index(i))
+			list[i] = encode(rv.Index(i))
 		}
 		return list
 	case reflect.Map:
 		m := make(Map, 0, rv.Len())
 		for _, k := range rv.MapKeys() {
 			mv := rv.MapIndex(k)
-			m = m.appendVal(fmt.Sprintf("%v", k), reflectValue(mv))
+			m = m.appendVal(fmt.Sprintf("%v", k), encode(mv))
 		}
 		m.sort()
 		return m
@@ -153,7 +153,7 @@ func reflectStruct(m Map, rv reflect.Value, typ reflect.Type) Map {
 			continue
 		}
 
-		v := reflectValue(fv)
+		v := encode(fv)
 		name := ft.Tag.Get("log")
 		if name == "" {
 			name = snakecase(ft.Name)
@@ -255,7 +255,7 @@ func extractErrorChain(rv reflect.Value) List {
 				}
 				continue
 			}
-			errs = append(errs, reflectValue(reflect.ValueOf(err)))
+			errs = append(errs, encode(reflect.ValueOf(err)))
 		}
 		return errs
 	}
