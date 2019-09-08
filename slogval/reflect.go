@@ -16,7 +16,6 @@ import (
 // that would like to only use the reflection based
 // converter for itself and ignore interfaces like error
 // or fmt.Stringer.
-// TODO add back ValueFunc
 type Reflector interface {
 	LogWithReflect()
 }

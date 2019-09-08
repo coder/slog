@@ -25,6 +25,14 @@ type Value interface {
 	LogValue() interface{}
 }
 
+// ValueFunc is a convenient function wrapper around Value.
+type ValueFunc func() interface{}
+
+// LogValue implements Value.
+func (v ValueFunc) LogValue() interface{} {
+	return v()
+}
+
 type componentField string
 
 func (c componentField) LogKey() string        { panic("never called") }
