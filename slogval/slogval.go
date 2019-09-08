@@ -1,3 +1,5 @@
+// Package slogval is used by the default sloggers to take a []slog.Field
+// and convert it into a easily marshable slogval.Value.
 package slogval // import "go.coder.com/slog/slogval"
 
 import (

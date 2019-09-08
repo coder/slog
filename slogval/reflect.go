@@ -22,11 +22,6 @@ func Reflect(fs []slog.Field) Map {
 	return m
 }
 
-// PureReflect is like reflect but only uses
-func PureReflect(v interface{}) {
-	panic("TODO")
-}
-
 func reflectValue(rv reflect.Value) Value {
 	if !rv.IsValid() {
 		// reflect.ValueOf(nil).IsValid == false
