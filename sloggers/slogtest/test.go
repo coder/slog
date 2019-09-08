@@ -7,7 +7,6 @@ import (
 
 	"go.coder.com/slog"
 	"go.coder.com/slog/internal/humanfmt"
-	"go.coder.com/slog/internal/stdlibctx"
 )
 
 // TestOptions represents the options for the logger returned
@@ -30,11 +29,23 @@ func Make(tb testing.TB, opts *TestOptions) slog.Logger {
 }
 
 type testSink struct {
-	tb   testing.TB
-	opts *TestOptions
+	tb     testing.TB
+	opts   *TestOptions
+	stdlib bool
 }
 
-func (ts testSink) XXX_slogTestingHelper() func() {
+func (ts testSink) Stdlib() slog.Sink {
+	ts.stdlib = true
+	return ts
+}
+
+// Implements:
+// type testSink interface {
+//	Stdlib() Sink
+//	TestingHelper() func()
+// }
+// See slog.go in root package.
+func (ts testSink) TestingHelper() func() {
 	return ts.tb.Helper
 }
 
@@ -43,7 +54,7 @@ var stderrColor = humanfmt.IsTTY(os.Stderr)
 func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
 	ts.tb.Helper()
 
-	if !stdlibctx.From(ctx) {
+	if !ts.stdlib {
 		// We do not want to print the file or line number ourselves.
 		// The testing framework handles it for us.
 		// But we do want the function name.

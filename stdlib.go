@@ -4,8 +4,6 @@ import (
 	"context"
 	"log"
 	"strings"
-
-	"go.coder.com/slog/internal/stdlibctx"
 )
 
 // Stdlib creates a standard library logger from the given logger.
@@ -20,7 +18,12 @@ import (
 func Stdlib(ctx context.Context, l Logger) *log.Logger {
 	l.skip += 4
 
-	ctx = stdlibctx.With(ctx)
+	l = l.clone()
+	for i, s := range l.sinks {
+		if ts, ok := s.sink.(testSink); ok {
+			l.sinks[i].sink = ts.Stdlib()
+		}
+	}
 
 	w := &stdlogWriter{
 		Log: func(msg string) {

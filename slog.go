@@ -159,10 +159,8 @@ func Make(s Sink) Logger {
 	}
 	l.SetLevel(LevelDebug)
 
-	if sink, ok := s.(interface {
-		XXX_slogTestingHelper() func()
-	}); ok {
-		l.testingHelper = sink.XXX_slogTestingHelper()
+	if ts, ok := s.(testSink); ok {
+		l.testingHelper = ts.TestingHelper()
 	}
 	return l
 }
@@ -178,6 +176,11 @@ type Logger struct {
 
 	sinks []sink
 	skip  int
+}
+
+func (l Logger) clone() Logger {
+	l.sinks = append([]sink(nil), l.sinks...)
+	return l
 }
 
 func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
@@ -211,15 +214,15 @@ func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 }
 
 func (l Logger) With(fields ...Field) Logger {
-	sinks := make([]sink, len(l.sinks))
+	l = l.clone()
 	for i, s := range l.sinks {
 		s.pl = s.pl.withFields(fields)
-		sinks[i] = s
+		l.sinks[i] = s
 	}
-	l.sinks = sinks
 	return l
 }
 
+// SetLevel changes the Logger's level.
 func (l Logger) SetLevel(level Level) {
 	for _, s := range l.sinks {
 		atomic.StoreInt64(s.level, int64(level))
@@ -357,4 +360,9 @@ func Tee(ls ...Logger) Logger {
 	}
 
 	return l
+}
+
+type testSink interface {
+	Stdlib() Sink
+	TestingHelper() func()
 }
