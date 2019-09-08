@@ -1,3 +1,5 @@
+// Package humanfmt contains the code to format slog.Entry
+// into a human readable format.
 package humanfmt
 
 import (
@@ -13,6 +15,7 @@ import (
 	"go.coder.com/slog/slogval"
 )
 
+// Entry returns a human readable format for ent.
 func Entry(ent slog.Entry, enableColor bool) string {
 	var ents string
 	if ent.File != "" {

@@ -1,3 +1,5 @@
+// Package sloghuman contains the slogger
+// that writes logs in a human readable format.
 package sloghuman // import "go.coder.com/slog/sloggers/sloghuman"
 
 import (

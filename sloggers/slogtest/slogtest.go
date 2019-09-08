@@ -1,4 +1,6 @@
-package slogtest
+// Package slogtest contains the slogger for use
+// with Go's testing package.
+package slogtest // import "go.coder.com/slog/sloggers/slogtest"
 
 import (
 	"context"
@@ -17,7 +19,7 @@ type TestOptions struct {
 	IgnoreErrors bool
 }
 
-// Test creates a Logger that writes logs to tb.
+// Test creates a Logger that writes logs to tb in a human readable format.
 func Make(tb testing.TB, opts *TestOptions) slog.Logger {
 	if opts == nil {
 		opts = &TestOptions{}
@@ -28,6 +30,14 @@ func Make(tb testing.TB, opts *TestOptions) slog.Logger {
 	})
 }
 
+// testSink implements slog.Sink but also
+//
+// type testSink interface {
+//	Stdlib() Sink
+//	TestingHelper() func()
+// }
+//
+// See slog.go in root package.
 type testSink struct {
 	tb     testing.TB
 	opts   *TestOptions
@@ -39,12 +49,6 @@ func (ts testSink) Stdlib() slog.Sink {
 	return ts
 }
 
-// Implements:
-// type testSink interface {
-//	Stdlib() Sink
-//	TestingHelper() func()
-// }
-// See slog.go in root package.
 func (ts testSink) TestingHelper() func() {
 	return ts.tb.Helper
 }
@@ -81,4 +85,30 @@ func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
 		}
 		ts.tb.Fatal(s)
 	}
+}
+
+var ctx = context.Background()
+
+// Debug logs the given msg and fields to t via t.Log at the debug level.
+func Debug(t testing.TB, msg string, fields ...slog.Field) {
+	t.Helper()
+	Make(t, nil).Debug(ctx, msg, fields...)
+}
+
+// Info logs the given msg and fields to t via t.Log at the info level.
+func Info(t testing.TB, msg string, fields ...slog.Field) {
+	t.Helper()
+	Make(t, nil).Info(ctx, msg, fields...)
+}
+
+// Error logs the given msg and fields to t via t.Error at the error level.
+func Error(t testing.TB, msg string, fields ...slog.Field) {
+	t.Helper()
+	Make(t, nil).Error(ctx, msg, fields...)
+}
+
+// Fatal logs the given msg and fields to t via t.Fatal at the fatal level.
+func Fatal(t testing.TB, msg string, fields ...slog.Field) {
+	t.Helper()
+	Make(t, nil).Fatal(ctx, msg, fields...)
 }

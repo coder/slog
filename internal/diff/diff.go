@@ -1,3 +1,7 @@
+// Package diff is a helper package around go-cmp for generating
+// diffs between arbitrary interfaces.
+// See https://github.com/google/go-cmp/issues/40#issuecomment-328615283
+// Copied from https://github.com/nhooyr/websocket/blob/1b874731eab56c69c8bb3ebf8a029020c7863fc9/cmp_test.go
 package diff
 
 import (
@@ -6,8 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-// https://github.com/google/go-cmp/issues/40#issuecomment-328615283
-// Copied from https://github.com/nhooyr/websocket/blob/1b874731eab56c69c8bb3ebf8a029020c7863fc9/cmp_test.go
+// Diff returns a diff between exp and act.
+// The empty string is returned if they are identical.
 func Diff(exp, act interface{}) string {
 	return cmp.Diff(exp, act, deepAllowUnexported(exp, act))
 }

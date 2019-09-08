@@ -20,43 +20,37 @@ go get go.coder.com/slog
 - First class [context.Context](https://blog.golang.org/context) support
 - Beautiful logging output by default
 - Multiple adapters
-- First class [\*testing.T](https://godoc.org/go.coder.com/slog/slogtest) support
+- First class [\testing.TB](https://godoc.org/go.coder.com/slog/slogtest) support
 
 ## Example
 
 ```go
-testlog.Info(t, "my message here",
+slogtest.Info(t, "my message here",
     slog.F("field_name", "something or the other"),
-    slog.F("some_map", map[string]interface{}{
-        "nested_fields": "wowow",
-    }),
-    slog.F("some slice", []interface{}{
-        1,
-        "foof",
-        "bar",
-        true,
-    }),
+    slog.F("some_map", slog.Map(
+        slog.F("nested_fields", "wowow"),
+    )),
+    slog.Error(
+        xerrors.Errorf("wrap1: %w",
+            xerrors.Errorf("wrap2: %w",
+                io.EOF),
+        )),
     slog.Component("test"),
-
-    slog.F("name", slog.ValueFunc(func() interface{} {
-        return "wow"
-    })),
 )
 
-// --- PASS: TestExampleTest (0.00s)
-//    test_test.go:38: Sep 06 14:33:52.628 [INFO] (test): my_message_here
+// --- PASS: TestExample (0.00s)
+//    examples_test.go:46: Sep 08 13:54:34.532 [INFO] (test): my_message_here
 //        field_name: something or the other
 //        some_map:
 //          nested_fields: wowow
 //        error:
-//          - msg: wrap2
-//            loc: /Users/nhooyr/src/cdr/slog/test_test.go:43
-//            fun: go.coder.com/slog_test.TestExampleTest
-//          - msg: wrap1
-//            loc: /Users/nhooyr/src/cdr/slog/test_test.go:44
-//            fun: go.coder.com/slog_test.TestExampleTest
+//          - wrap1
+//            go.coder.com/slog_test.TestExample
+//              /Users/nhooyr/src/cdr/slog/examples_test.go:52
+//          - wrap2
+//            go.coder.com/slog_test.TestExample
+//              /Users/nhooyr/src/cdr/slog/examples_test.go:53
 //          - EOF
-//        name: wow
 ```
 
 ## Design justifications

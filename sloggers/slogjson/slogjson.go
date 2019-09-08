@@ -1,3 +1,5 @@
+// Package slogjson contains the slogger
+// that writes logs in a JSON format.
 package slogjson // import "go.coder.com/slog/sloggers/slogjson"
 
 import (
