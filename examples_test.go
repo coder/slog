@@ -9,7 +9,7 @@ import (
 	"go.coder.com/slog/sloggers/slogtest"
 )
 
-func Example() {
+func Example_test() {
 	// Nil here but would be provided by the testing framework.
 	var t testing.TB
 
