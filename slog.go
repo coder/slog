@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync/atomic"
 	"time"
 
 	"go.opencensus.io/trace"
@@ -147,24 +148,17 @@ type Sink interface {
 }
 
 // Make creates a logger that writes logs to sink.
-func Make(s Sink, opts *Options) Logger {
-	if opts == nil {
-		opts = &Options{
-			Level: func() Level {
-				return LevelDebug
-			},
-		}
-	}
-
+func Make(s Sink) Logger {
 	l := Logger{
 		sinks: []sink{
 			{
 				sink:  s,
-				level: opts.Level(),
+				level: new(int64),
 			},
 		},
 		testingHelper: func() {},
 	}
+	l.SetLevel(LevelDebug)
 
 	if sink, ok := s.(interface {
 		XXX_slogTestingHelper() func()
@@ -176,7 +170,7 @@ func Make(s Sink, opts *Options) Logger {
 
 type sink struct {
 	sink  Sink
-	level Level
+	level *int64
 	pl    parsedFields
 }
 
@@ -226,11 +220,18 @@ func (l Logger) With(fields ...Field) Logger {
 	return l
 }
 
+func (l Logger) SetLevel(level Level) {
+	for _, s := range l.sinks {
+		atomic.StoreInt64(s.level, int64(level))
+	}
+}
+
 func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field) {
 	l.testingHelper()
 
 	for _, s := range l.sinks {
-		if level < s.level {
+		slevel := Level(atomic.LoadInt64(s.level))
+		if level < slevel {
 			// We will not log levels below the current log level.
 			continue
 		}
@@ -247,12 +248,6 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 	if level == LevelFatal {
 		os.Exit(1)
 	}
-}
-
-// The base options for every Logger.
-type Options struct {
-	// Level returns level to log at, defaults to LevelDebug.
-	Level func() Level
 }
 
 type parsedFields struct {
