@@ -54,25 +54,19 @@ go.coder.com/slog/slogval.TestReflect
 			},
 		},
 		{
-			name: "logTag",
-			in: struct {
-				a string `log:"-"`
-				b string `log:"hi"`
-				c string `log:"f"`
-			}{
-				"a",
-				"b",
-				"c",
-			},
-			out: Map{
-				{"hi", String("b")},
-				{"f", String("c")},
-			},
-		},
-		{
-			name: "LogValue",
+			name: "logValue",
 			in:   myStruct{},
 			out:  String("hi"),
+		},
+		{
+			name: "embeddedStruct",
+			in:   outerStruct{},
+			out: Map{
+				{"field_3", Int(0)},
+				{"field_5", Int(0)},
+				{"field_1", String("")},
+				{"field_2", Int(0)},
+			},
 		},
 	}
 
@@ -101,4 +95,16 @@ type myStruct struct{}
 
 func (m myStruct) LogValue() interface{} {
 	return "hi"
+}
+
+type outerStruct struct {
+	innerStruct
+
+	field1 string
+	field2 int
+}
+
+type innerStruct struct {
+	field3 int
+	field5 int
 }

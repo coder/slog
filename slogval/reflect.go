@@ -12,8 +12,19 @@ import (
 	"go.coder.com/slog"
 )
 
+// Reflector is implemented by a value passed to Field
+// that would like to only use the reflection based
+// converter for itself and ignore interfaces like error
+// or fmt.Stringer.
+// TODO add back ValueFunc
+type Reflector interface {
+	LogWithReflect()
+}
+
 // Reflect uses reflection to convert the slice of fields into a ordered
 // map that uses only the primitive value types defined in this package.
+// It uses interfaces like error and fmt.Stringer where appropriate.
+// Have a type implement Reflector if you would like to force
 func Reflect(fs []slog.Field) Map {
 	var m Map
 	for _, f := range fs {
@@ -39,6 +50,9 @@ func reflectValue(rv reflect.Value) Value {
 
 	typ := rv.Type()
 	switch {
+	case implements(typ, (*Reflector)(nil)):
+		// Skip checking for any other interfaces as the value wants
+		//
 	case implements(typ, (*Value)(nil)):
 		v := rv.MethodByName("isSlogCoreValue").Call(nil)
 		return v[0].Interface().(Value)
@@ -109,35 +123,41 @@ func reflectValue(rv reflect.Value) Value {
 		m.sort()
 		return m
 	case reflect.Struct:
-		typ := rv.Type()
-
-		f := make(Map, 0, typ.NumField())
-
-		for i := 0; i < typ.NumField(); i++ {
-			ft := typ.Field(i)
-			fv := rv.Field(i)
-
-			if ft.Tag.Get("log") == "-" {
-				continue
-			}
-			if implements(typ, (*proto.Message)(nil)) && strings.HasPrefix(ft.Name, "XXX_") {
-				// Have to ignore XXX_ fields for protobuf messages.
-				continue
-			}
-
-			v := reflectValue(fv)
-			name := ft.Tag.Get("log")
-			if name == "" {
-				name = snakecase(ft.Name)
-			}
-			f = f.appendVal(name, v)
-
-		}
-
-		return f
+		m := make(Map, 0, typ.NumField())
+		m = reflectStruct(m, rv, typ)
+		return m
 	default:
 		return String(fmt.Sprintf("%v", rv))
 	}
+}
+
+func reflectStruct(m Map, rv reflect.Value, typ reflect.Type) Map {
+	for i := 0; i < typ.NumField(); i++ {
+		ft := typ.Field(i)
+		fv := rv.Field(i)
+
+		if ft.Tag.Get("log") == "-" {
+			continue
+		}
+		if implements(typ, (*proto.Message)(nil)) && strings.HasPrefix(ft.Name, "XXX_") {
+			// Have to ignore XXX_ fields for protobuf messages.
+			continue
+		}
+
+		if ft.Anonymous {
+			m = reflectStruct(m, fv, ft.Type)
+			continue
+		}
+
+		v := reflectValue(fv)
+		name := ft.Tag.Get("log")
+		if name == "" {
+			name = snakecase(ft.Name)
+		}
+		m = m.appendVal(name, v)
+
+	}
+	return m
 }
 
 func snakecase(s string) string {
