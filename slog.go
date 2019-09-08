@@ -251,7 +251,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 
 // The base options for every Logger.
 type Options struct {
-	// Level returns to log at, defaults to LevelDebug.
+	// Level returns level to log at, defaults to LevelDebug.
 	Level func() Level
 }
 
