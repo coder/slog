@@ -12,27 +12,24 @@ import (
 	"go.coder.com/slog"
 )
 
-// Reflector is implemented by a value passed to Field
-// that would like to only use the reflection based
-// converter for itself and ignore interfaces like error
-// or fmt.Stringer.
-type Reflector interface {
-	LogWithReflect()
+// Encode uses interface detection and reflection to Encode v into a
+// Value that uses only the primitive value types defined in this package.
+// Use Reflect if you'd like to force the value to be encoded with reflection and
+// ignore other interfaces.
+func Encode(v interface{}) Value {
+	return encode(reflect.ValueOf(v))
 }
 
-// Reflect uses reflection to convert the slice of fields into a ordered
-// map that uses only the primitive value types defined in this package.
-// It uses interfaces like error and fmt.Stringer where appropriate.
-// Have a type implement Reflector if you would like to force
-func Reflect(fs []slog.Field) Map {
-	var m Map
-	for _, f := range fs {
-		m = m.appendVal(f.LogKey(), reflectValue(reflect.ValueOf(f.LogValue())))
-	}
-	return m
+// Reflect uses reflection to convert v to a Value.
+// Nested values inside v will be converted using the
+// Encode function which considers interfaces.
+// You should use this inside a slog.Value to force
+// reflection over fmt.Stringer and error.
+func Reflect(v interface{}) Value {
+	return reflectValue(reflect.ValueOf(v))
 }
 
-func reflectValue(rv reflect.Value) Value {
+func encode(rv reflect.Value) Value {
 	if !rv.IsValid() {
 		// reflect.ValueOf(nil).IsValid == false
 		return nil
@@ -49,9 +46,6 @@ func reflectValue(rv reflect.Value) Value {
 
 	typ := rv.Type()
 	switch {
-	case implements(typ, (*Reflector)(nil)):
-		// Skip checking for any other interfaces as the value wants
-		//
 	case implements(typ, (*Value)(nil)):
 		v := rv.MethodByName("isSlogCoreValue").Call(nil)
 		return v[0].Interface().(Value)
@@ -76,6 +70,16 @@ func reflectValue(rv reflect.Value) Value {
 		return String(s[0].String())
 	}
 
+	// Fallback to pure reflection.
+	return reflectValue(rv)
+}
+
+func reflectValue(rv reflect.Value) Value {
+	if !rv.IsValid() {
+		// reflect.ValueOf(nil).IsValid == false
+		return nil
+	}
+
 	switch rv.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
 		if rv.IsNil() {
@@ -83,6 +87,7 @@ func reflectValue(rv reflect.Value) Value {
 		}
 	}
 
+	typ := rv.Type()
 	switch rv.Kind() {
 	case reflect.String:
 		return String(rv.String())

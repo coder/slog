@@ -61,12 +61,12 @@ func pinnedFields(ent slog.Entry) string {
 		slog.F("span", ent.SpanContext.SpanID),
 	)
 
-	return humanFields(slogval.Reflect(m))
+	return humanFields(slogval.Encode(m).(slogval.Map))
 }
 
 func stringFields(ent slog.Entry) string {
 	pinned := pinnedFields(ent)
-	fields := humanFields(slogval.Reflect(ent.Fields))
+	fields := humanFields(slogval.Encode(ent.Fields).(slogval.Map))
 
 	if pinned == "" {
 		return fields

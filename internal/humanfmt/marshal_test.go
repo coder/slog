@@ -117,7 +117,7 @@ dsamkld`),
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			v := slogval.Reflect(tc.in)
+			v := slogval.Encode(tc.in).(slogval.Map)
 			actOut := humanFields(v)
 			t.Logf("yaml:\n%v", actOut)
 			if diff := diff.Diff(tc.out, actOut); diff != "" {
