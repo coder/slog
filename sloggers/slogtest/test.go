@@ -13,8 +13,6 @@ import (
 // TestOptions represents the options for the logger returned
 // by Test.
 type TestOptions struct {
-	*slog.Options
-
 	// IgnoreErrors causes the test logger to not fatal the test
 	// on Fatal and not error the test on Error or Critical.
 	IgnoreErrors bool
@@ -28,7 +26,7 @@ func Make(tb testing.TB, opts *TestOptions) slog.Logger {
 	return slog.Make(testSink{
 		tb:   tb,
 		opts: opts,
-	}, opts.Options)
+	})
 }
 
 type testSink struct {

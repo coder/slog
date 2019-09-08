@@ -44,9 +44,9 @@ func (s *humanSink) writeString(str string) {
 
 // Human creates a logger that writes logs in a human
 // readable YAML like format to the given writer.
-func Make(w io.Writer, opts *slog.Options) slog.Logger {
+func Make(w io.Writer) slog.Logger {
 	return slog.Make(&humanSink{
 		w:     w,
 		color: humanfmt.IsTTY(w),
-	}, opts)
+	})
 }

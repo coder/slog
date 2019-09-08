@@ -8,6 +8,6 @@ import (
 
 // Make creates a logger that writes JSON logs
 // to the given writer. The format is as follows:
-func Make(w io.Writer, opts *slog.Options) slog.Logger {
+func Make(w io.Writer) slog.Logger {
 	panic("TODO")
 }

@@ -20,6 +20,11 @@ func Reflect(fs []slog.Field) Map {
 	return m
 }
 
+// TODO
+func ReflectMap() {
+	panic("TODO")
+}
+
 // TODO remove later.
 func ReflectUnsafe(v interface{}) Value {
 	return reflectValue(reflect.ValueOf(v))
