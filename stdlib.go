@@ -2,11 +2,11 @@ package slog
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strings"
 
 	"go.coder.com/slog/internal/skipctx"
+	"go.coder.com/slog/internal/stdlibctx"
 )
 
 // Stdlib creates a standard library logger from the given logger.
@@ -20,11 +20,7 @@ import (
 // See the example.
 func Stdlib(ctx context.Context, l Logger) *log.Logger {
 	ctx = skipctx.With(ctx, 4)
-
-	if tl, ok := l.(testLogger); ok {
-		tl.stdlib = true
-		l = tl
-	}
+	ctx = stdlibctx.With(ctx)
 
 	w := &stdlogWriter{
 		Log: func(msg string) {
@@ -33,12 +29,6 @@ func Stdlib(ctx context.Context, l Logger) *log.Logger {
 	}
 
 	return log.New(w, "", 0)
-}
-
-func panicf(f string, v ...interface{}) {
-	f = "slog: " + f
-	s := fmt.Sprintf(f, v...)
-	panic(s)
 }
 
 type stdlogWriter struct {

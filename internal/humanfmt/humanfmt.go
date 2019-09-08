@@ -2,15 +2,18 @@ package humanfmt
 
 import (
 	"fmt"
+	"io"
 	"path/filepath"
 
 	"github.com/fatih/color"
 	"go.opencensus.io/trace"
+	"golang.org/x/crypto/ssh/terminal"
 
-	"go.coder.com/slog/slogcore"
+	"go.coder.com/slog"
+	"go.coder.com/slog/slogval"
 )
 
-func Entry(ent slogcore.Entry, enableColor bool) string {
+func Entry(ent slog.Entry, enableColor bool) string {
 	var ents string
 	if ent.File != "" {
 		ents += fmt.Sprintf("%v:%v: ", filepath.Base(ent.File), ent.Line)
@@ -21,7 +24,7 @@ func Entry(ent slogcore.Entry, enableColor bool) string {
 		cl := levelColor(ent.Level)
 		ents += color.New(cl).Sprint(ent.Level)
 	} else {
-		ents += string(ent.Level)
+		ents += ent.Level.String()
 	}
 
 	ents += "]"
@@ -45,20 +48,20 @@ func Entry(ent slogcore.Entry, enableColor bool) string {
 	return ents
 }
 
-func pinnedFields(ent slogcore.Entry) string {
-	pinned := slogcore.Map{}
+func pinnedFields(ent slog.Entry) string {
+	pinned := slogval.Map{}
 
 	if ent.SpanContext != (trace.SpanContext{}) {
-		pinned = pinned.Append("trace", slogcore.String(ent.SpanContext.TraceID.String()))
-		pinned = pinned.Append("span", slogcore.String(ent.SpanContext.SpanID.String()))
+		pinned = pinned.Append("trace", slogval.String(ent.SpanContext.TraceID.String()))
+		pinned = pinned.Append("span", slogval.String(ent.SpanContext.SpanID.String()))
 	}
 
-	return Fields(pinned)
+	return humanFields(pinned)
 }
 
-func stringFields(ent slogcore.Entry) string {
+func stringFields(ent slog.Entry) string {
 	pinned := pinnedFields(ent)
-	fields := Fields(ent.Fields)
+	fields := humanFields(slogval.Reflect(ent.Fields))
 
 	if pinned == "" {
 		return fields
@@ -74,20 +77,21 @@ func stringFields(ent slogcore.Entry) string {
 // Same as time.StampMilli but the days in the month padded by zeros.
 const timestampMilli = "Jan 02 15:04:05.000"
 
-func panicf(f string, v ...interface{}) {
-	f = "humanfmt: " + f
-	s := fmt.Sprintf(f, v...)
-	panic(s)
-}
-
-func levelColor(level slogcore.Level) color.Attribute {
+func levelColor(level slog.Level) color.Attribute {
 	switch level {
-	case slogcore.Debug, slogcore.Info:
+	case slog.Debug, slog.Info:
 		return color.FgBlue
-	case slogcore.Warn:
+	case slog.Warn:
 		return color.FgYellow
-	case slogcore.Error, slogcore.Critical, slogcore.Fatal:
+	case slog.LevelError, slog.Critical, slog.Fatal:
 		return color.FgRed
 	}
 	panic("humanfmt: unexpected level: " + string(level))
+}
+
+func IsTTY(w io.Writer) bool {
+	f, ok := w.(interface {
+		Fd() uintptr
+	})
+	return ok && terminal.IsTerminal(int(f.Fd()))
 }

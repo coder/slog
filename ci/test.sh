@@ -11,6 +11,7 @@ argv=(
   "--format=short-verbose"
   --
   "-vet=off"
+  "./..."
 )
 # Interactive usage does not want to turn off vet or use gotestsum.
 if [[ $# -gt 0 ]]; then

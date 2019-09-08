@@ -20,7 +20,7 @@ go get go.coder.com/slog
 - First class [context.Context](https://blog.golang.org/context) support
 - Beautiful logging output by default
 - Multiple adapters
-- First class [\*testing.T](https://godoc.org/go.coder.com/slog/testlog) support
+- First class [\*testing.T](https://godoc.org/go.coder.com/slog/slogtest) support
 
 ## Example
 

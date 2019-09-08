@@ -1,14 +1,17 @@
-package slogcore
+package slogval // import "go.coder.com/slog/slogval"
 
 import (
 	"sort"
 )
 
 type Value interface {
-	isFieldValue()
+	// This returns the Value so that we do not need
+	// to reconstruct the field ourselves as we cannot
+	// access it directly without an accessor method
+	// in case its on an unexported struct.
+	isSlogCoreValue() Value
 }
 
-// field represents a log field.
 type Field struct {
 	Name  string
 	Value Value
@@ -16,31 +19,45 @@ type Field struct {
 
 type String string
 
-func (f String) isFieldValue() {}
+func (f String) isSlogCoreValue() Value {
+	return f
+}
 
 type Int int64
 
-func (f Int) isFieldValue() {}
+func (f Int) isSlogCoreValue() Value {
+	return f
+}
 
 type Uint uint64
 
-func (f Uint) isFieldValue() {}
+func (f Uint) isSlogCoreValue() Value {
+	return f
+}
 
 type Float float64
 
-func (f Float) isFieldValue() {}
+func (f Float) isSlogCoreValue() Value {
+	return f
+}
 
 type Bool bool
 
-func (f Bool) isFieldValue() {}
+func (f Bool) isSlogCoreValue() Value {
+	return f
+}
 
 type Map []Field
 
-func (f Map) isFieldValue() {}
+func (f Map) isSlogCoreValue() Value {
+	return f
+}
 
 type List []Value
 
-func (f List) isFieldValue() {}
+func (f List) isSlogCoreValue() Value {
+	return f
+}
 
 func (f Map) Clone() Map {
 	f2 := make(Map, len(f))
@@ -48,6 +65,7 @@ func (f Map) Clone() Map {
 	return f2
 }
 
+// TODO make sure this is used correctly.
 func (f Map) Append(key string, val Value) Map {
 	return append(f, Field{
 		key,

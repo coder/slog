@@ -1,4 +1,4 @@
-package slogcore
+package slogval
 
 import (
 	"fmt"
@@ -8,11 +8,20 @@ import (
 	"github.com/fatih/camelcase"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/xerrors"
+
+	"go.coder.com/slog"
 )
 
-// Reflect takes an interface v and converts it to a loggable
-// structured Value via reflection.
-func Reflect(v interface{}) Value {
+func Reflect(fs []slog.Field) Map {
+	var m Map
+	for _, f := range fs {
+		m = m.Append(f.LogKey(), reflectValue(reflect.ValueOf(f.LogValue())))
+	}
+	return m
+}
+
+// TODO remove later.
+func ReflectUnsafe(v interface{}) Value {
 	return reflectValue(reflect.ValueOf(v))
 }
 
@@ -33,10 +42,10 @@ func reflectValue(rv reflect.Value) Value {
 
 	typ := rv.Type()
 	switch {
-	// Not referenced directly to avoid import cycle.
-	case implements(typ, (*interface {
-		LogValue() interface{}
-	})(nil)):
+	case implements(typ, (*Value)(nil)):
+		v := rv.MethodByName("isSlogCoreValue").Call(nil)
+		return v[0].Interface().(Value)
+	case implements(typ, (*slog.Value)(nil)):
 		m := rv.MethodByName("LogValue")
 		lv := m.Call(nil)
 		return reflectValue(lv[0])
@@ -53,8 +62,7 @@ func reflectValue(rv reflect.Value) Value {
 			// protobufs values have structure in logs.
 			break
 		}
-		m := rv.MethodByName("String")
-		s := m.Call(nil)
+		s := rv.MethodByName("String").Call(nil)
 		return String(s[0].String())
 	}
 
@@ -63,11 +71,6 @@ func reflectValue(rv reflect.Value) Value {
 		if rv.IsNil() {
 			return nil
 		}
-	}
-
-	if typ == reflect.TypeOf((func() interface{})(nil)) {
-		lv := rv.Call(nil)
-		return reflectValue(lv[0])
 	}
 
 	switch rv.Kind() {
@@ -84,20 +87,30 @@ func reflectValue(rv reflect.Value) Value {
 	case reflect.Ptr:
 		return reflectValue(rv.Elem())
 	case reflect.Slice, reflect.Array:
+		// Ordered map.
+		if typ == reflect.TypeOf([]slog.Field(nil)) {
+			m := make(Map, 0, rv.Len())
+			for i := 0; i < rv.Len(); i++ {
+				f := rv.Index(i)
+				key := f.MethodByName("LogKey").Call(nil)[0].String()
+				val := f.MethodByName("LogValue").Call(nil)[0]
+				m = m.Append(key, reflectValue(val))
+			}
+			return m
+		}
 		list := make(List, rv.Len())
-
 		for i := 0; i < rv.Len(); i++ {
 			list[i] = reflectValue(rv.Index(i))
 		}
 		return list
 	case reflect.Map:
-		f := make(Map, 0, rv.Len())
+		m := make(Map, 0, rv.Len())
 		for _, k := range rv.MapKeys() {
 			mv := rv.MapIndex(k)
-			f = f.Append(fmt.Sprintf("%v", k), reflectValue(mv))
+			m = m.Append(fmt.Sprintf("%v", k), reflectValue(mv))
 		}
-		f.Sort()
-		return f
+		m.Sort()
+		return m
 	case reflect.Struct:
 		typ := rv.Type()
 
@@ -186,15 +199,14 @@ func (p *xerrorPrinter) Detail() bool {
 }
 
 func (p *xerrorPrinter) fields() Value {
-	var m Map
-	m = m.Append("msg", String(p.msg))
+	s := p.msg
 	if p.function != "" {
-		m = m.Append("fun", String(p.function))
+		s += "\n" + p.function
 	}
 	if p.loc != "" {
-		m = m.Append("loc", String(p.loc))
+		s += "\n  " + p.loc
 	}
-	return m
+	return String(s)
 }
 
 // The value passed in must implement xerrors.Formatter.
@@ -229,7 +241,7 @@ func extractErrorChain(rv reflect.Value) List {
 }
 
 func panicf(f string, v ...interface{}) {
-	f = "slogcore: " + f
+	f = "slogval: " + f
 	s := fmt.Sprintf(f, v...)
 	panic(s)
 }
