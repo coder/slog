@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"go.coder.com/slog"
-	"go.coder.com/slog/slogtest"
+	"go.coder.com/slog/sloggers/slogtest"
 )
 
 func Example_test() {

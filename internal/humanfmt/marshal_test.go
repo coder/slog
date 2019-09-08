@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"go.coder.com/slog/internal/diff"
-	"go.coder.com/slog/slogcore"
+	"go.coder.com/slog/slogval"
 )
 
 func Test_marshalFields(t *testing.T) {
@@ -116,8 +116,8 @@ dsamkld`,
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			v := slogcore.Reflect(tc.in)
-			actOut := Fields(v.(slogcore.Map))
+			v := slogval.ReflectUnsafe(tc.in)
+			actOut := humanFields(v.(slogval.Map))
 			t.Logf("yaml:\n%v", actOut)
 			if diff := diff.Diff(tc.out, actOut); diff != "" {
 				t.Fatalf("unexpected output: %v", diff)

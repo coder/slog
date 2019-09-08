@@ -2,29 +2,15 @@ package slog
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"runtime"
+	"time"
+
+	"go.opencensus.io/trace"
+
+	"go.coder.com/slog/internal/skipctx"
 )
-
-// Logger is the core interface for logging.
-type Logger interface {
-	// Debug means a potentially noisy log.
-	Debug(ctx context.Context, msg string, fields ...Field)
-	// Info means an informational log.
-	Info(ctx context.Context, msg string, fields ...Field)
-	// Warn means something may be going wrong.
-	Warn(ctx context.Context, msg string, fields ...Field)
-	// Error means the an error occured but does not require immediate attention.
-	Error(ctx context.Context, msg string, fields ...Field)
-	// Critical means an error occured and requires immediate attention.
-	Critical(ctx context.Context, msg string, fields ...Field)
-	// Fatal is the same as critical but calls os.Exit(1) afterwards.
-	Fatal(ctx context.Context, msg string, fields ...Field)
-
-	// With returns a logger that will merge the given fields with all fields logged.
-	// Fields logged with one of the above methods or from the context will always take priority.
-	// Use the global with function when the fields being stored belong in the context and this
-	// when they do not.
-	With(fields ...Field) Logger
-}
 
 // Field represents a log field.
 type Field interface {
@@ -75,6 +61,12 @@ func F(name string, v interface{}) Field {
 	}
 }
 
+// Map is used to create an ordered map of fields that can be
+// logged.
+func Map(fs ...Field) []Field {
+	return fs
+}
+
 // Error is the standard key used for logging a Go error value.
 func Error(err error) Field {
 	return unparsedField{
@@ -94,11 +86,276 @@ func fromContext(ctx context.Context) parsedFields {
 	return l
 }
 
-// With returns a context that contains the given fields.
+// Context returns a context that contains the given fields.
 // Any logs written with the provided context will contain
 // the given fields.
-func With(ctx context.Context, fields ...Field) context.Context {
+// It will append to any fields already in ctx.
+func Context(ctx context.Context, fields ...Field) context.Context {
 	l := fromContext(ctx)
 	l = l.withFields(fields)
 	return withContext(ctx, l)
+}
+
+type Entry struct {
+	Time time.Time
+
+	Level   Level
+	Message string
+
+	Component string
+
+	Func string
+	File string
+	Line int
+
+	SpanContext trace.SpanContext
+
+	Fields []Field
+}
+
+type Level int
+
+const (
+	Debug Level = iota
+	Info
+	Warn
+	LevelError
+	Critical
+	Fatal
+)
+
+var levelStrings = map[Level]string{
+	Debug:      "DEBUG",
+	Info:       "INFO",
+	Warn:       "WARN",
+	LevelError: "ERROR",
+	Critical:   "CRITICAL",
+	Fatal:      "FATAL",
+}
+
+func (l Level) String() string {
+	s, ok := levelStrings[l]
+	if !ok {
+		return fmt.Sprintf(`"unknown_level: %v"`, int(l))
+	}
+	return s
+}
+
+// Sink is the destination of a Logger.
+type Sink interface {
+	LogEntry(ctx context.Context, e Entry)
+}
+
+// Make creates a logger that writes logs to sink.
+func Make(s Sink, opts *Options) Logger {
+	if opts == nil {
+		opts = &Options{}
+	}
+
+	l := Logger{
+		sinks: []sink{
+			{
+				sink:  s,
+				level: opts.Level,
+			},
+		},
+		testingHelper: func() {},
+	}
+
+	if sink, ok := s.(interface {
+		XXX_slogTestingHelper() func()
+	}); ok {
+		l.testingHelper = sink.XXX_slogTestingHelper()
+	}
+	return l
+}
+
+type sink struct {
+	sink  Sink
+	level Level
+	pl    parsedFields
+}
+
+type Logger struct {
+	testingHelper func()
+
+	sinks []sink
+}
+
+func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
+	l.testingHelper()
+	l.log(ctx, Debug, msg, fields)
+}
+
+func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
+	l.testingHelper()
+	l.log(ctx, Info, msg, fields)
+}
+
+func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
+	l.testingHelper()
+	l.log(ctx, Warn, msg, fields)
+}
+
+func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
+	l.testingHelper()
+	l.log(ctx, LevelError, msg, fields)
+}
+
+func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
+	l.testingHelper()
+	l.log(ctx, Critical, msg, fields)
+}
+
+func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
+	l.testingHelper()
+	l.log(ctx, Fatal, msg, fields)
+}
+
+func (l Logger) With(fields ...Field) Logger {
+	sinks := make([]sink, len(l.sinks))
+	for i, s := range l.sinks {
+		s.pl = s.pl.withFields(fields)
+		sinks[i] = s
+	}
+	l.sinks = sinks
+	return l
+}
+
+func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field) {
+	l.testingHelper()
+
+	for _, s := range l.sinks {
+		if level < s.level {
+			// We will not log levels below the current log level.
+			continue
+		}
+		ent := s.pl.entry(ctx, entryParams{
+			level:  level,
+			msg:    msg,
+			fields: fields,
+			skip:   2,
+		})
+
+		s.sink.LogEntry(ctx, ent)
+	}
+
+	if level == Fatal {
+		os.Exit(1)
+	}
+}
+
+// The base options for every Logger.
+type Options struct {
+	// Level to log at, defaults to LevelDebug.
+	Level Level
+}
+
+type parsedFields struct {
+	component string
+	spanCtx   trace.SpanContext
+
+	fields []Field
+}
+
+func parseFields(fields []Field) parsedFields {
+	var l parsedFields
+	l.fields = make([]Field, 0, len(fields))
+
+	for _, f := range fields {
+		if s, ok := f.(componentField); ok {
+			l = l.appendComponent(string(s))
+			continue
+		}
+		l.fields = append(l.fields, f)
+	}
+
+	return l
+}
+
+func (l parsedFields) withFields(f []Field) parsedFields {
+	return l.with(parseFields(f))
+}
+
+func (l parsedFields) with(l2 parsedFields) parsedFields {
+	l = l.appendComponent(l2.component)
+	if l2.spanCtx != (trace.SpanContext{}) {
+		l.spanCtx = l2.spanCtx
+	}
+
+	l.fields = append(l.fields, l2.fields...)
+	return l
+}
+
+func (l parsedFields) appendComponent(name string) parsedFields {
+	if l.component == "" {
+		l.component = name
+	} else if name != "" {
+		l.component += "." + name
+	}
+	return l
+}
+
+func (l parsedFields) withContext(ctx context.Context) parsedFields {
+	l2 := fromContext(ctx)
+	if len(l2.fields) == 0 {
+		return l
+	}
+
+	return l.with(l2)
+}
+
+type entryParams struct {
+	level  Level
+	msg    string
+	fields []Field
+	skip   int
+}
+
+func (l parsedFields) entry(ctx context.Context, params entryParams) Entry {
+	l = l.withContext(ctx)
+	l = l.withFields(params.fields)
+
+	ent := Entry{
+		Time:        time.Now(),
+		Level:       params.level,
+		Component:   l.component,
+		Message:     params.msg,
+		SpanContext: trace.FromContext(ctx).SpanContext(),
+		Fields:      l.fields,
+	}
+
+	file, line, fn, ok := location(params.skip + 1 + skipctx.From(ctx))
+	if ok {
+		ent.File = file
+		ent.Line = line
+		ent.Func = fn
+	}
+	return ent
+}
+
+func location(skip int) (file string, line int, fn string, ok bool) {
+	pc, file, line, ok := runtime.Caller(skip + 1)
+	if !ok {
+		return "", 0, "", false
+	}
+	f := runtime.FuncForPC(pc)
+	return file, line, f.Name(), true
+}
+
+// Tee enables logging to multiple loggers.
+func Tee(ls ...Logger) Logger {
+	var l Logger
+
+	for _, l2 := range ls {
+		if l2.testingHelper != nil {
+			if l.testingHelper == nil {
+				panic("slog.Tee: cannot Tee multiple slogtest Loggers")
+			}
+			l.testingHelper = l2.testingHelper
+		}
+		l.sinks = append(l.sinks, l2.sinks...)
+	}
+
+	return l
 }
