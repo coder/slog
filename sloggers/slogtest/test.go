@@ -58,15 +58,15 @@ func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
 	s := humanfmt.Entry(ent, stderrColor)
 
 	switch ent.Level {
-	case slog.Debug, slog.Info, slog.Warn:
+	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:
 		ts.tb.Log(s)
-	case slog.LevelError, slog.Critical:
+	case slog.LevelError, slog.LevelCritical:
 		if ts.opts.IgnoreErrors {
 			ts.tb.Log(s)
 		} else {
 			ts.tb.Error(s)
 		}
-	case slog.Fatal:
+	case slog.LevelFatal:
 		if ts.opts.IgnoreErrors {
 			panic("slogtest: cannot fatal in tests when IgnoreErrors option is set")
 		}

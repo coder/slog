@@ -116,21 +116,21 @@ type Entry struct {
 type Level int
 
 const (
-	Debug Level = iota
-	Info
-	Warn
+	LevelDebug Level = iota
+	LevelInfo
+	LevelWarn
 	LevelError
-	Critical
-	Fatal
+	LevelCritical
+	LevelFatal
 )
 
 var levelStrings = map[Level]string{
-	Debug:      "DEBUG",
-	Info:       "INFO",
-	Warn:       "WARN",
-	LevelError: "ERROR",
-	Critical:   "CRITICAL",
-	Fatal:      "FATAL",
+	LevelDebug:    "DEBUG",
+	LevelInfo:     "INFO",
+	LevelWarn:     "WARN",
+	LevelError:    "ERROR",
+	LevelCritical: "CRITICAL",
+	LevelFatal:    "FATAL",
 }
 
 func (l Level) String() string {
@@ -149,14 +149,18 @@ type Sink interface {
 // Make creates a logger that writes logs to sink.
 func Make(s Sink, opts *Options) Logger {
 	if opts == nil {
-		opts = &Options{}
+		opts = &Options{
+			Level: func() Level {
+				return LevelDebug
+			},
+		}
 	}
 
 	l := Logger{
 		sinks: []sink{
 			{
 				sink:  s,
-				level: opts.Level,
+				level: opts.Level(),
 			},
 		},
 		testingHelper: func() {},
@@ -184,17 +188,17 @@ type Logger struct {
 
 func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
-	l.log(ctx, Debug, msg, fields)
+	l.log(ctx, LevelDebug, msg, fields)
 }
 
 func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
-	l.log(ctx, Info, msg, fields)
+	l.log(ctx, LevelInfo, msg, fields)
 }
 
 func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
-	l.log(ctx, Warn, msg, fields)
+	l.log(ctx, LevelWarn, msg, fields)
 }
 
 func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
@@ -204,12 +208,12 @@ func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
 
 func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
-	l.log(ctx, Critical, msg, fields)
+	l.log(ctx, LevelCritical, msg, fields)
 }
 
 func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.testingHelper()
-	l.log(ctx, Fatal, msg, fields)
+	l.log(ctx, LevelFatal, msg, fields)
 }
 
 func (l Logger) With(fields ...Field) Logger {
@@ -240,15 +244,15 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 		s.sink.LogEntry(ctx, ent)
 	}
 
-	if level == Fatal {
+	if level == LevelFatal {
 		os.Exit(1)
 	}
 }
 
 // The base options for every Logger.
 type Options struct {
-	// Level to log at, defaults to LevelDebug.
-	Level Level
+	// Level returns to log at, defaults to LevelDebug.
+	Level func() Level
 }
 
 type parsedFields struct {

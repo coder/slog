@@ -79,11 +79,11 @@ const timestampMilli = "Jan 02 15:04:05.000"
 
 func levelColor(level slog.Level) color.Attribute {
 	switch level {
-	case slog.Debug, slog.Info:
+	case slog.LevelDebug, slog.LevelInfo:
 		return color.FgBlue
-	case slog.Warn:
+	case slog.LevelWarn:
 		return color.FgYellow
-	case slog.LevelError, slog.Critical, slog.Fatal:
+	case slog.LevelError, slog.LevelCritical, slog.LevelFatal:
 		return color.FgRed
 	}
 	panic("humanfmt: unexpected level: " + string(level))
