@@ -43,6 +43,7 @@ func (c componentField) LogValue() interface{} { panic("never called") }
 // E.g. if the component is currently "my_component" and then later
 // the component "my_pkg" is set, then the final component will be
 // "my_component.my_pkg".
+// TODO turn into Logger.
 func Component(name string) Field {
 	return componentField(name)
 }
@@ -166,13 +167,13 @@ func Make(s Sink) Logger {
 				level: new(int64),
 			},
 		},
-		testingHelper: func() {},
-		skip:          2,
+		Helper: func() {},
+		skip:   2,
 	}
 	l.SetLevel(LevelDebug)
 
 	if ts, ok := s.(testSink); ok {
-		l.testingHelper = ts.TestingHelper()
+		l.Helper = ts.TestingHelper()
 	}
 	return l
 }
@@ -186,7 +187,10 @@ type sink struct {
 // Logger allows logging a ordered slice of fields
 // to an underlying set of sinks.
 type Logger struct {
-	testingHelper func()
+	// Helper behaves exactly like testing.TB.Helper.
+	// It causes the location information printed to skip
+	// the current function and instead reflect the parent.
+	Helper func()
 
 	sinks []sink
 	skip  int
@@ -199,37 +203,37 @@ func (l Logger) clone() Logger {
 
 // Debug logs the msg and fields at LevelDebug.
 func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
-	l.testingHelper()
+	l.Helper()
 	l.log(ctx, LevelDebug, msg, fields)
 }
 
 // Info logs the msg and fields at LevelInfo.
 func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
-	l.testingHelper()
+	l.Helper()
 	l.log(ctx, LevelInfo, msg, fields)
 }
 
 // Warn logs the msg and fields at LevelWarn.
 func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
-	l.testingHelper()
+	l.Helper()
 	l.log(ctx, LevelWarn, msg, fields)
 }
 
 // Error logs the msg and fields at LevelError.
 func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
-	l.testingHelper()
+	l.Helper()
 	l.log(ctx, LevelError, msg, fields)
 }
 
 // Critical logs the msg and fields at LevelCritical.
 func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
-	l.testingHelper()
+	l.Helper()
 	l.log(ctx, LevelCritical, msg, fields)
 }
 
 // Fatal logs the msg and fields at LevelFatal.
 func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
-	l.testingHelper()
+	l.Helper()
 	l.log(ctx, LevelFatal, msg, fields)
 }
 
@@ -253,7 +257,7 @@ func (l Logger) SetLevel(level Level) {
 }
 
 func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field) {
-	l.testingHelper()
+	l.Helper()
 
 	for _, s := range l.sinks {
 		slevel := Level(atomic.LoadInt64(s.level))
@@ -373,11 +377,11 @@ func Tee(ls ...Logger) Logger {
 	var l Logger
 
 	for _, l2 := range ls {
-		if l2.testingHelper != nil {
-			if l.testingHelper == nil {
+		if l2.Helper != nil {
+			if l.Helper == nil {
 				panic("slog.Tee: cannot Tee multiple slogtest Loggers")
 			}
-			l.testingHelper = l2.testingHelper
+			l.Helper = l2.Helper
 		}
 		l.sinks = append(l.sinks, l2.sinks...)
 	}

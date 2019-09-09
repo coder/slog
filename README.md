@@ -39,17 +39,17 @@ slogtest.Info(t, "my message here",
 )
 
 // --- PASS: TestExample (0.00s)
-//    examples_test.go:46: Sep 08 13:54:34.532 [INFO] (test): my_message_here
+//    examples_test.go:49: [INFO] {slogtest.go:101} (test) Sep 09 16:17:46.925: my message here
 //        field_name: something or the other
 //        some_map:
 //          nested_fields: wowow
 //        error:
 //          - wrap1
 //            go.coder.com/slog_test.TestExample
-//              /Users/nhooyr/src/cdr/slog/examples_test.go:52
+//              /Users/nhooyr/src/cdr/slog/examples_test.go:55
 //          - wrap2
 //            go.coder.com/slog_test.TestExample
-//              /Users/nhooyr/src/cdr/slog/examples_test.go:53
+//              /Users/nhooyr/src/cdr/slog/examples_test.go:56
 //          - EOF
 ```
 

@@ -58,16 +58,6 @@ var stderrColor = humanfmt.IsTTY(os.Stderr)
 func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
 	ts.tb.Helper()
 
-	if !ts.stdlib {
-		// We do not want to print the file or line number ourselves.
-		// The testing framework handles it for us.
-		// But we do want the function name.
-		// However, if the test package is being used with the stdlib log adapter, then we do want
-		// the line/file number because we cannot put t.Helper calls in stdlib log.
-		ent.File = ""
-		ent.Line = 0
-	}
-
 	s := humanfmt.Entry(ent, stderrColor)
 
 	switch ent.Level {

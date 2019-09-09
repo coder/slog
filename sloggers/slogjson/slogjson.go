@@ -62,9 +62,11 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) {
 		)
 	}
 
-	m = append(m,
-		slog.F("fields", ent.Fields),
-	)
+	if len(ent.Fields) > 0 {
+		m = append(m,
+			slog.F("fields", ent.Fields),
+		)
+	}
 
 	v := slogval.Reflect(m)
 	// We use NewEncoder because it reuses buffers behind the scenes which we cannot

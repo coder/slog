@@ -18,27 +18,39 @@ import (
 // Entry returns a human readable format for ent.
 func Entry(ent slog.Entry, enableColor bool) string {
 	var ents string
-	if ent.File != "" {
-		ents += fmt.Sprintf("%v:%v: ", filepath.Base(ent.File), ent.Line)
-	}
-	ents += fmt.Sprintf("%v [", ent.Time.Format(timestampMilli))
-
+	level := ent.Level.String()
 	if enableColor {
-		cl := levelColor(ent.Level)
-		ents += color.New(cl).Sprint(ent.Level)
-	} else {
-		ents += ent.Level.String()
+		level = color.New(levelColor(ent.Level)).Sprint(level)
 	}
+	ents += fmt.Sprintf("[%v]\t", level)
 
-	ents += "]"
+	loc := fmt.Sprintf("%v:%v", filepath.Base(ent.File), ent.Line)
+	if enableColor {
+		loc = color.New(color.FgGreen).Sprint(loc)
+	}
+	ents += fmt.Sprintf("{%v}\t", loc)
 
 	if ent.Component != "" {
-		ents += fmt.Sprintf(" (%v)", quote(ent.Component))
+		component := quoteKey(ent.Component)
+		if enableColor {
+			component = color.New(color.FgMagenta).Sprint(component)
+		}
+		// ents += fmt.Sprintf("(%v)\t", component)
 	}
 
-	ents += fmt.Sprintf(": %v", quote(ent.Message))
+	ts := ent.Time.Format(timestampMilli)
+	ents += ts
 
-	fields := stringFields(ent)
+	msg := quote(ent.Message)
+	ents += fmt.Sprintf(": %v", msg)
+
+	if ent.SpanContext != (trace.SpanContext{}) {
+		ent.Fields = append(slog.Map(
+			slog.F("trace", ent.SpanContext.TraceID),
+			slog.F("span", ent.SpanContext.SpanID),
+		), ent.Fields...)
+	}
+	fields := stringFields(ent.Fields)
 	if fields != "" {
 		// We never return with a trailing newline because Go's testing framework adds one
 		// automatically and if we include one, then we'll get two newlines.
@@ -51,36 +63,12 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	return ents
 }
 
-func pinnedFields(ent slog.Entry) string {
-	if ent.SpanContext == (trace.SpanContext{}) {
-		return ""
-	}
-
-	m := slog.Map(
-		slog.F("trace", ent.SpanContext.TraceID),
-		slog.F("span", ent.SpanContext.SpanID),
-	)
-
-	return humanFields(slogval.Encode(m).(slogval.Map))
-}
-
-func stringFields(ent slog.Entry) string {
-	pinned := pinnedFields(ent)
-	fields := ""
-	m, ok := slogval.Encode(ent.Fields).(slogval.Map)
+func stringFields(fields []slog.Field) string {
+	m, ok := slogval.Encode(fields).(slogval.Map)
 	if ok {
-		fields = humanFields(m)
+		return humanFields(m)
 	}
-
-	if pinned == "" {
-		return fields
-	}
-
-	if fields == "" {
-		return pinned
-	}
-
-	return pinned + "\n" + fields
+	return ""
 }
 
 // Same as time.StampMilli but the days in the month padded by zeros.
@@ -92,8 +80,10 @@ func levelColor(level slog.Level) color.Attribute {
 		return color.FgBlue
 	case slog.LevelWarn:
 		return color.FgYellow
-	case slog.LevelError, slog.LevelCritical, slog.LevelFatal:
+	case slog.LevelError:
 		return color.FgRed
+	case slog.LevelCritical, slog.LevelFatal:
+		return color.FgHiRed
 	}
 	panic("humanfmt: unexpected level: " + string(level))
 }

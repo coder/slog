@@ -75,6 +75,7 @@ func (y *consoleMarshaller) marshal(v slogval.Value) {
 		y.indent()
 		for _, v := range v {
 			y.line()
+
 			y.s("-")
 
 			if _, ok := v.(slogval.List); !ok {
@@ -133,9 +134,6 @@ func quote(key string) string {
 		return `""`
 	}
 
-	// Replace spaces in the map keys with underscores.
-	key = strings.ReplaceAll(key, " ", "_")
-
 	quoted := strconv.Quote(key)
 	// If the key doesn't need to be quoted, don't quote it.
 	// We do not use strconv.CanBackquote because it doesn't
@@ -144,6 +142,11 @@ func quote(key string) string {
 		return key
 	}
 	return quoted
+}
+
+func quoteKey(key string) string {
+	// Replace spaces in the map keys with underscores.
+	return strings.ReplaceAll(key, " ", "_")
 }
 
 func panicf(f string, v ...interface{}) {
