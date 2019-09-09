@@ -66,7 +66,11 @@ func pinnedFields(ent slog.Entry) string {
 
 func stringFields(ent slog.Entry) string {
 	pinned := pinnedFields(ent)
-	fields := humanFields(slogval.Encode(ent.Fields).(slogval.Map))
+	fields := ""
+	m, ok := slogval.Encode(ent.Fields).(slogval.Map)
+	if ok {
+		fields = humanFields(m)
+	}
 
 	if pinned == "" {
 		return fields
