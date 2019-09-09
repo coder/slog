@@ -3,6 +3,7 @@ package slog_test
 import (
 	"context"
 	"encoding/hex"
+	"go.coder.com/slog/sloggers/sloghuman"
 	"io"
 	"math/rand"
 	"os"
@@ -50,7 +51,7 @@ func Example_test() {
 
 func TestExample(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		slogtest.Info(t, randStr(),
+		sloghuman.Make(os.Stderr).Info(context.Background(), randStr(),
 			slog.F(randStr(), "something or the other"),
 			slog.F("some_map", slog.Map(
 				slog.F("nested_fields", "wowow"),
@@ -82,7 +83,7 @@ func TestJSON(t *testing.T) {
 }
 
 func randStr() string {
-	p := make([]byte, rand.Intn(8))
+	p := make([]byte, rand.Intn(5)+3)
 	rand.Read(p)
 	return hex.EncodeToString(p)
 }

@@ -219,7 +219,20 @@ func (p *xerrorPrinter) Detail() bool {
 	return true
 }
 
+const JSONTest = false
+
 func (p *xerrorPrinter) fields() Value {
+	if JSONTest {
+		var m Map
+		m = m.appendVal("msg", String(p.msg))
+		if p.function != "" {
+			m = m.appendVal("fun", String(p.function))
+		}
+		if p.loc != "" {
+			m = m.appendVal("loc", String(p.loc))
+		}
+		return m
+	}
 	s := p.msg
 	if p.function != "" {
 		s += "\n" + p.function

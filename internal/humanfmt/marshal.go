@@ -2,6 +2,7 @@ package humanfmt
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"strconv"
 	"strings"
 
@@ -14,9 +15,9 @@ type consoleMarshaller struct {
 	indentstr string
 }
 
-func humanFields(m slogval.Map) string {
+func fmtVal(v slogval.Value) string {
 	var y consoleMarshaller
-	y.marshal(m)
+	y.marshal(v)
 	return y.out.String()
 }
 
@@ -67,12 +68,15 @@ func (y *consoleMarshaller) marshal(v slogval.Value) {
 				y.line()
 			}
 
-			y.s(quote(f.Name) + ":")
+			name := quote(f.Name)
+			if slogval.JSONTest {
+				name = color.RedString(name)
+			}
+			y.s( name+ ":")
 
 			y.marshalSub(f.Value, true)
 		}
 	case slogval.List:
-		y.indent()
 		for _, v := range v {
 			y.line()
 
@@ -84,7 +88,6 @@ func (y *consoleMarshaller) marshal(v slogval.Value) {
 			}
 			y.marshalSub(v, false)
 		}
-		y.unindent()
 	case nil:
 		y.s("null")
 	default:
@@ -111,6 +114,7 @@ func (y *consoleMarshaller) marshalSub(v slogval.Value, isParentMap bool) {
 			y.line()
 		}
 	case slogval.List:
+		y.indent()
 	default:
 		if isParentMap {
 			// Non map and non list values in structs begin on the same line with a space between the key and value.
@@ -120,7 +124,8 @@ func (y *consoleMarshaller) marshalSub(v slogval.Value, isParentMap bool) {
 
 	y.marshal(v)
 
-	if _, ok := v.(slogval.Map); ok {
+	switch v.(type) {
+	case slogval.Map, slogval.List:
 		y.unindent()
 	}
 }

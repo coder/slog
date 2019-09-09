@@ -129,7 +129,7 @@ dsamkld`),
 			t.Parallel()
 
 			v := slogval.Encode(tc.in).(slogval.Map)
-			actOut := humanFields(v)
+			actOut := fmtVal(v)
 			t.Logf("yaml:\n%v", actOut)
 			assert.Equalf(t, tc.out, actOut, "unexpected output")
 		})
