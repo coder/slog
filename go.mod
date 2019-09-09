@@ -6,7 +6,7 @@ require (
 	github.com/fatih/camelcase v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/golang/protobuf v1.3.2
-	github.com/google/go-cmp v0.3.0
+	github.com/google/go-cmp v0.3.2-0.20190829225427-b1c9c4891a65
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect

@@ -54,7 +54,7 @@ func encode(rv reflect.Value) Value {
 		lv := m.Call(nil)
 		return encode(lv[0])
 	case implements(typ, (*xerrors.Formatter)(nil)):
-		return extractErrorChain(rv)
+		return extractXErrorChain(rv)
 	case implements(typ, (*error)(nil)):
 		m := rv.MethodByName("Error")
 		s := m.Call(nil)
@@ -231,7 +231,7 @@ func (p *xerrorPrinter) fields() Value {
 }
 
 // The value passed in must implement xerrors.Formatter.
-func extractErrorChain(rv reflect.Value) List {
+func extractXErrorChain(rv reflect.Value) List {
 	errs := List{}
 
 	formatError := func(p xerrors.Printer) error {

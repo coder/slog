@@ -1,12 +1,15 @@
 package slog_test
 
 import (
+	"context"
 	"io"
+	"os"
 	"testing"
 
 	"golang.org/x/xerrors"
 
 	"go.coder.com/slog"
+	"go.coder.com/slog/sloggers/slogjson"
 	"go.coder.com/slog/sloggers/slogtest"
 )
 
@@ -44,6 +47,22 @@ func Example_test() {
 
 func TestExample(t *testing.T) {
 	slogtest.Info(t, "my message here",
+		slog.F("field_name", "something or the other"),
+		slog.F("some_map", slog.Map(
+			slog.F("nested_fields", "wowow"),
+		)),
+		slog.Error(
+			xerrors.Errorf("wrap1: %w",
+				xerrors.Errorf("wrap2: %w",
+					io.EOF),
+			)),
+		slog.Component("test"),
+	)
+}
+
+func TestJSON(t *testing.T) {
+	l := slogjson.Make(os.Stderr)
+	l.Info(context.Background(), "my message here",
 		slog.F("field_name", "something or the other"),
 		slog.F("some_map", slog.Map(
 			slog.F("nested_fields", "wowow"),

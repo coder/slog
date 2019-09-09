@@ -3,7 +3,11 @@
 package slogval // import "go.coder.com/slog/slogval"
 
 import (
+	"bytes"
+	"encoding/json"
 	"sort"
+
+	"golang.org/x/xerrors"
 )
 
 // Value represents a primitive value for structured logging.
@@ -86,4 +90,35 @@ func (m Map) sort() {
 	sort.Slice(m, func(i, j int) bool {
 		return m[i].Name < m[j].Name
 	})
+}
+
+var _ json.Marshaler = Map(nil)
+
+// MarshalJSON implements json.Marshaler.
+func (m Map) MarshalJSON() ([]byte, error) {
+	b := &bytes.Buffer{}
+	b.WriteString("{")
+	for i, f := range m {
+		fieldName, err := json.Marshal(f.Name)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshal field name: %w", err)
+		}
+
+		fieldValue, err := json.Marshal(f.Value)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshal field value: %w", err)
+		}
+
+		b.WriteString("\n")
+		b.Write(fieldName)
+		b.WriteString(":")
+		b.Write(fieldValue)
+
+		if i < len(m)-1 {
+			b.WriteString(",")
+		}
+	}
+	b.WriteString(`}`)
+
+	return b.Bytes(), nil
 }

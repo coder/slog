@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"go.coder.com/slog"
-	"go.coder.com/slog/internal/diff"
+	"go.coder.com/slog/internal/assert"
 	"go.coder.com/slog/slogval"
 )
 
@@ -110,6 +110,17 @@ dsamkld`),
 "\rxeow\r": mdsla
   dsamkld`,
 		},
+		{
+			name: "specialCharacterKey",
+			in: slog.Map(
+				slog.F("nhooyr \tsoftware™️", "hi"),
+				slog.F("\rxeow\r", `mdsla
+dsamkld`),
+			),
+			out: `"nhooyr_\tsoftware™️": hi
+"\rxeow\r": mdsla
+  dsamkld`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -120,9 +131,7 @@ dsamkld`),
 			v := slogval.Encode(tc.in).(slogval.Map)
 			actOut := humanFields(v)
 			t.Logf("yaml:\n%v", actOut)
-			if diff := diff.Diff(tc.out, actOut); diff != "" {
-				t.Fatalf("unexpected output: %v", diff)
-			}
+			assert.Equalf(t, tc.out, actOut, "unexpected output")
 		})
 	}
 }

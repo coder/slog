@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"go.coder.com/slog/internal/diff"
+	"go.coder.com/slog/internal/assert"
 )
 
 func TestEncode(t *testing.T) {
@@ -75,9 +75,7 @@ go.coder.com/slog/slogval.TestEncode
 			t.Parallel()
 
 			actOut := Encode(tc.in)
-			if diff := diff.Diff(tc.out, actOut); diff != "" {
-				t.Fatalf("unexpected output: %v", diff)
-			}
+			assert.Equalf(t, tc.out, actOut, "unexpected output")
 		})
 	}
 }
