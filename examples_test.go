@@ -3,7 +3,6 @@ package slog_test
 import (
 	"context"
 	"encoding/hex"
-	"go.coder.com/slog/sloggers/sloghuman"
 	"io"
 	"math/rand"
 	"os"
@@ -50,25 +49,32 @@ func Example_test() {
 }
 
 func TestExample(t *testing.T) {
-	for i := 0; i < 10; i++ {
-		sloghuman.Make(os.Stderr).Info(context.Background(), randStr(),
+	err := slog.Error(
+		xerrors.Errorf(randStr()+": %w",
+			xerrors.Errorf(randStr()+": %w",
+				io.EOF),
+		))
+	for i := 0; i < 100; i++ {
+		m := slog.Map(
 			slog.F(randStr(), "something or the other"),
 			slog.F("some_map", slog.Map(
 				slog.F("nested_fields", "wowow"),
 			)),
-			slog.Error(
-				xerrors.Errorf(randStr()+": %w",
-					xerrors.Errorf(randStr()+": %w",
-						io.EOF),
-				)),
 			slog.Component(randStr()),
+			slog.F("hi", 3),
+			slog.F("bool", true),
+			slog.F("str", []string{randStr()}),
 		)
+		if rand.Intn(4)%4 == 0 {
+			m = append(m, err)
+		}
+		slogjson.Make(os.Stderr).Info(context.Background(), randStr(), m...)
 	}
 }
 
 func TestJSON(t *testing.T) {
 	l := slogjson.Make(os.Stderr)
-	l.Info(context.Background(), "my message here",
+	l.Info(context.Background(), "my message\r here",
 		slog.F("field_name", "something or the other"),
 		slog.F("some_map", slog.Map(
 			slog.F("nested_fields", "wowow"),

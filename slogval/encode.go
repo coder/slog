@@ -219,7 +219,7 @@ func (p *xerrorPrinter) Detail() bool {
 	return true
 }
 
-const JSONTest = false
+const JSONTest = true
 
 func (p *xerrorPrinter) fields() Value {
 	if JSONTest {

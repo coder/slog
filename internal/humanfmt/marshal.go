@@ -72,7 +72,7 @@ func (y *consoleMarshaller) marshal(v slogval.Value) {
 			if slogval.JSONTest {
 				name = color.RedString(name)
 			}
-			y.s( name+ ":")
+			y.s(name + ":")
 
 			y.marshalSub(f.Value, true)
 		}

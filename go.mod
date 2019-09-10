@@ -3,6 +3,7 @@ module go.coder.com/slog
 go 1.13
 
 require (
+	github.com/alecthomas/chroma v0.6.6
 	github.com/fatih/camelcase v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/golang/protobuf v1.3.2
@@ -11,7 +12,6 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
-	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
 	go.coder.com/go-tools v0.0.0-20190317003359-0c6a35b74a16

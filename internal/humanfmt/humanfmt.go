@@ -52,15 +52,20 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	m, ok := slogval.Encode(ent.Fields).(slogval.Map)
 	if ok {
 		if slogval.JSONTest {
-			errVal := m[2]
-			m = append(m[:2], m[2+1:]...)
+			var errVal slogval.Field
+			if len(m) >= 3 {
+				errVal = m[2]
+				m = append(m[:2], m[2+1:]...)
+			}
 			fields, err := json.Marshal(m)
 			if err == nil {
-				ents += "\n" + string(fields)
+				ents += "    " + string(fields)
 			}
-			ents += "\n" + fmtVal(slogval.Map{
-				slogval.Field{"error", errVal.Value},
-			})
+			if errVal != (slogval.Field{}) {
+				ents += "\n" + fmtVal(slogval.Map{
+					slogval.Field{"error", errVal.Value},
+				})
+			}
 		} else {
 			// We never return with a trailing newline because Go's testing framework adds one
 			// automatically and if we include one, then we'll get two newlines.
