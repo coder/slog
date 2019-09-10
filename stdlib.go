@@ -18,12 +18,7 @@ import (
 func Stdlib(ctx context.Context, l Logger) *log.Logger {
 	l.skip += 4
 
-	l = l.clone()
-	for i, s := range l.sinks {
-		if ts, ok := s.sink.(testSink); ok {
-			l.sinks[i].sink = ts.Stdlib()
-		}
-	}
+	l = l.Named("stdlib")
 
 	w := &stdlogWriter{
 		Log: func(msg string) {

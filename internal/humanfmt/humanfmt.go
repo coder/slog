@@ -19,7 +19,7 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	var ents string
 	level := ent.Level.String()
 	if enableColor {
-		level = color.New(levelColor(ent.Level)).Sprint(level)
+		level = LevelColor(ent.Level)
 	}
 	ents += fmt.Sprintf("[%v] ", level)
 
@@ -29,8 +29,8 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	}
 	ents += fmt.Sprintf("{%v} ", loc)
 
-	if ent.Component != "" {
-		component := quoteKey(ent.Component)
+	if ent.LoggerName != "" {
+		component := quoteKey(ent.LoggerName)
 		if enableColor {
 			component = color.New(color.FgMagenta).Sprint(component)
 		}
@@ -82,18 +82,23 @@ func Entry(ent slog.Entry, enableColor bool) string {
 // Same as time.StampMilli but the days in the month padded by zeros.
 const timestampMilli = "Jan 02 15:04:05.000"
 
-func levelColor(level slog.Level) color.Attribute {
+func LevelColor(level slog.Level) string {
+	var attr color.Attribute
 	switch level {
-	case slog.LevelDebug, slog.LevelInfo:
-		return color.FgBlue
+	case slog.LevelDebug:
+		return level.String()
+	case slog.LevelInfo:
+		attr = color.FgBlue
 	case slog.LevelWarn:
-		return color.FgYellow
+		attr = color.FgYellow
 	case slog.LevelError:
-		return color.FgRed
+		attr = color.FgRed
 	case slog.LevelCritical, slog.LevelFatal:
-		return color.FgHiRed
+		attr = color.FgHiRed
+	default:
+		panic("humanfmt: unexpected level: " + string(level))
 	}
-	panic("humanfmt: unexpected level: " + string(level))
+	return color.New(attr).Sprint(level)
 }
 
 // IsTTY checks whether the given writer is a *os.File TTY.

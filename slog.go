@@ -33,21 +33,6 @@ func (v ValueFunc) LogValue() interface{} {
 	return v()
 }
 
-type componentField string
-
-func (c componentField) LogKey() string        { panic("never called") }
-func (c componentField) LogValue() interface{} { panic("never called") }
-
-// Component represents the component a log is being logged for.
-// If there is already a component set, it will be joined by ".".
-// E.g. if the component is currently "my_component" and then later
-// the component "my_pkg" is set, then the final component will be
-// "my_component.my_pkg".
-// TODO turn into Logger.
-func Component(name string) Field {
-	return componentField(name)
-}
-
 type unparsedField struct {
 	name string
 	v    interface{}
@@ -83,14 +68,14 @@ func Error(err error) Field {
 	}
 }
 
-type loggerKey struct{}
+type fieldsKey struct{}
 
-func withContext(ctx context.Context, l parsedFields) context.Context {
-	return context.WithValue(ctx, loggerKey{}, l)
+func fieldsWithContext(ctx context.Context, fields []Field) context.Context {
+	return context.WithValue(ctx, fieldsKey{}, fields)
 }
 
-func fromContext(ctx context.Context) parsedFields {
-	l, _ := ctx.Value(loggerKey{}).(parsedFields)
+func fieldsFromContext(ctx context.Context) []Field {
+	l, _ := ctx.Value(fieldsKey{}).([]Field)
 	return l
 }
 
@@ -99,9 +84,9 @@ func fromContext(ctx context.Context) parsedFields {
 // the given logs prepended.
 // It will append to any fields already in ctx.
 func Context(ctx context.Context, fields ...Field) context.Context {
-	l := fromContext(ctx)
-	l = l.withFields(fields)
-	return withContext(ctx, l)
+	f1 := fieldsFromContext(ctx)
+	f2 := combineFields(f1, fields)
+	return fieldsWithContext(ctx, f2)
 }
 
 // Entry represents the structure of a log entry.
@@ -112,7 +97,7 @@ type Entry struct {
 	Level   Level
 	Message string
 
-	Component string
+	LoggerName string
 
 	Func string
 	File string
@@ -167,31 +152,47 @@ func Make(s Sink) Logger {
 				level: new(int64),
 			},
 		},
-		Helper: func() {},
-		skip:   2,
+		skip: 2,
 	}
 	l.SetLevel(LevelDebug)
-
-	if ts, ok := s.(testSink); ok {
-		l.Helper = ts.TestingHelper()
-	}
 	return l
 }
 
 type sink struct {
-	sink  Sink
-	level *int64
-	pl    parsedFields
+	name   string
+	sink   Sink
+	level  *int64
+	fields []Field
+}
+
+func combineFields(f1, f2 []Field) []Field {
+	f3 := make([]Field, 0, len(f1)+len(f2))
+	f3 = append(f3, f1...)
+	f3 = append(f3, f2...)
+	return f3
+}
+func (s sink) withFields(fields []Field) sink {
+	s.fields = combineFields(s.fields, fields)
+	return s
+}
+
+func (s sink) named(name string) sink {
+	if s.name == "" {
+		s.name = name
+	} else if name != "" {
+		s.name += "." + name
+	}
+	return s
+}
+
+func (s sink) withContext(ctx context.Context) sink {
+	f := fieldsFromContext(ctx)
+	return s.withFields(f)
 }
 
 // Logger allows logging a ordered slice of fields
 // to an underlying set of sinks.
 type Logger struct {
-	// Helper behaves exactly like testing.TB.Helper.
-	// It causes the location information printed to skip
-	// the current function and instead reflect the parent.
-	Helper func()
-
 	sinks []sink
 	skip  int
 }
@@ -203,37 +204,31 @@ func (l Logger) clone() Logger {
 
 // Debug logs the msg and fields at LevelDebug.
 func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
-	l.Helper()
 	l.log(ctx, LevelDebug, msg, fields)
 }
 
 // Info logs the msg and fields at LevelInfo.
 func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
-	l.Helper()
 	l.log(ctx, LevelInfo, msg, fields)
 }
 
 // Warn logs the msg and fields at LevelWarn.
 func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
-	l.Helper()
 	l.log(ctx, LevelWarn, msg, fields)
 }
 
 // Error logs the msg and fields at LevelError.
 func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
-	l.Helper()
 	l.log(ctx, LevelError, msg, fields)
 }
 
 // Critical logs the msg and fields at LevelCritical.
 func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
-	l.Helper()
 	l.log(ctx, LevelCritical, msg, fields)
 }
 
 // Fatal logs the msg and fields at LevelFatal.
 func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
-	l.Helper()
 	l.log(ctx, LevelFatal, msg, fields)
 }
 
@@ -243,8 +238,20 @@ func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 func (l Logger) With(fields ...Field) Logger {
 	l = l.clone()
 	for i, s := range l.sinks {
-		s.pl = s.pl.withFields(fields)
-		l.sinks[i] = s
+		l.sinks[i] = s.withFields(fields)
+	}
+	return l
+}
+
+// Named names the logger.
+// If there is already a name set, it will be joined by ".".
+// E.g. if the name is currently "my_component" and then later
+// the name "my_pkg" is set, then the final component will be
+// "my_component.my_pkg".
+func (l Logger) Named(name string) Logger {
+	l = l.clone()
+	for i, s := range l.sinks {
+		l.sinks[i] = s.named(name)
 	}
 	return l
 }
@@ -257,15 +264,13 @@ func (l Logger) SetLevel(level Level) {
 }
 
 func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field) {
-	l.Helper()
-
 	for _, s := range l.sinks {
 		slevel := Level(atomic.LoadInt64(s.level))
 		if level < slevel {
 			// We will not log levels below the current log level.
 			continue
 		}
-		ent := s.pl.entry(ctx, entryParams{
+		ent := s.entry(ctx, entryParams{
 			level:  level,
 			msg:    msg,
 			fields: fields,
@@ -280,60 +285,6 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 	}
 }
 
-type parsedFields struct {
-	component string
-	spanCtx   trace.SpanContext
-
-	fields []Field
-}
-
-func parseFields(fields []Field) parsedFields {
-	var l parsedFields
-	l.fields = make([]Field, 0, len(fields))
-
-	for _, f := range fields {
-		if s, ok := f.(componentField); ok {
-			l = l.appendComponent(string(s))
-			continue
-		}
-		l.fields = append(l.fields, f)
-	}
-
-	return l
-}
-
-func (l parsedFields) withFields(f []Field) parsedFields {
-	return l.with(parseFields(f))
-}
-
-func (l parsedFields) with(l2 parsedFields) parsedFields {
-	l = l.appendComponent(l2.component)
-	if l2.spanCtx != (trace.SpanContext{}) {
-		l.spanCtx = l2.spanCtx
-	}
-
-	l.fields = append(l.fields, l2.fields...)
-	return l
-}
-
-func (l parsedFields) appendComponent(name string) parsedFields {
-	if l.component == "" {
-		l.component = name
-	} else if name != "" {
-		l.component += "." + name
-	}
-	return l
-}
-
-func (l parsedFields) withContext(ctx context.Context) parsedFields {
-	l2 := fromContext(ctx)
-	if len(l2.fields) == 0 {
-		return l
-	}
-
-	return l.with(l2)
-}
-
 type entryParams struct {
 	level  Level
 	msg    string
@@ -341,17 +292,17 @@ type entryParams struct {
 	skip   int
 }
 
-func (l parsedFields) entry(ctx context.Context, params entryParams) Entry {
-	l = l.withContext(ctx)
-	l = l.withFields(params.fields)
+func (s sink) entry(ctx context.Context, params entryParams) Entry {
+	s = s.withContext(ctx)
+	s = s.withFields(params.fields)
 
 	ent := Entry{
 		Time:        time.Now(),
 		Level:       params.level,
-		Component:   l.component,
+		LoggerName:  s.name,
 		Message:     params.msg,
 		SpanContext: trace.FromContext(ctx).SpanContext(),
-		Fields:      l.fields,
+		Fields:      s.fields,
 	}
 
 	file, line, fn, ok := location(params.skip + 1)
@@ -375,21 +326,8 @@ func location(skip int) (file string, line int, fn string, ok bool) {
 // Tee enables logging to multiple loggers.
 func Tee(ls ...Logger) Logger {
 	var l Logger
-
 	for _, l2 := range ls {
-		if l2.Helper != nil {
-			if l.Helper == nil {
-				panic("slog.Tee: cannot Tee multiple slogtest Loggers")
-			}
-			l.Helper = l2.Helper
-		}
 		l.sinks = append(l.sinks, l2.sinks...)
 	}
-
 	return l
-}
-
-type testSink interface {
-	Stdlib() Sink
-	TestingHelper() func()
 }

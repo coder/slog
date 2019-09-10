@@ -30,7 +30,6 @@ func Example_test() {
 				xerrors.Errorf("wrap2: %w",
 					io.EOF),
 			)),
-		slog.Component("test"),
 	)
 
 	// --- PASS: TestExample (0.00s)
@@ -60,7 +59,6 @@ func TestExample(t *testing.T) {
 			slog.F("some_map", slog.Map(
 				slog.F("nested_fields", "wowow"),
 			)),
-			slog.Component(randStr()),
 			slog.F("hi", 3),
 			slog.F("bool", true),
 			slog.F("str", []string{randStr()}),
@@ -68,7 +66,9 @@ func TestExample(t *testing.T) {
 		if rand.Intn(4)%4 == 0 {
 			m = append(m, err)
 		}
-		slogjson.Make(os.Stderr).Info(context.Background(), randStr(), m...)
+		l := slogjson.Make(os.Stderr)
+		l = l.Named(randStr())
+		l.Warn(context.Background(), randStr(), m...)
 	}
 }
 
@@ -84,7 +84,6 @@ func TestJSON(t *testing.T) {
 				xerrors.Errorf("wrap2: %w",
 					io.EOF),
 			)),
-		slog.Component("test"),
 	)
 }
 

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/formatters"
+	"github.com/fatih/color"
 	"go.coder.com/slog/internal/humanfmt"
 	"io"
 	"os"
@@ -57,7 +58,7 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) {
 	m := slog.Map(
 		slog.F("level", ent.Level),
 		slog.F("msg", ent.Message),
-		slog.F("component", ent.Component),
+		slog.F("component", ent.LoggerName),
 		slog.F("caller", fmt.Sprintf("%v:%v", ent.File, ent.Line)),
 		slog.F("func", ent.Func),
 		slog.F("ts", jsonTimestamp(ent.Time)),
@@ -90,13 +91,18 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) {
 			os.Stderr.WriteString("slogjson: failed to tokenize JSON entry: " + err.Error())
 			return
 		}
-		b := bytes.NewBuffer(buf)
+		b := bytes.NewBuffer(buf[:0])
 		err = formatters.TTY8.Format(b, nhooyrJSON, it)
 		if err != nil {
 			os.Stderr.WriteString("slogjson: failed to format JSON entry: " + err.Error())
 			return
 		}
 		buf = b.Bytes()
+
+		og := []byte(`{"level":` + color.GreenString(`"` + ent.Level.String() + `"`) + `,`)
+		repl := []byte(`{"level":` + color.GreenString(`"`) + humanfmt.LevelColor(ent.Level) + color.GreenString(`"`) + `,`)
+
+		buf = bytes.Replace(buf, og, repl, 1)
 	}
 
 	_, err = s.w.Write(buf)
