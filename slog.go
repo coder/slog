@@ -3,7 +3,6 @@ package slog
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"runtime"
 	"sync"
@@ -345,7 +344,6 @@ func (p entryParams) fillLoc(skip int) entryParams {
 
 	frame := first
 	for {
-		log.Println(frame.Function)
 		if _, ok := logHelpers[frame.Function]; !ok {
 			// Found a frame that wasn't inside a helper function.
 			return p.fillFromFrame(frame)
