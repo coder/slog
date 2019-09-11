@@ -38,23 +38,49 @@ func Encode(v interface{}, visit VisitFunc) Value {
 		return m
 	case json.Marshaler:
 		return fromJSON(v, visit)
+	case fmt.Stringer:
+		return Encode(fmt.Sprintf("%+v", v), visit)
+	case error:
+		return Encode(fmt.Sprintf("%+v", v), visit)
 	case string:
 		return String(v)
 	case bool:
 		return Bool(v)
 	}
 
-	rv := reflect.ValueOf(v)
-	switch rv.Kind() {
-	case reflect.Float32, reflect.Float64:
-		return Float(rv.Float())
-	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		return Int(rv.Int())
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return Uint(rv.Uint())
+	rv, ok := reflectEncode(v, visit)
+	if ok {
+		return rv
 	}
 
 	return Encode(fmt.Sprintf("%+v", v), visit)
+}
+
+func reflectEncode(v interface{}, visit VisitFunc) (Value, bool) {
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Float32, reflect.Float64:
+		return Float(rv.Float()), true
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
+		return Int(rv.Int()), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return Uint(rv.Uint()), true
+	case reflect.Slice, reflect.Array:
+		list := make(List, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			list[i] = Encode(rv.Index(i).Interface(), visit)
+		}
+		return list, true
+	case reflect.Map:
+		m := make(Map, 0, rv.Len())
+		for _, k := range rv.MapKeys() {
+			mv := rv.MapIndex(k)
+			m = m.appendVal(fmt.Sprintf("%v", k), Encode(mv, visit))
+		}
+		m.sort()
+		return m, true
+	}
+	return nil, false
 }
 
 func fromJSON(v interface{}, visit VisitFunc) Value {

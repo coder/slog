@@ -54,34 +54,32 @@ func TestExample(t *testing.T) {
 			xerrors.Errorf(randStr()+": %w",
 				io.EOF),
 		))
-	for i := 0; i < 100; i++ {
-		m := slog.Map(
-			slog.F(randStr(), "something or the other"),
-			slog.F("some_map", slog.Map(
-				slog.F("nested_fields", "wowow"),
-			)),
-			slog.F("hi", 3),
-			slog.F("bool", true),
-			slog.F("str", []string{randStr()}),
-		)
-		if rand.Intn(4)%4 == 0 {
-			m = append(m, err)
-		}
-		l := slogtest.Make(t, nil)
-		l = l.Named(randStr())
+	m := slog.Map(
+		slog.F(randStr(), "something or the other"),
+		slog.F("some_map", slog.Map(
+			slog.F("nested_fields", "wowow"),
+		)),
+		slog.F("hi", 3),
+		slog.F("bool", true),
+		slog.F("str", []string{randStr()}),
+	)
+	if rand.Intn(4)%4 == 0 {
+		m = append(m, err)
+	}
+	l := slogtest.Make(t, nil)
+	l = l.Named(randStr())
 
-		switch rand.Intn(5)%5 {
-		case 0:
-			l.Debug(ctx, randStr(), m...)
-		case 1:
-			l.Info(ctx, randStr(), m...)
-		case 2:
-			l.Warn(ctx, randStr(), m...)
-		case 3:
-			l.Error(ctx, randStr(), m...)
-		case 4:
-			l.Critical(ctx, randStr(), m...)
-		}
+	switch rand.Intn(5) % 5 {
+	case 0:
+		l.Debug(ctx, randStr(), m...)
+	case 1:
+		l.Info(ctx, randStr(), m...)
+	case 2:
+		l.Warn(ctx, randStr(), m...)
+	case 3:
+		l.Error(ctx, randStr(), m...)
+	case 4:
+		l.Critical(ctx, randStr(), m...)
 	}
 }
 

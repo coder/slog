@@ -285,7 +285,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 		spanContext: trace.FromContext(ctx).SpanContext(),
 	}
 	params = params.fillLoc(l.skip + 1)
-	// TODO set location information
+
 	for _, s := range l.sinks {
 		slevel := Level(atomic.LoadInt64(s.level))
 		if level < slevel {
