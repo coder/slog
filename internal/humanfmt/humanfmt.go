@@ -14,6 +14,7 @@ import (
 	"github.com/fatih/color"
 	"go.opencensus.io/trace"
 	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/xerrors"
 
 	"go.coder.com/slog"
 	"go.coder.com/slog/slogval"
@@ -64,27 +65,31 @@ func Entry(ent slog.Entry, enableColor bool) string {
 		), ent.Fields...)
 	}
 
-	m, ok := slogval.Encode(ent.Fields, nil).(slogval.Map)
-	if !ok || len(m) == 0 {
-		return ents
-	}
-
 	var multilineKey string
 	var multilineVal string
 
-	for i, f := range m {
-		if v, ok := f.Value.(slogval.String); ok {
-			s := string(v)
-			s = strings.TrimSpace(s)
-			if !strings.Contains(s, "\n") {
-				continue
-			}
-			// Remove this field.
-			m = append(m[:i], m[i+1:]...)
-			multilineKey = f.Name
-			multilineVal = s
-			break
+	for i, f := range ent.Fields {
+		var s string
+		switch v := f.LogValue().(type) {
+		case string:
+			s = v
+		case xerrors.Formatter:
+			s = fmt.Sprintf("%+v", v)
 		}
+		s = strings.TrimSpace(s)
+		if !strings.Contains(s, "\n") {
+			continue
+		}
+
+		// Remove this field.
+		ent.Fields = append(ent.Fields[:i], ent.Fields[i+1:]...)
+		multilineKey = f.LogKey()
+		multilineVal = s
+	}
+
+	m, ok := slogval.Encode(ent.Fields, nil).(slogval.Map)
+	if !ok || len(m) == 0 {
+		return ents
 	}
 
 	fields, err := json.MarshalIndent(m, "", "")
