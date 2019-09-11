@@ -2,10 +2,11 @@ package humanfmt
 
 import (
 	"bytes"
+	"os"
+
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/formatters"
 	jlexers "github.com/alecthomas/chroma/lexers/j"
-	"os"
 )
 
 // Adapted from https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/styles/bw.go#L7
@@ -20,7 +21,7 @@ var nhooyrJSON = chroma.MustNewStyle("nhooyrJSON", chroma.StyleEntries{
 	chroma.Name: "#00007f",
 })
 
-func JSON(buf []byte) []byte {
+func highlightJSON(buf []byte) []byte {
 	jsonLexer := chroma.Coalesce(jlexers.JSON)
 	it, err := jsonLexer.Tokenise(nil, string(buf))
 	if err != nil {

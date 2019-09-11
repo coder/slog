@@ -21,7 +21,7 @@ func TestMapJSON(t *testing.T) {
 		)),
 	)
 
-	act, err := json.MarshalIndent(Encode(m), "", strings.Repeat(" ", 2))
+	act, err := json.MarshalIndent(Encode(m, nil), "", strings.Repeat(" ", 2))
 	if err != nil {
 		t.Fatalf("failed to encode map to JSON: %+v", err)
 	}

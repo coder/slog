@@ -4,16 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"go.coder.com/slog"
 	"reflect"
 	"strings"
 
 	"gitlab.com/c0b/go-ordered-json"
 	"golang.org/x/xerrors"
+
+	"go.coder.com/slog"
 )
 
+// VisitFunc is used to customize the representation of any field visited
+// by the Encode.
 type VisitFunc func(v interface{}, fn VisitFunc) (_ Value, ok bool)
 
+// Encode encodes the interface to Value.
 func Encode(v interface{}, visit VisitFunc) Value {
 	if visit != nil {
 		rv, ok := visit(v, visit)
@@ -23,8 +27,10 @@ func Encode(v interface{}, visit VisitFunc) Value {
 	}
 
 	switch v := v.(type) {
-	case slog.JSONValue:
-		return fromJSON(v.V, visit)
+	case interface {
+		LogValueJSON() interface{}
+	}:
+		return fromJSON(v.LogValueJSON(), visit)
 	case slog.Value:
 		return Encode(v.LogValue(), visit)
 	case Value:
@@ -40,6 +46,8 @@ func Encode(v interface{}, visit VisitFunc) Value {
 		return fromJSON(v, visit)
 	case fmt.Stringer:
 		return Encode(fmt.Sprintf("%+v", v), visit)
+	case xerrors.Formatter:
+		return extractXErrorChain(v, visit)
 	case error:
 		return Encode(fmt.Sprintf("%+v", v), visit)
 	case string:
@@ -105,23 +113,23 @@ func fromJSON(v interface{}, visit VisitFunc) Value {
 	return unmarshalJSONVal(jsonVal)
 }
 
-type WrapError struct {
+type wrapError struct {
 	Msg string `json:"msg"`
 	Fun string `json:"fun"`
 	// file:line `json
 	Loc string `json:"loc"`
 }
 
-func (e WrapError) Error() string {
+func (e wrapError) Error() string {
 	return fmt.Sprintf("wrap error: %+v", e)
 }
 
-func (e WrapError) LogValue() interface{} {
-	return slog.JSONValue{e}
+func (e wrapError) LogValue() interface{} {
+	return slog.JSON(e)
 }
 
 type xerrorPrinter struct {
-	e WrapError
+	e wrapError
 }
 
 func (p *xerrorPrinter) Print(v ...interface{}) {
@@ -152,7 +160,7 @@ func (p *xerrorPrinter) Detail() bool {
 	return true
 }
 
-func ExtractXErrorChain(f xerrors.Formatter, visit VisitFunc) List {
+func extractXErrorChain(f xerrors.Formatter, visit VisitFunc) List {
 	var l List
 
 	for {

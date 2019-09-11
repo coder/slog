@@ -22,7 +22,7 @@ func Stdlib(ctx context.Context, l Logger) *log.Logger {
 
 	w := &stdlogWriter{
 		ctx: ctx,
-		l: l,
+		l:   l,
 	}
 
 	return log.New(w, "", 0)
@@ -30,7 +30,7 @@ func Stdlib(ctx context.Context, l Logger) *log.Logger {
 
 type stdlogWriter struct {
 	ctx context.Context
-	l Logger
+	l   Logger
 }
 
 func (w stdlogWriter) Write(p []byte) (n int, err error) {

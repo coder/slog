@@ -37,7 +37,6 @@ func TestExampleTest(t *testing.T) {
 				io.EOF,
 			),
 		)),
-		slog.Component("test"),
 		slog.F("hi3", slog.Map(
 			meow{1},
 			meow{2},

@@ -74,7 +74,7 @@ go.coder.com/slog/slogval.TestEncode
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			actOut := Encode(tc.in)
+			actOut := Encode(tc.in, nil)
 			assert.Equalf(t, tc.out, actOut, "unexpected output")
 		})
 	}

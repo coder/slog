@@ -389,13 +389,20 @@ func Tee(ls ...Logger) Logger {
 	return l
 }
 
-// JSONValue tells the sink that it is valid
-// to log the value as JSON.
-type JSONValue struct {
-	V interface{}
+type jsonValue struct {
+	v interface{}
 }
 
-// LogValue implements Value.
-func (v JSONValue) LogValue() interface{} {
-	return v
+func (v jsonValue) LogValueJSON() interface{} {
+	return v.v
+}
+
+func (v jsonValue) LogValue() interface{} {
+	return v.v
+}
+
+// JSON tells the sink that it is valid
+// to log the value as JSON.
+func JSON(v interface{}) Value {
+	return jsonValue{v: v}
 }
