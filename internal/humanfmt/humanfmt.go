@@ -96,7 +96,9 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	if err == nil {
 		fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
 		fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
-		fields = highlightJSON(fields)
+		if enableColor {
+			fields = highlightJSON(fields)
+		}
 		ents += "\t" + string(fields)
 	} else {
 		ents += fmt.Sprintf("\thumanfmt: failed to marshal fields: %+v", err)
