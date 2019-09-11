@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -232,6 +233,18 @@ func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelFatal, msg, fields)
 }
 
+var helpersMu = &sync.Mutex{}
+var logHelpers = map[string]struct{}{}
+
+// Helper marks the calling function as a helper
+// and skips it for source location information.
+func (l Logger) Helper() {
+	helpersMu.Lock()
+	defer helpersMu.Unlock()
+	_, _, fn := location(1)
+	logHelpers[fn] = struct{}{}
+}
+
 // With returns a Logger that prepends the given fields on every
 // logged entry.
 // It will append to any fields already in the Logger.
@@ -264,18 +277,22 @@ func (l Logger) SetLevel(level Level) {
 }
 
 func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field) {
+	params := entryParams{
+		time:        time.Now(),
+		level:       level,
+		msg:         msg,
+		fields:      fields,
+		spanContext: trace.FromContext(ctx).SpanContext(),
+	}
+	params = params.fillLoc(l.skip + 1)
+	// TODO set location information
 	for _, s := range l.sinks {
 		slevel := Level(atomic.LoadInt64(s.level))
 		if level < slevel {
 			// We will not log levels below the current log level.
 			continue
 		}
-		ent := s.entry(ctx, entryParams{
-			level:  level,
-			msg:    msg,
-			fields: fields,
-			skip:   l.skip,
-		})
+		ent := s.entry(ctx, params)
 
 		s.sink.LogEntry(ctx, ent)
 	}
@@ -286,10 +303,52 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 }
 
 type entryParams struct {
+	time   time.Time
 	level  Level
 	msg    string
 	fields []Field
-	skip   int
+
+	file string
+	line int
+	fn   string
+
+	spanContext trace.SpanContext
+}
+
+func (p entryParams) fillFromFrame(f runtime.Frame) entryParams {
+	p.fn = f.Function
+	p.file = f.File
+	p.line = f.Line
+	return p
+}
+
+func (p entryParams) fillLoc(skip int) entryParams {
+	// Copied from testing.T
+	const maxStackLen = 50
+	var pc [maxStackLen]uintptr
+
+	// Skip two extra frames to account for this function
+	// and runtime.Callers itself.
+	n := runtime.Callers(skip+2, pc[:])
+	if n == 0 {
+		panic("slog: zero callers found")
+	}
+
+	frames := runtime.CallersFrames(pc[:n])
+	first, more := frames.Next()
+	if !more {
+		return p.fillFromFrame(first)
+	}
+	for {
+		frame, more := frames.Next()
+		if !more {
+			return p.fillFromFrame(first)
+		}
+		if _, ok := logHelpers[frame.Function]; !ok {
+			// Found a frame that wasn't inside a helper function.
+			return p.fillFromFrame(frame)
+		}
+	}
 }
 
 func (s sink) entry(ctx context.Context, params entryParams) Entry {
@@ -297,30 +356,28 @@ func (s sink) entry(ctx context.Context, params entryParams) Entry {
 	s = s.withFields(params.fields)
 
 	ent := Entry{
-		Time:        time.Now(),
+		Time:        params.time,
 		Level:       params.level,
 		LoggerName:  s.name,
 		Message:     params.msg,
-		SpanContext: trace.FromContext(ctx).SpanContext(),
+		SpanContext: params.spanContext,
 		Fields:      s.fields,
+
+		File: params.file,
+		Line: params.line,
+		Func: params.fn,
 	}
 
-	file, line, fn, ok := location(params.skip + 1)
-	if ok {
-		ent.File = file
-		ent.Line = line
-		ent.Func = fn
-	}
 	return ent
 }
 
-func location(skip int) (file string, line int, fn string, ok bool) {
+func location(skip int) (file string, line int, fn string) {
 	pc, file, line, ok := runtime.Caller(skip + 1)
 	if !ok {
-		return "", 0, "", false
+		panic("slog: zero callers found")
 	}
 	f := runtime.FuncForPC(pc)
-	return file, line, f.Name(), true
+	return file, line, f.Name()
 }
 
 // Tee enables logging to multiple loggers.
