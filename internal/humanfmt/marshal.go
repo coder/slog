@@ -69,9 +69,7 @@ func (y *consoleMarshaller) marshal(v slogval.Value) {
 			}
 
 			name := quote(f.Name)
-			if slogval.JSONTest {
-				name = color.RedString(name)
-			}
+			name = color.BlueString(name)
 			y.s(name + ":")
 
 			y.marshalSub(f.Value, true)

@@ -22,21 +22,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/alecthomas/chroma"
-	"github.com/alecthomas/chroma/formatters"
 	"github.com/fatih/color"
-	"go.coder.com/slog/internal/humanfmt"
-	"io"
-	"os"
-	"time"
-
-	jlexers "github.com/alecthomas/chroma/lexers/j"
-	"go.opencensus.io/trace"
-	"golang.org/x/xerrors"
-
 	"go.coder.com/slog"
+	"go.coder.com/slog/internal/humanfmt"
 	"go.coder.com/slog/internal/syncwriter"
 	"go.coder.com/slog/slogval"
+	"go.opencensus.io/trace"
+	"golang.org/x/xerrors"
+	"io"
+	"os"
 )
 
 // Make creates a logger that writes JSON logs
@@ -56,12 +50,12 @@ type jsonSink struct {
 
 func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) {
 	m := slog.Map(
+		slog.F("ts", ent.Time),
 		slog.F("level", ent.Level),
-		slog.F("msg", ent.Message),
 		slog.F("component", ent.LoggerName),
+		slog.F("msg", ent.Message),
 		slog.F("caller", fmt.Sprintf("%v:%v", ent.File, ent.Line)),
 		slog.F("func", ent.Func),
-		slog.F("ts", jsonTimestamp(ent.Time)),
 	)
 
 	if ent.SpanContext != (trace.SpanContext{}) {
@@ -77,56 +71,47 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) {
 		)
 	}
 
-	v := slogval.Reflect(m)
-	buf, err := json.Marshal(v)
+	v := slogval.Encode(m, func(v interface{}, visit slogval.VisitFunc) (_ slogval.Value, ok bool) {
+		f, ok := v.(xerrors.Formatter)
+		if !ok {
+			return nil, false
+		}
+		return slogval.ExtractXErrorChain(f, visit), true
+	})
+	buf, err := json.MarshalIndent(v, "", "")
 	if err != nil {
 		os.Stderr.WriteString("slogjson: failed to encode entry to JSON: " + err.Error())
 		return
 	}
-	buf = append(buf, '\n')
+	lines := bytes.SplitN(buf, []byte("\n"), 6)
 	if s.color {
-		jsonLexer := chroma.Coalesce(jlexers.JSON)
-		it, err := jsonLexer.Tokenise(nil, string(buf))
-		if err != nil {
-			os.Stderr.WriteString("slogjson: failed to tokenize JSON entry: " + err.Error())
-			return
+		colorField(lines, 1, color.FgCyan)
+		if ent.Level != slog.LevelDebug {
+			colorField(lines, 2, humanfmt.LevelColor(ent.Level))
 		}
-		b := bytes.NewBuffer(buf[:0])
-		err = formatters.TTY8.Format(b, nhooyrJSON, it)
-		if err != nil {
-			os.Stderr.WriteString("slogjson: failed to format JSON entry: " + err.Error())
-			return
-		}
-		buf = b.Bytes()
-
-		og := []byte(`{"level":` + color.GreenString(`"` + ent.Level.String() + `"`) + `,`)
-		repl := []byte(`{"level":` + color.GreenString(`"`) + humanfmt.LevelColor(ent.Level) + color.GreenString(`"`) + `,`)
-
-		buf = bytes.Replace(buf, og, repl, 1)
+		colorField(lines, 3, color.FgMagenta)
+		colorField(lines, 4, color.FgGreen)
 	}
+	buf = bytes.Join(lines, []byte("\n"))
+	buf = bytes.ReplaceAll(buf, []byte(",\n"), []byte(", "))
+	buf = bytes.ReplaceAll(buf, []byte("\n"), []byte(""))
+	buf = append(buf, '\n')
+
+	buf = append([]byte("    "), buf...)
 
 	_, err = s.w.Write(buf)
 	if err != nil {
 		os.Stderr.WriteString("slogjson: failed to write JSON entry: " + err.Error())
+		return
 	}
 }
 
-func jsonTimestamp(t time.Time) interface{} {
-	ts, err := t.MarshalText()
-	if err != nil {
-		return xerrors.Errorf("failed to marshal timestamp to text: %w", err)
-	}
-	return string(ts)
-}
+func colorField(lines [][]byte, n int, attr color.Attribute) {
+	og := []byte(`: "`)
+	repl := []byte(`: "` + color.New(attr).Sprint()[:5])
 
-// Adapted from https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/styles/bw.go#L7
-// https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/formatters/tty_indexed.go
-// https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/lexers/j/json.go
-var nhooyrJSON = chroma.MustNewStyle("nhooyrJSON", chroma.StyleEntries{
-	// Magenta.
-	chroma.Keyword: "#7f007f",
-	// Magenta.
-	chroma.Number: "#7f007f",
-	// Green.
-	chroma.String: "#007f00",
-})
+	lines[n] = bytes.Replace(lines[n], og, repl, 1)
+
+	l := lines[n]
+	lines[n] = append(l[:len(l)-2], []byte(color.New(color.Reset).Sprint()+`",`)...)
+}

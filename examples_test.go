@@ -48,6 +48,7 @@ func Example_test() {
 }
 
 func TestExample(t *testing.T) {
+	ctx := context.Background()
 	err := slog.Error(
 		xerrors.Errorf(randStr()+": %w",
 			xerrors.Errorf(randStr()+": %w",
@@ -66,9 +67,21 @@ func TestExample(t *testing.T) {
 		if rand.Intn(4)%4 == 0 {
 			m = append(m, err)
 		}
-		l := slogjson.Make(os.Stderr)
+		l := slogtest.Make(t, nil)
 		l = l.Named(randStr())
-		l.Warn(context.Background(), randStr(), m...)
+
+		switch rand.Intn(5)%5 {
+		case 0:
+			l.Debug(ctx, randStr(), m...)
+		case 1:
+			l.Info(ctx, randStr(), m...)
+		case 2:
+			l.Warn(ctx, randStr(), m...)
+		case 3:
+			l.Error(ctx, randStr(), m...)
+		case 4:
+			l.Critical(ctx, randStr(), m...)
+		}
 	}
 }
 
