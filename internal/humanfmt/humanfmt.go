@@ -55,7 +55,7 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	if enableColor {
 		msg = color.New(color.FgGreen).Sprint(msg)
 	}
-	ents += fmt.Sprintf("%v\t", msg)
+	ents += fmt.Sprintf("%v", msg)
 
 	if ent.SpanContext != (trace.SpanContext{}) {
 		ent.Fields = append(slog.Map(
