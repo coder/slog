@@ -29,7 +29,7 @@ func (s humanSink) LogEntry(ctx context.Context, ent slog.Entry) {
 		if line == "" {
 			continue
 		}
-		fieldsLines[i] = strings.Repeat("    ", 4) + line
+		fieldsLines[i] = strings.Repeat(" ", 2) + line
 	}
 
 	str = strings.Join(lines, "\n")

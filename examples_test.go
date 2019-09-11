@@ -2,9 +2,12 @@ package slog_test
 
 import (
 	"context"
+	"encoding/hex"
 	"io"
+	"math/rand"
 	"os"
 	"testing"
+	"time"
 
 	"golang.org/x/xerrors"
 
@@ -27,42 +30,150 @@ func Example_test() {
 				xerrors.Errorf("wrap2: %w",
 					io.EOF),
 			)),
-		slog.Component("test"),
 	)
 
 	// --- PASS: TestExample (0.00s)
-	//    examples_test.go:46: Sep 08 13:54:34.532 [INFO] (test): my_message_here
+	//    examples_test.go:49: [INFO] {slogtest.go:101} (test) Sep 09 16:17:46.925: my message here
 	//        field_name: something or the other
 	//        some_map:
 	//          nested_fields: wowow
 	//        error:
 	//          - wrap1
 	//            go.coder.com/slog_test.TestExample
-	//              /Users/nhooyr/src/cdr/slog/examples_test.go:52
+	//              /Users/nhooyr/src/cdr/slog/examples_test.go:55
 	//          - wrap2
 	//            go.coder.com/slog_test.TestExample
-	//              /Users/nhooyr/src/cdr/slog/examples_test.go:53
+	//              /Users/nhooyr/src/cdr/slog/examples_test.go:56
 	//          - EOF
 }
 
 func TestExample(t *testing.T) {
-	slogtest.Info(t, "my message here",
-		slog.F("field_name", "something or the other"),
+	ctx := context.Background()
+	err := slog.Error(
+		xerrors.Errorf(randStr()+": %w",
+			xerrors.Errorf(randStr()+": %w",
+				io.EOF),
+		))
+	_ = err
+	m := slog.Map(
+		slog.F(randStr(), "something or the other"),
 		slog.F("some_map", slog.Map(
 			slog.F("nested_fields", "wowow"),
 		)),
-		slog.Error(
-			xerrors.Errorf("wrap1: %w",
-				xerrors.Errorf("wrap2: %w",
-					io.EOF),
-			)),
-		slog.Component("test"),
+		slog.F("hi", 3),
+		slog.F("bool", true),
+		slog.F("str", []string{randStr()}),
+	// 		slog.F("diff", cmp.Diff(`1
+	// 2
+	// 3
+	// 3
+	// 4
+	// 3
+	// 4
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// 5`, `1
+	// 2
+	// 3
+	// 3
+	// 4
+	// 3
+	// 4
+	// 32
+	// 53
+	// 1
+	// 6
+	// 3
+	// 4
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	//
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// 32
+	// 53
+	// 1
+	// 23
+	// 343
+	// 4324
+	// 432432
+	// `)),
 	)
+	// if rand.Intn(4)%4 == 0 {
+	m = append(m, err)
+	// }
+	l := slogtest.Make(t, nil)
+	l = l.Named("my amazing name").Named("subname")
+
+	l.Info(ctx, "my amazing wowowo wo wdasdasd message", m...)
 }
 
 func TestJSON(t *testing.T) {
 	l := slogjson.Make(os.Stderr)
-	l.Info(context.Background(), "my message here",
+	l.Info(context.Background(), "my message\r here",
 		slog.F("field_name", "something or the other"),
 		slog.F("some_map", slog.Map(
 			slog.F("nested_fields", "wowow"),
@@ -72,6 +183,15 @@ func TestJSON(t *testing.T) {
 				xerrors.Errorf("wrap2: %w",
 					io.EOF),
 			)),
-		slog.Component("test"),
 	)
+}
+
+func randStr() string {
+	p := make([]byte, rand.Intn(5)+3)
+	rand.Read(p)
+	return hex.EncodeToString(p)
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }

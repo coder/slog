@@ -3,12 +3,12 @@
 // Format
 //
 //  {
+//    "ts": "2019-09-10T20:19:07.159852-05:00",
 //    "level": "INFO",
+//    "component": "comp.subcomp",
 //    "msg": "hi",
-//    "ts": "",
 //    "caller": "slog/examples_test.go:62",
 //    "func": "go.coder.com/slog/sloggers/slogtest_test.TestExampleTest",
-//    "component": "comp.subcomp",
 //    "trace": "<traceid>",
 //    "span": "<spanid>",
 //    "fields": {
@@ -22,12 +22,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"time"
+	"os"
 
 	"go.opencensus.io/trace"
-	"golang.org/x/xerrors"
 
 	"go.coder.com/slog"
+	"go.coder.com/slog/internal/humanfmt"
 	"go.coder.com/slog/internal/syncwriter"
 	"go.coder.com/slog/slogval"
 )
@@ -37,22 +37,24 @@ import (
 // for the format.
 func Make(w io.Writer) slog.Logger {
 	return slog.Make(jsonSink{
-		w: syncwriter.New(w),
+		w:     syncwriter.New(w),
+		color: humanfmt.IsTTY(w),
 	})
 }
 
 type jsonSink struct {
-	w *syncwriter.Writer
+	w     *syncwriter.Writer
+	color bool
 }
 
 func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) {
 	m := slog.Map(
+		slog.F("ts", ent.Time),
 		slog.F("level", ent.Level),
+		slog.F("component", ent.LoggerName),
 		slog.F("msg", ent.Message),
-		slog.F("ts", jsonTimestamp(ent.Time)),
 		slog.F("caller", fmt.Sprintf("%v:%v", ent.File, ent.Line)),
 		slog.F("func", ent.Func),
-		slog.F("component", ent.Component),
 	)
 
 	if ent.SpanContext != (trace.SpanContext{}) {
@@ -62,21 +64,23 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) {
 		)
 	}
 
-	m = append(m,
-		slog.F("fields", ent.Fields),
-	)
-
-	v := slogval.Reflect(m)
-	// We use NewEncoder because it reuses buffers behind the scenes which we cannot
-	// do with json.Marshal.
-	e := json.NewEncoder(s.w)
-	e.Encode(v)
-}
-
-func jsonTimestamp(t time.Time) interface{} {
-	ts, err := t.MarshalText()
-	if err != nil {
-		return xerrors.Errorf("failed to marshal timestamp to text: %w", err)
+	if len(ent.Fields) > 0 {
+		m = append(m,
+			slog.F("fields", ent.Fields),
+		)
 	}
-	return string(ts)
+
+	v := slogval.Encode(m, nil)
+	buf, err := json.Marshal(v)
+	if err != nil {
+		os.Stderr.WriteString("slogjson: failed to encode entry to JSON: " + err.Error())
+		return
+	}
+
+	buf = append(buf, '\n')
+	_, err = s.w.Write(buf)
+	if err != nil {
+		os.Stderr.WriteString("slogjson: failed to write JSON entry: " + err.Error())
+		return
+	}
 }

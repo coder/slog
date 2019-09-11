@@ -18,34 +18,28 @@ import (
 func Stdlib(ctx context.Context, l Logger) *log.Logger {
 	l.skip += 4
 
-	l = l.clone()
-	for i, s := range l.sinks {
-		if ts, ok := s.sink.(testSink); ok {
-			l.sinks[i].sink = ts.Stdlib()
-		}
-	}
+	l = l.Named("stdlib")
 
 	w := &stdlogWriter{
-		Log: func(msg string) {
-			l.Info(ctx, msg)
-		},
+		ctx: ctx,
+		l:   l,
 	}
 
 	return log.New(w, "", 0)
 }
 
 type stdlogWriter struct {
-	Log func(msg string)
+	ctx context.Context
+	l   Logger
 }
 
 func (w stdlogWriter) Write(p []byte) (n int, err error) {
 	msg := string(p)
-	// stdlib includes a trailing newline on the msg but we will
-	// insert it later in the string method of the entry so
-	// we do not want it here.
+	// stdlib includes a trailing newline on the msg that
+	// we do not want.
 	msg = strings.TrimSuffix(msg, "\n")
 
-	w.Log(msg)
+	w.l.Info(w.ctx, msg)
 
 	return len(p), nil
 }
