@@ -20,7 +20,7 @@ var nhooyrJSON = chroma.MustNewStyle("nhooyrJSON", chroma.StyleEntries{
 	// Magenta.
 	chroma.Name: "#00007f",
 	// Green.
-	chroma.String: "#007f00",
+	// chroma.String: "#007f00",
 })
 
 func highlightJSON(buf []byte) []byte {
