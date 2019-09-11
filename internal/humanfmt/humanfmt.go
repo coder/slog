@@ -20,6 +20,12 @@ import (
 )
 
 // Entry returns a human readable format for ent.
+//
+// We never return with a trailing newline because Go's testing framework adds one
+// automatically and if we include one, then we'll get two newlines.
+// We also do not indent the fields as go's test does that automatically
+// for extra lines in a log so if we did it here, the fields would be indented
+// twice in test logs. So the Stderr logger indents all the fields itself.
 func Entry(ent slog.Entry, enableColor bool) string {
 	var ents string
 	ts := ent.Time.Format(timestampMilli)
@@ -57,24 +63,43 @@ func Entry(ent slog.Entry, enableColor bool) string {
 			slog.F("span", ent.SpanContext.SpanID),
 		), ent.Fields...)
 	}
+
 	m, ok := slogval.Encode(ent.Fields, nil).(slogval.Map)
-	if ok {
-		fields, err := json.MarshalIndent(m, "", "")
-		if err == nil {
-			fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
-			fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
-			fields = highlightJSON(fields)
-			ents += "\t" + string(fields)
-		} else {
-			ents += fmt.Sprintf("\thumanfmt: failed to marshal fields: %+v", err)
+	if !ok || len(m) == 0 {
+		return ents
+	}
+
+	var multilineKey string
+	var multilineVal string
+
+	for i, f := range m {
+		if s, ok := f.Value.(slogval.String); ok && strings.Contains(string(s), "\n") {
+			// Remove this field.
+			m = append(m[:i], m[i+1:]...)
+			multilineKey = f.Name
+			multilineVal = string(s)
+			break
 		}
 	}
 
-	// We never return with a trailing newline because Go's testing framework adds one
-	// automatically and if we include one, then we'll get two newlines.
-	// We also do not indent the fields as go's test does that automatically
-	// for extra lines in a log so if we did it here, the fields would be indented
-	// twice in test logs. So the Stderr logger indents all the fields itself.
+	fields, err := json.MarshalIndent(m, "", "")
+	if err == nil {
+		fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
+		fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
+		fields = highlightJSON(fields)
+		ents += "\t" + string(fields)
+	} else {
+		ents += fmt.Sprintf("\thumanfmt: failed to marshal fields: %+v", err)
+	}
+
+	if multilineVal != "" {
+		multilineVal = strings.TrimSpace(multilineVal)
+		if enableColor {
+			multilineKey = color.BlueString(`"%v"`, multilineKey)
+		}
+		ents += fmt.Sprintf(" ...\n%v: %v", multilineKey, multilineVal)
+	}
+
 	return ents
 }
 

@@ -403,6 +403,7 @@ func (v jsonValue) LogValue() interface{} {
 
 // JSON tells the sink that it is valid
 // to log the value as JSON.
+// TODO this is jank.
 func JSON(v interface{}) Value {
 	return jsonValue{v: v}
 }

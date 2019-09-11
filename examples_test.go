@@ -54,6 +54,7 @@ func TestExample(t *testing.T) {
 			xerrors.Errorf(randStr()+": %w",
 				io.EOF),
 		))
+	_ = err
 	m := slog.Map(
 		slog.F(randStr(), "something or the other"),
 		slog.F("some_map", slog.Map(
@@ -62,25 +63,112 @@ func TestExample(t *testing.T) {
 		slog.F("hi", 3),
 		slog.F("bool", true),
 		slog.F("str", []string{randStr()}),
-	)
-	if rand.Intn(4)%4 == 0 {
+// 		slog.F("diff", cmp.Diff(`1
+// 2
+// 3
+// 3
+// 4
+// 3
+// 4
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// 5`, `1
+// 2
+// 3
+// 3
+// 4
+// 3
+// 4
+// 32
+// 53
+// 1
+// 6
+// 3
+// 4
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+//
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// 32
+// 53
+// 1
+// 23
+// 343
+// 4324
+// 432432
+// `)),
+)
+	// if rand.Intn(4)%4 == 0 {
 		m = append(m, err)
-	}
+	// }
 	l := slogtest.Make(t, nil)
-	l = l.Named(randStr())
+	l = l.Named("my amazing name").Named("subname")
 
-	switch rand.Intn(5) % 5 {
-	case 0:
-		l.Debug(ctx, randStr(), m...)
-	case 1:
-		l.Info(ctx, randStr(), m...)
-	case 2:
-		l.Warn(ctx, randStr(), m...)
-	case 3:
-		l.Error(ctx, randStr(), m...)
-	case 4:
-		l.Critical(ctx, randStr(), m...)
-	}
+	l.Critical(ctx, "my amazing wowowo wo wdasdasd message", m...)
 }
 
 func TestJSON(t *testing.T) {

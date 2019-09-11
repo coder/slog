@@ -46,8 +46,8 @@ func Encode(v interface{}, visit VisitFunc) Value {
 		return fromJSON(v, visit)
 	case fmt.Stringer:
 		return Encode(fmt.Sprintf("%+v", v), visit)
-	case xerrors.Formatter:
-		return extractXErrorChain(v, visit)
+	// case xerrors.Formatter:
+	// 	return extractXErrorChain(v, visit)
 	case error:
 		return Encode(fmt.Sprintf("%+v", v), visit)
 	case string:
