@@ -36,7 +36,10 @@ type testSink struct {
 	stdlib bool
 }
 
-var stderrColor = humanfmt.IsTTY(os.Stderr)
+// We check os.Stdin and not os.Stderr because
+// when multiple packages are being tested, the
+// test does not have access to the real tty stderr.
+var stderrColor = humanfmt.IsTTY(os.Stdin)
 
 func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
 	s := humanfmt.Entry(ent, stderrColor)
