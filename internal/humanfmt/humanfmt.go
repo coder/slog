@@ -53,7 +53,7 @@ func Entry(ent slog.Entry, enableColor bool) string {
 
 	msg := quote(ent.Message)
 	if enableColor {
-		msg = color.New(color.FgGreen).Sprint(msg)
+		// msg = color.New(color.FgGreen).Sprint(msg)
 	}
 	ents += fmt.Sprintf("%v", msg)
 
