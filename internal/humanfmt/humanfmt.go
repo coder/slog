@@ -45,17 +45,17 @@ func Entry(ent slog.Entry, enableColor bool) string {
 		ents += fmt.Sprintf("(%v)\t", component)
 	}
 
+	loc := fmt.Sprintf("%v:%v", filepath.Base(ent.File), ent.Line)
+	if enableColor {
+		loc = color.New(color.FgCyan).Sprint(loc)
+	}
+	ents += fmt.Sprintf("<%v>\t", loc)
+
 	msg := quote(ent.Message)
 	if enableColor {
 		msg = color.New(color.FgGreen).Sprint(msg)
 	}
 	ents += fmt.Sprintf("%v\t", msg)
-
-	loc := fmt.Sprintf("%v:%v", filepath.Base(ent.File), ent.Line)
-	if enableColor {
-		loc = color.New(color.FgCyan).Sprint(loc)
-	}
-	ents += fmt.Sprintf("<%v> ", loc)
 
 	if ent.SpanContext != (trace.SpanContext{}) {
 		ent.Fields = append(slog.Map(
