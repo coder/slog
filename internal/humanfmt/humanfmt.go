@@ -73,11 +73,16 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	var multilineVal string
 
 	for i, f := range m {
-		if s, ok := f.Value.(slogval.String); ok && strings.Contains(string(s), "\n") {
+		if v, ok := f.Value.(slogval.String); ok {
+			s := string(v)
+			s = strings.TrimSpace(s)
+			if !strings.Contains(s, "\n") {
+				continue
+			}
 			// Remove this field.
 			m = append(m[:i], m[i+1:]...)
 			multilineKey = f.Name
-			multilineVal = string(s)
+			multilineVal = s
 			break
 		}
 	}
