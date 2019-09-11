@@ -12,6 +12,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"go.coder.com/slog"
+	"go.coder.com/slog/sloggers/sloghuman"
 	"go.coder.com/slog/sloggers/slogjson"
 	"go.coder.com/slog/sloggers/slogtest"
 )
@@ -180,9 +181,11 @@ func TestExample(t *testing.T) {
 	l := slogtest.Make(t, nil)
 	l = l.Named("my amazing name").Named("subname")
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1; i++ {
 		l.Info(ctx, "my amazing wowowo wo wdasdasd message", m...)
 	}
+
+	sloghuman.Make(os.Stderr).Info(ctx, "my amazing wowowo wo wdasdasd message", m...)
 }
 
 func TestJSON(t *testing.T) {

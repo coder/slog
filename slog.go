@@ -153,7 +153,7 @@ func Make(s Sink) Logger {
 				level: new(int64),
 			},
 		},
-		skip: 1,
+		skip: 0,
 	}
 	l.SetLevel(LevelDebug)
 	return l
@@ -284,7 +284,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 		fields:      fields,
 		spanContext: trace.FromContext(ctx).SpanContext(),
 	}
-	params = params.fillLoc(l.skip + 1)
+	params = params.fillLoc(l.skip + 2)
 
 	for _, s := range l.sinks {
 		slevel := Level(atomic.LoadInt64(s.level))
