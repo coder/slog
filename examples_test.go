@@ -48,6 +48,18 @@ func Example_test() {
 }
 
 func TestExample(t *testing.T) {
+	slogtest.Info(t, "my message here",
+		slog.F("field_name", "something or the other"),
+		slog.F("some_map", slog.Map(
+			slog.F("nested_fields", "wowow"),
+		)),
+		slog.Error(
+			xerrors.Errorf("wrap1: %w",
+				xerrors.Errorf("wrap2: %w",
+					io.EOF),
+			)),
+	)
+
 	ctx := context.Background()
 	err := slog.Error(
 		xerrors.Errorf(randStr()+": %w",
@@ -184,6 +196,8 @@ func TestJSON(t *testing.T) {
 					io.EOF),
 			)),
 	)
+
+	slog.Stdlib(context.Background(), l).Println("hi")
 }
 
 func randStr() string {

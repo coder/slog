@@ -3,6 +3,7 @@ package slog
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"sync"
@@ -153,7 +154,7 @@ func Make(s Sink) Logger {
 				level: new(int64),
 			},
 		},
-		skip: 2,
+		skip: 1,
 	}
 	l.SetLevel(LevelDebug)
 	return l
@@ -339,14 +340,19 @@ func (p entryParams) fillLoc(skip int) entryParams {
 	if !more {
 		return p.fillFromFrame(first)
 	}
+	helpersMu.Lock()
+	defer helpersMu.Unlock()
+
+	frame := first
 	for {
-		frame, more := frames.Next()
-		if !more {
-			return p.fillFromFrame(first)
-		}
+		log.Println(frame.Function)
 		if _, ok := logHelpers[frame.Function]; !ok {
 			// Found a frame that wasn't inside a helper function.
 			return p.fillFromFrame(frame)
+		}
+		frame, more = frames.Next()
+		if !more {
+			return p.fillFromFrame(first)
 		}
 	}
 }

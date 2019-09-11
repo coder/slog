@@ -16,7 +16,7 @@ import (
 // to the Writer on the logger returned by this function.
 // See the example.
 func Stdlib(ctx context.Context, l Logger) *log.Logger {
-	l.skip += 4
+	l.skip += 3
 
 	l = l.Named("stdlib")
 
