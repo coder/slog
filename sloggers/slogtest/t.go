@@ -36,13 +36,11 @@ type testSink struct {
 	stdlib bool
 }
 
-// We check os.Stdin and not os.Stderr because
-// when multiple packages are being tested, the
-// test does not have access to the real tty stderr.
-var stderrColor = humanfmt.IsTTY(os.Stdin)
+// The testing package logs to stdout and not stderr.
+var stdoutColor = humanfmt.IsTTY(os.Stdout)
 
 func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
-	s := humanfmt.Entry(ent, stderrColor)
+	s := humanfmt.Entry(ent, stdoutColor)
 
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:
