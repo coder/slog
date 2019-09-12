@@ -36,11 +36,14 @@ func c(attrs ...color.Attribute) *color.Color {
 func Entry(ent slog.Entry, enableColor bool) string {
 	var ents string
 	ts := ent.Time.Format(timestampMilli)
+	if enableColor {
+		ts = c(color.Bold).Sprint(ts)
+	}
 	ents += ts + " "
 
 	level := "[" + ent.Level.String() + "]"
 	if enableColor {
-		level = c(levelColor(ent.Level)).Sprint(ent.Level)
+		level = c(levelColor(ent.Level)).Sprint(level)
 	}
 	ents += fmt.Sprintf("%v\t", level)
 
