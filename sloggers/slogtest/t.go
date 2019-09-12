@@ -4,12 +4,20 @@ package slogtest // import "go.coder.com/slog/sloggers/slogtest"
 
 import (
 	"context"
+	"log"
 	"os"
 	"testing"
 
 	"go.coder.com/slog"
 	"go.coder.com/slog/internal/humanfmt"
+	"go.coder.com/slog/sloggers/sloghuman"
 )
+
+// Ensure all stdlib logs go through slog.
+func init() {
+	l := sloghuman.Make(os.Stderr)
+	log.SetOutput(slog.Stdlib(context.Background(), l).Writer())
+}
 
 // Options represents the options for the logger returned
 // by Make.
