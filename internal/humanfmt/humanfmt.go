@@ -41,7 +41,7 @@ func Entry(ent slog.Entry, enableColor bool) string {
 
 	level := "[" + ent.Level.String() + "]"
 	if enableColor {
-		level = c(levelColor(ent.Level)).Sprint(level)
+		level = c(levelColor(ent.Level), color.Bold).Sprint(level)
 	}
 	ents += fmt.Sprintf("%v\t", level)
 
@@ -58,7 +58,6 @@ func Entry(ent slog.Entry, enableColor bool) string {
 		loc = c(color.FgCyan).Sprint(loc)
 	}
 	ents += fmt.Sprintf("%v\t", loc)
-
 
 	var multilineKey string
 	var multilineVal string
