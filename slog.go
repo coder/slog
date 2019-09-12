@@ -278,7 +278,7 @@ func (l Logger) SetLevel(level Level) {
 
 func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field) {
 	params := entryParams{
-		time:        time.Now(),
+		time:        time.Now().UTC(),
 		level:       level,
 		msg:         msg,
 		fields:      fields,

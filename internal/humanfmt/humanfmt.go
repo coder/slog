@@ -35,7 +35,8 @@ func c(attrs ...color.Attribute) *color.Color {
 // twice in test logs. So the Stderr logger indents all the fields itself.
 func Entry(ent slog.Entry, enableColor bool) string {
 	var ents string
-	ts := ent.Time.Format(timestampMilli)
+	// Simplified RFC3339 format.
+	ts := ent.Time.Format(`2006-01-02 15:04:05.000`)
 	ents += ts + " "
 
 	level := "[" + ent.Level.String() + "]"
@@ -117,9 +118,6 @@ func Entry(ent slog.Entry, enableColor bool) string {
 
 	return ents
 }
-
-// Same as time.StampMilli but the days in the month padded by zeros.
-const timestampMilli = "Jan 02 15:04:05.000"
 
 func levelColor(level slog.Level) color.Attribute {
 	switch level {
