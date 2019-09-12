@@ -59,7 +59,16 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	}
 	ents += fmt.Sprintf("%v\t", loc)
 
-	msg := quote(ent.Message)
+
+	var multilineKey string
+	var multilineVal string
+	msg := strings.TrimSpace(ent.Message)
+	if strings.Contains(msg, "\n") {
+		multilineKey = "msg"
+		multilineVal = msg
+		msg = "multiline message"
+	}
+	msg = quote(msg)
 	ents += msg
 
 	if ent.SpanContext != (trace.SpanContext{}) {
@@ -69,10 +78,11 @@ func Entry(ent slog.Entry, enableColor bool) string {
 		), ent.Fields...)
 	}
 
-	var multilineKey string
-	var multilineVal string
-
 	for i, f := range ent.Fields {
+		if multilineVal != "" {
+			break
+		}
+
 		var s string
 		switch v := f.LogValue().(type) {
 		case string:
@@ -92,20 +102,18 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	}
 
 	m, ok := slogval.Encode(ent.Fields, nil).(slogval.Map)
-	if !ok || len(m) == 0 {
-		return ents
-	}
-
-	fields, err := json.MarshalIndent(m, "", "")
-	if err == nil {
-		fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
-		fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
-		if enableColor {
-			fields = highlightJSON(fields)
+	if ok && len(m) > 0 {
+		fields, err := json.MarshalIndent(m, "", "")
+		if err == nil {
+			fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
+			fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
+			if enableColor {
+				fields = highlightJSON(fields)
+			}
+			ents += "\t" + string(fields)
+		} else {
+			ents += fmt.Sprintf("\thumanfmt: failed to marshal fields: %+v", err)
 		}
-		ents += "\t" + string(fields)
-	} else {
-		ents += fmt.Sprintf("\thumanfmt: failed to marshal fields: %+v", err)
 	}
 
 	if multilineVal != "" {

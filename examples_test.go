@@ -186,6 +186,7 @@ func TestExample(t *testing.T) {
 	}
 
 	sloghuman.Make(os.Stderr).Info(ctx, "my amazing wowowo wo wdasdasd message", m...)
+	slog.Stdlib(context.Background(), l).Println("hi\nmeow")
 }
 
 func TestJSON(t *testing.T) {
@@ -202,7 +203,7 @@ func TestJSON(t *testing.T) {
 			)),
 	)
 
-	slog.Stdlib(context.Background(), l).Println("hi")
+	slog.Stdlib(context.Background(), l).Println("hi\nmeow")
 }
 
 func randStr() string {
