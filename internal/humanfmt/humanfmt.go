@@ -41,7 +41,7 @@ func Entry(ent slog.Entry, enableColor bool) string {
 
 	level := "[" + ent.Level.String() + "]"
 	if enableColor {
-		level = c(levelColor(ent.Level), color.Bold).Sprint(level)
+		level = c(levelColor(ent.Level)).Sprint(level)
 	}
 	ents += fmt.Sprintf("%v\t", level)
 
