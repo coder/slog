@@ -36,14 +36,11 @@ func c(attrs ...color.Attribute) *color.Color {
 func Entry(ent slog.Entry, enableColor bool) string {
 	var ents string
 	ts := ent.Time.Format(timestampMilli)
-	if enableColor {
-		// ts = c(color.Bold).Sprint(ts)
-	}
 	ents += ts + " "
 
 	level := "[" + ent.Level.String() + "]"
 	if enableColor {
-		level = c(levelColor(ent.Level), color.Bold).Sprint(level)
+		level = c(levelColor(ent.Level)).Sprint(level)
 	}
 	ents += fmt.Sprintf("%v\t", level)
 
@@ -61,7 +58,8 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	}
 	ents += fmt.Sprintf("%v\t", loc)
 
-	ents += quote(ent.Message)
+	msg := quote(ent.Message)
+	ents += msg
 
 	if ent.SpanContext != (trace.SpanContext{}) {
 		ent.Fields = append(slog.Map(
