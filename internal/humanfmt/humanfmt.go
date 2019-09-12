@@ -20,6 +20,12 @@ import (
 	"go.coder.com/slog/slogval"
 )
 
+func c(attrs ...color.Attribute) *color.Color {
+	c := color.New(attrs...)
+	c.EnableColor()
+	return c
+}
+
 // Entry returns a human readable format for ent.
 //
 // We never return with a trailing newline because Go's testing framework adds one
@@ -32,31 +38,27 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	ts := ent.Time.Format(timestampMilli)
 	ents += ts + " "
 
-	level := ent.Level.String()
+	level := "[" + ent.Level.String() + "]"
 	if enableColor {
-		level = color.New(levelColor(ent.Level)).Sprint(ent.Level)
+		level = c(levelColor(ent.Level)).Sprint(ent.Level)
 	}
-	ents += fmt.Sprintf("[%v]\t", level)
+	ents += fmt.Sprintf("%v\t", level)
 
 	if ent.LoggerName != "" {
-		component := quoteKey(ent.LoggerName)
+		component := "(" + quoteKey(ent.LoggerName) + ")"
 		if enableColor {
-			component = color.New(color.FgMagenta).Sprint(component)
+			component = c(color.FgMagenta).Sprint(component)
 		}
-		ents += fmt.Sprintf("(%v)\t", component)
+		ents += fmt.Sprintf("%v\t", component)
 	}
 
-	loc := fmt.Sprintf("%v:%v", filepath.Base(ent.File), ent.Line)
+	loc := fmt.Sprintf("<%v:%v>", filepath.Base(ent.File), ent.Line)
 	if enableColor {
-		loc = color.New(color.FgCyan).Sprint(loc)
+		loc = c(color.FgCyan).Sprint(loc)
 	}
-	ents += fmt.Sprintf("<%v>\t", loc)
+	ents += fmt.Sprintf("%v\t", loc)
 
-	msg := quote(ent.Message)
-	if enableColor {
-		// msg = color.New(color.FgGreen).Sprint(msg)
-	}
-	ents += fmt.Sprintf("%v", msg)
+	ents += quote(ent.Message)
 
 	if ent.SpanContext != (trace.SpanContext{}) {
 		ent.Fields = append(slog.Map(
@@ -107,7 +109,7 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	if multilineVal != "" {
 		multilineVal = strings.TrimSpace(multilineVal)
 		if enableColor {
-			multilineKey = color.BlueString(`"%v"`, multilineKey)
+			multilineKey = c(color.FgBlue).Sprintf(`"%v"`, multilineKey)
 		}
 		ents += fmt.Sprintf(" ...\n%v: %v", multilineKey, multilineVal)
 	}

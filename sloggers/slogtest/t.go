@@ -11,18 +11,18 @@ import (
 	"go.coder.com/slog/internal/humanfmt"
 )
 
-// TestOptions represents the options for the logger returned
+// Options represents the options for the logger returned
 // by Make.
-type TestOptions struct {
+type Options struct {
 	// IgnoreErrors causes the test logger to not fatal the test
 	// on Fatal and not error the test on Error or Critical.
 	IgnoreErrors bool
 }
 
 // Make creates a Logger that writes logs to tb in a human readable format.
-func Make(tb testing.TB, opts *TestOptions) slog.Logger {
+func Make(tb testing.TB, opts *Options) slog.Logger {
 	if opts == nil {
-		opts = &TestOptions{}
+		opts = &Options{}
 	}
 	return slog.Make(testSink{
 		tb:   tb,
@@ -32,17 +32,15 @@ func Make(tb testing.TB, opts *TestOptions) slog.Logger {
 
 type testSink struct {
 	tb     testing.TB
-	opts   *TestOptions
+	opts   *Options
 	stdlib bool
 }
 
-// We check os.Stdin and not os.Stderr because
-// when multiple packages are being tested, the
-// test does not have access to the real tty stderr.
-var stderrColor = humanfmt.IsTTY(os.Stdin)
+// The testing package logs to stdout and not stderr.
+var stdoutColor = humanfmt.IsTTY(os.Stdout) || os.Getenv("FORCE_COLOR") != ""
 
 func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
-	s := humanfmt.Entry(ent, stderrColor)
+	s := humanfmt.Entry(ent, stdoutColor)
 
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:

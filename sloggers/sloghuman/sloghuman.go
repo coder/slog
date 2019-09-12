@@ -5,6 +5,7 @@ package sloghuman // import "go.coder.com/slog/sloggers/sloghuman"
 import (
 	"context"
 	"io"
+	"os"
 	"strings"
 
 	"go.coder.com/slog"
@@ -42,6 +43,6 @@ func (s humanSink) LogEntry(ctx context.Context, ent slog.Entry) {
 func Make(w io.Writer) slog.Logger {
 	return slog.Make(&humanSink{
 		w:     syncwriter.New(w),
-		color: humanfmt.IsTTY(w),
+		color: humanfmt.IsTTY(w) || os.Getenv("FORCE_COLOR") != "",
 	})
 }
