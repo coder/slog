@@ -77,7 +77,7 @@ func Entry(ent slog.Entry, enableColor bool) string {
 		switch v := f.LogValue().(type) {
 		case string:
 			s = v
-		case xerrors.Formatter:
+		case error, xerrors.Formatter:
 			s = fmt.Sprintf("%+v", v)
 		}
 		s = strings.TrimSpace(s)
