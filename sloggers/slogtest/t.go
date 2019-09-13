@@ -67,6 +67,10 @@ func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
 	}
 }
 
+func (ts testSink) Sync() error {
+	return nil
+}
+
 var ctx = context.Background()
 
 // Debug logs the given msg and fields to t via t.Log at the debug level.

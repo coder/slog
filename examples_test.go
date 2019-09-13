@@ -2,10 +2,11 @@ package slog_test
 
 import (
 	"context"
-	"golang.org/x/xerrors"
 	"io"
 	"os"
 	"testing"
+
+	"golang.org/x/xerrors"
 
 	"go.coder.com/slog"
 	"go.coder.com/slog/sloggers/slogjson"

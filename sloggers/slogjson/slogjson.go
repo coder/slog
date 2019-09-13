@@ -21,20 +21,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"os"
-
 	"go.opencensus.io/trace"
+	"golang.org/x/xerrors"
+	"io"
 
 	"go.coder.com/slog"
 	"go.coder.com/slog/internal/humanfmt"
 	"go.coder.com/slog/internal/syncwriter"
-	"go.coder.com/slog/slogval"
 )
 
 // Make creates a logger that writes JSON logs
 // to the given writer. See package level docs
 // for the format.
+// If the writer implements Sync() error then
+// it will be called when syncing.
 func Make(w io.Writer) slog.Logger {
 	return slog.Make(jsonSink{
 		w:     syncwriter.New(w),
@@ -47,7 +47,7 @@ type jsonSink struct {
 	color bool
 }
 
-func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) {
+func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) error {
 	m := slog.Map(
 		slog.F("ts", ent.Time),
 		slog.F("level", ent.Level),
@@ -70,17 +70,20 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) {
 		)
 	}
 
-	v := slogval.Encode(m, nil)
+	v := slog.Encode(m, nil)
 	buf, err := json.Marshal(v)
 	if err != nil {
-		os.Stderr.WriteString("slogjson: failed to encode entry to JSON: " + err.Error())
-		return
+		return xerrors.Errorf("slogjson: failed to encode entry to JSON: %w", err)
 	}
 
 	buf = append(buf, '\n')
 	_, err = s.w.Write(buf)
 	if err != nil {
-		os.Stderr.WriteString("slogjson: failed to write JSON entry: " + err.Error())
-		return
+		return xerrors.Errorf("slogjson: failed to write JSON entry: %w", err)
 	}
+	return nil
+}
+
+func (s jsonSink) Sync() error {
+	return s.w.Sync()
 }

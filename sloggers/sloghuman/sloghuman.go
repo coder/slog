@@ -13,12 +13,24 @@ import (
 	"go.coder.com/slog/internal/syncwriter"
 )
 
+// Make creates a logger that writes logs in a human
+// readable YAML like format to the given writer.
+//
+// If the writer implements Sync() error then
+// it will be called when syncing.
+func Make(w io.Writer) slog.Logger {
+	return slog.Make(&humanSink{
+		w:     syncwriter.New(w),
+		color: humanfmt.IsTTY(w) || os.Getenv("FORCE_COLOR") != "",
+	})
+}
+
 type humanSink struct {
 	w     *syncwriter.Writer
 	color bool
 }
 
-func (s humanSink) LogEntry(ctx context.Context, ent slog.Entry) {
+func (s humanSink) LogEntry(ctx context.Context, ent slog.Entry) error {
 	str := humanfmt.Entry(ent, s.color)
 	lines := strings.Split(str, "\n")
 
@@ -36,13 +48,9 @@ func (s humanSink) LogEntry(ctx context.Context, ent slog.Entry) {
 	str = strings.Join(lines, "\n")
 
 	io.WriteString(s.w, str+"\n")
+	return nil
 }
 
-// Make creates a logger that writes logs in a human
-// readable YAML like format to the given writer.
-func Make(w io.Writer) slog.Logger {
-	return slog.Make(&humanSink{
-		w:     syncwriter.New(w),
-		color: humanfmt.IsTTY(w) || os.Getenv("FORCE_COLOR") != "",
-	})
+func (s humanSink) Sync() error {
+	return s.w.Sync()
 }

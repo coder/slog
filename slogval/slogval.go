@@ -74,19 +74,19 @@ func (f List) isSlogCoreValue() Value {
 	return f
 }
 
-// appendVal appends an entry with the given key
+// Append appends an entry with the given key
 // and val to the map.
-func (m Map) appendVal(key string, val Value) Map {
+func (m Map) Append(key string, val Value) Map {
 	return append(m, Field{
 		key,
 		val,
 	})
 }
 
-// sort sorts the fields by name.
+// Sort sorts the fields by name.
 // Only used when the fields represent a Go map to ensure
 // stable key order.
-func (m Map) sort() {
+func (m Map) Sort() {
 	sort.Slice(m, func(i, j int) bool {
 		return m[i].Name < m[j].Name
 	})

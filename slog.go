@@ -141,7 +141,8 @@ func (l Level) String() string {
 
 // Sink is the destination of a Logger.
 type Sink interface {
-	LogEntry(ctx context.Context, e Entry)
+	LogEntry(ctx context.Context, e Entry) error
+	Sync() error
 }
 
 // Make creates a logger that writes logs to sink.
@@ -279,15 +280,15 @@ func (l Logger) SetLevel(level Level) {
 }
 
 func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field) {
-	params := entryParams{
-		time:        time.Now().UTC(),
-		level:       level,
-		msg:         msg,
-		fields:      fields,
-		spanContext: trace.FromContext(ctx).SpanContext(),
+	ent := Entry{
+		Time:        time.Now().UTC(),
+		Level:       level,
+		Message:     msg,
+		Fields:      fields,
+		SpanContext: trace.FromContext(ctx).SpanContext(),
 	}
 	l.helpersMu.Lock()
-	params = params.fillLoc(l.helpers, l.skip+2)
+	ent = ent.fillLoc(l.helpers, l.skip+2)
 	l.helpersMu.Unlock()
 
 	for _, s := range l.sinks {
@@ -296,9 +297,11 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 			// We will not log levels below the current log level.
 			continue
 		}
-		ent := s.entry(ctx, params)
-
-		s.sink.LogEntry(ctx, ent)
+		err := s.sink.LogEntry(ctx, s.entry(ctx, ent))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "slog: sink with name %v and type %T failed to log entry: %+v", s.name, s.sink, err)
+			continue
+		}
 	}
 
 	if level == LevelFatal {
@@ -306,27 +309,26 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 	}
 }
 
-type entryParams struct {
-	time   time.Time
-	level  Level
-	msg    string
-	fields []Field
-
-	file string
-	line int
-	fn   string
-
-	spanContext trace.SpanContext
+// Sync calls Sync on the sinks underlying the logger.
+// Used it to ensure all logs are flushed during exit.
+func (l Logger) Sync() {
+	for _, s := range l.sinks {
+		err := s.sink.Sync()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "slog: sink with name %v and type %T failed to sync: %+v", s.name, s.sink, err)
+			continue
+		}
+	}
 }
 
-func (p entryParams) fillFromFrame(f runtime.Frame) entryParams {
-	p.fn = f.Function
-	p.file = f.File
-	p.line = f.Line
-	return p
+func (ent Entry) fillFromFrame(f runtime.Frame) Entry {
+	ent.Func = f.Function
+	ent.File = f.File
+	ent.Line = f.Line
+	return ent
 }
 
-func (p entryParams) fillLoc(helpers map[string]struct{}, skip int) entryParams {
+func (ent Entry) fillLoc(helpers map[string]struct{}, skip int) Entry {
 	// Copied from testing.T
 	const maxStackLen = 50
 	var pc [maxStackLen]uintptr
@@ -341,38 +343,29 @@ func (p entryParams) fillLoc(helpers map[string]struct{}, skip int) entryParams 
 	frames := runtime.CallersFrames(pc[:n])
 	first, more := frames.Next()
 	if !more {
-		return p.fillFromFrame(first)
+		return ent.fillFromFrame(first)
 	}
 
 	frame := first
 	for {
 		if _, ok := helpers[frame.Function]; !ok {
 			// Found a frame that wasn't inside a helper function.
-			return p.fillFromFrame(frame)
+			return ent.fillFromFrame(frame)
 		}
 		frame, more = frames.Next()
 		if !more {
-			return p.fillFromFrame(first)
+			return ent.fillFromFrame(first)
 		}
 	}
 }
 
-func (s sink) entry(ctx context.Context, params entryParams) Entry {
+func (s sink) entry(ctx context.Context, ent Entry) Entry {
 	s = s.withContext(ctx)
-	s = s.withFields(params.fields)
+	s = s.withFields(ent.Fields)
+	s = s.named(ent.LoggerName)
 
-	ent := Entry{
-		Time:        params.time,
-		Level:       params.level,
-		LoggerName:  s.name,
-		Message:     params.msg,
-		SpanContext: params.spanContext,
-		Fields:      s.fields,
-
-		File: params.file,
-		Line: params.line,
-		Func: params.fn,
-	}
+	ent.LoggerName = s.name
+	ent.Fields = s.fields
 
 	return ent
 }
