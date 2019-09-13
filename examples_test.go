@@ -29,14 +29,14 @@ func Example_test() {
 			)),
 	)
 
-	//     t.go:55: 2019-09-13 19:27:15.336 [INFO]	<examples_test.go:47>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "wowow"}} ...
-	//        "error": wrap1:
-	//            go.coder.com/slog_test.TestExample
-	//                /Users/nhooyr/src/cdr/slog/examples_test.go:53
-	//          - wrap2:
-	//            go.coder.com/slog_test.TestExample
-	//                /Users/nhooyr/src/cdr/slog/examples_test.go:54
-	//          - EOF
+	// t.go:55: 2019-09-13 23:19:03.468 [INFO]	<examples_test.go:43>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "wowow"}} ...
+	//     "error": wrap1:
+	//         go.coder.com/slog_test.TestExample
+	//             /Users/nhooyr/src/cdr/slog/examples_test.go:49
+	//       - wrap2:
+	//         go.coder.com/slog_test.TestExample
+	//             /Users/nhooyr/src/cdr/slog/examples_test.go:50
+	//       - EOF
 }
 
 func TestExample(t *testing.T) {
