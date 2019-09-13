@@ -18,9 +18,9 @@ go get go.coder.com/slog
 - Minimal API
 - Tiny codebase
 - First class [context.Context](https://blog.golang.org/context) support
+- First class [testing.TB](https://godoc.org/go.coder.com/slog/slogtest) support
 - Beautiful logging output by default
 - Multiple adapters
-- First class [testing.TB](https://godoc.org/go.coder.com/slog/slogtest) support
 
 ## Example
 

@@ -50,6 +50,8 @@ func encode(rv reflect.Value) slogval.Value {
 		m := make(slogval.Map, 0, typ.NumField())
 		m = reflectStruct(m, rv, typ, true)
 		return m
+	case typ == reflect.TypeOf(forceReflectValue{}):
+		return reflectValue(rv.FieldByName("V").Elem())
 	case implements(typ, (*Value)(nil)):
 		m := rv.MethodByName("LogValue")
 		lv := m.Call(nil)

@@ -416,9 +416,13 @@ func JSON(v interface{}) interface{} {
 	return jsonValue{V: v}
 }
 
+type forceReflectValue struct {
+	V interface{}
+}
+
 // Reflect tells Encode that the value
 // should be logged with pure reflect instead
 // of using any of the interfaces.
 func Reflect(v interface{}) interface{} {
-	panic("TODO")
+	return forceReflectValue{V: v}
 }
