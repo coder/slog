@@ -305,6 +305,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 	}
 
 	if level == LevelFatal {
+		l.Sync()
 		os.Exit(1)
 	}
 }
