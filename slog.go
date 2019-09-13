@@ -402,19 +402,23 @@ func Tee(ls ...Logger) Logger {
 }
 
 type jsonValue struct {
-	v interface{}
-}
-
-func (v jsonValue) LogValueJSON() interface{} {
-	return v.v
-}
-
-func (v jsonValue) LogValue() interface{} {
-	return v.v
+	V interface{}
 }
 
 // JSON tells the sink that it is valid
-// to log the value as JSON.
-func JSON(v interface{}) Value {
-	return jsonValue{v: v}
+// to log the value obeying the rules
+// of encoding/json (i.e tags).
+//
+// In general, json tags for omitting
+// empty and changing field names are respected
+// but this makes unexported fields ignored.
+func JSON(v interface{}) interface{} {
+	return jsonValue{V: v}
+}
+
+// Reflect tells Encode that the value
+// should be logged with pure reflect instead
+// of using any of the interfaces.
+func Reflect(v interface{}) interface{} {
+	panic("TODO")
 }
