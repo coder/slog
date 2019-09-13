@@ -33,6 +33,8 @@ type syncer interface {
 
 var _ syncer = &os.File{}
 
+// Sync calls Sync on the underlying writer
+// if possible.
 func (w *Writer) Sync() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()

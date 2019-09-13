@@ -47,7 +47,7 @@ type testSink struct {
 // The testing package logs to stdout and not stderr.
 var stdoutColor = humanfmt.IsTTY(os.Stdout) || os.Getenv("FORCE_COLOR") != ""
 
-func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
+func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) error {
 	s := humanfmt.Entry(ent, stdoutColor)
 
 	switch ent.Level {
@@ -65,6 +65,7 @@ func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) {
 		}
 		ts.tb.Fatal(s)
 	}
+	return nil
 }
 
 func (ts testSink) Sync() error {

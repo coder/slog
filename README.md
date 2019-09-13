@@ -18,9 +18,9 @@ go get go.coder.com/slog
 - Minimal API
 - Tiny codebase
 - First class [context.Context](https://blog.golang.org/context) support
+- First class [testing.TB](https://godoc.org/go.coder.com/slog/slogtest) support
 - Beautiful logging output by default
 - Multiple adapters
-- First class [testing.TB](https://godoc.org/go.coder.com/slog/slogtest) support
 
 ## Example
 
@@ -35,18 +35,10 @@ slogtest.Info(t, "my message here",
             xerrors.Errorf("wrap2: %w",
                 io.EOF),
         )),
-    slog.Component("test"),
 )
-
-//     t.go:55: 2019-09-13 19:27:15.336 [INFO]	<examples_test.go:47>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "wowow"}} ...
-//        "error": wrap1:
-//            go.coder.com/slog_test.TestExample
-//                /Users/nhooyr/src/cdr/slog/examples_test.go:53
-//          - wrap2:
-//            go.coder.com/slog_test.TestExample
-//                /Users/nhooyr/src/cdr/slog/examples_test.go:54
-//          - EOF
 ```
+
+![Example output screenshot](https://i.imgur.com/o8uW4Oy.png)
 
 ## Design justifications
 

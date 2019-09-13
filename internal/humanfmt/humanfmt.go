@@ -100,7 +100,7 @@ func Entry(ent slog.Entry, enableColor bool) string {
 		multilineVal = s
 	}
 
-	m, ok := slog.Encode(ent.Fields, nil).(slogval.Map)
+	m, ok := slog.Encode(ent.Fields).(slogval.Map)
 	if ok && len(m) > 0 {
 		fields, err := json.MarshalIndent(m, "", "")
 		if err == nil {

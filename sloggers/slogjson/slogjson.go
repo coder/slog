@@ -21,9 +21,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
-	"io"
 
 	"go.coder.com/slog"
 	"go.coder.com/slog/internal/humanfmt"
@@ -70,7 +71,7 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) error {
 		)
 	}
 
-	v := slog.Encode(m, nil)
+	v := slog.Encode(m)
 	buf, err := json.Marshal(v)
 	if err != nil {
 		return xerrors.Errorf("slogjson: failed to encode entry to JSON: %w", err)

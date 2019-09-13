@@ -16,7 +16,7 @@ type Value interface {
 	// to reconstruct the field ourselves as we cannot
 	// access it directly without an accessor method
 	// in case its on an unexported struct.
-	isSlogCoreValue() Value
+	SlogValue() Value
 }
 
 // Field represents a field in the Map.
@@ -28,49 +28,56 @@ type Field struct {
 // String represents a string.
 type String string
 
-func (f String) isSlogCoreValue() Value {
+// SlogValue implements Value.
+func (f String) SlogValue() Value {
 	return f
 }
 
 // Int represents an integer.
 type Int int64
 
-func (f Int) isSlogCoreValue() Value {
+// SlogValue implements Value.
+func (f Int) SlogValue() Value {
 	return f
 }
 
 // Uint represents an unsigned integer.
 type Uint uint64
 
-func (f Uint) isSlogCoreValue() Value {
+// SlogValue implements Value.
+func (f Uint) SlogValue() Value {
 	return f
 }
 
 // Float represents a floating point number.
 type Float float64
 
-func (f Float) isSlogCoreValue() Value {
+// SlogValue implements Value.
+func (f Float) SlogValue() Value {
 	return f
 }
 
 // Bool represents a boolean.
 type Bool bool
 
-func (f Bool) isSlogCoreValue() Value {
+// SlogValue implements Value.
+func (f Bool) SlogValue() Value {
 	return f
 }
 
 // Map represents a ordered map.
 type Map []Field
 
-func (m Map) isSlogCoreValue() Value {
+// SlogValue implements Value.
+func (m Map) SlogValue() Value {
 	return m
 }
 
 // List represents a list of values.
 type List []Value
 
-func (f List) isSlogCoreValue() Value {
+// SlogValue implements Value.
+func (f List) SlogValue() Value {
 	return f
 }
 
