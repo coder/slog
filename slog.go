@@ -146,14 +146,12 @@ type Sink interface {
 
 // Make creates a logger that writes logs to sink.
 func Make(s Sink) Logger {
-	l := Logger{
-		sinks: []sink{
-			{
-				sink:  s,
-				level: new(int64),
-			},
+	l := makeLogger()
+	l.sinks = []sink{
+		{
+			sink:  s,
+			level: new(int64),
 		},
-		skip: 0,
 	}
 	l.SetLevel(LevelDebug)
 	return l
@@ -194,6 +192,9 @@ func (s sink) withContext(ctx context.Context) sink {
 // Logger allows logging a ordered slice of fields
 // to an underlying set of sinks.
 type Logger struct {
+	helpersMu *sync.Mutex
+	helpers   map[string]struct{}
+
 	sinks []sink
 	skip  int
 }
@@ -233,16 +234,17 @@ func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelFatal, msg, fields)
 }
 
-var helpersMu = &sync.Mutex{}
-var logHelpers = map[string]struct{}{}
-
 // Helper marks the calling function as a helper
 // and skips it for source location information.
 func (l Logger) Helper() {
-	helpersMu.Lock()
-	defer helpersMu.Unlock()
 	_, _, fn := location(1)
-	logHelpers[fn] = struct{}{}
+	l.addHelper(fn)
+}
+
+func (l Logger) addHelper(fn string) {
+	l.helpersMu.Lock()
+	l.helpers[fn] = struct{}{}
+	l.helpersMu.Unlock()
 }
 
 // With returns a Logger that prepends the given fields on every
@@ -284,7 +286,9 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 		fields:      fields,
 		spanContext: trace.FromContext(ctx).SpanContext(),
 	}
-	params = params.fillLoc(l.skip + 2)
+	l.helpersMu.Lock()
+	params = params.fillLoc(l.helpers, l.skip+2)
+	l.helpersMu.Unlock()
 
 	for _, s := range l.sinks {
 		slevel := Level(atomic.LoadInt64(s.level))
@@ -322,7 +326,7 @@ func (p entryParams) fillFromFrame(f runtime.Frame) entryParams {
 	return p
 }
 
-func (p entryParams) fillLoc(skip int) entryParams {
+func (p entryParams) fillLoc(helpers map[string]struct{}, skip int) entryParams {
 	// Copied from testing.T
 	const maxStackLen = 50
 	var pc [maxStackLen]uintptr
@@ -339,12 +343,10 @@ func (p entryParams) fillLoc(skip int) entryParams {
 	if !more {
 		return p.fillFromFrame(first)
 	}
-	helpersMu.Lock()
-	defer helpersMu.Unlock()
 
 	frame := first
 	for {
-		if _, ok := logHelpers[frame.Function]; !ok {
+		if _, ok := helpers[frame.Function]; !ok {
 			// Found a frame that wasn't inside a helper function.
 			return p.fillFromFrame(frame)
 		}
@@ -384,11 +386,24 @@ func location(skip int) (file string, line int, fn string) {
 	return file, line, f.Name()
 }
 
+func makeLogger() Logger {
+	return Logger{
+		helpersMu: &sync.Mutex{},
+		helpers:   make(map[string]struct{}),
+	}
+}
+
 // Tee enables logging to multiple loggers.
 func Tee(ls ...Logger) Logger {
-	var l Logger
+	l := makeLogger()
 	for _, l2 := range ls {
 		l.sinks = append(l.sinks, l2.sinks...)
+
+		l2.helpersMu.Lock()
+		for h := range l2.helpers {
+			l.addHelper(h)
+		}
+		l2.helpersMu.Unlock()
 	}
 	return l
 }
@@ -407,7 +422,6 @@ func (v jsonValue) LogValue() interface{} {
 
 // JSON tells the sink that it is valid
 // to log the value as JSON.
-// TODO this is jank.
 func JSON(v interface{}) Value {
 	return jsonValue{v: v}
 }

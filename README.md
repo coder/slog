@@ -38,18 +38,13 @@ slogtest.Info(t, "my message here",
     slog.Component("test"),
 )
 
-// --- PASS: TestExample (0.00s)
-//    examples_test.go:49: [INFO] {slogtest.go:101} (test) Sep 09 16:17:46.925: my message here
-//        field_name: something or the other
-//        some_map:
-//          nested_fields: wowow
-//        error:
-//          - wrap1
+//     t.go:55: 2019-09-13 19:27:15.336 [INFO]	<examples_test.go:47>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "wowow"}} ...
+//        "error": wrap1:
 //            go.coder.com/slog_test.TestExample
-//              /Users/nhooyr/src/cdr/slog/examples_test.go:55
-//          - wrap2
+//                /Users/nhooyr/src/cdr/slog/examples_test.go:53
+//          - wrap2:
 //            go.coder.com/slog_test.TestExample
-//              /Users/nhooyr/src/cdr/slog/examples_test.go:56
+//                /Users/nhooyr/src/cdr/slog/examples_test.go:54
 //          - EOF
 ```
 
