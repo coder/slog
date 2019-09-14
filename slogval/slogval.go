@@ -12,11 +12,7 @@ import (
 
 // Value represents a primitive value for structured logging.
 type Value interface {
-	// This returns the Value so that we do not need
-	// to reconstruct the field ourselves as we cannot
-	// access it directly without an accessor method
-	// in case its on an unexported struct.
-	SlogValue() Value
+	slogValue() Value
 }
 
 // Field represents a field in the Map.
@@ -28,56 +24,56 @@ type Field struct {
 // String represents a string.
 type String string
 
-// SlogValue implements Value.
-func (f String) SlogValue() Value {
+// slogValue implements Value.
+func (f String) slogValue() Value {
 	return f
 }
 
 // Int represents an integer.
 type Int int64
 
-// SlogValue implements Value.
-func (f Int) SlogValue() Value {
+// slogValue implements Value.
+func (f Int) slogValue() Value {
 	return f
 }
 
 // Uint represents an unsigned integer.
 type Uint uint64
 
-// SlogValue implements Value.
-func (f Uint) SlogValue() Value {
+// slogValue implements Value.
+func (f Uint) slogValue() Value {
 	return f
 }
 
 // Float represents a floating point number.
 type Float float64
 
-// SlogValue implements Value.
-func (f Float) SlogValue() Value {
+// slogValue implements Value.
+func (f Float) slogValue() Value {
 	return f
 }
 
 // Bool represents a boolean.
 type Bool bool
 
-// SlogValue implements Value.
-func (f Bool) SlogValue() Value {
+// slogValue implements Value.
+func (f Bool) slogValue() Value {
 	return f
 }
 
 // Map represents a ordered map.
 type Map []Field
 
-// SlogValue implements Value.
-func (m Map) SlogValue() Value {
+// slogValue implements Value.
+func (m Map) slogValue() Value {
 	return m
 }
 
 // List represents a list of values.
 type List []Value
 
-// SlogValue implements Value.
-func (f List) SlogValue() Value {
+// slogValue implements Value.
+func (f List) slogValue() Value {
 	return f
 }
 

@@ -406,24 +406,10 @@ type jsonValue struct {
 	V interface{}
 }
 
-// JSON tells the sink that it is valid
-// to log the value obeying the rules
-// of encoding/json (i.e tags).
-//
-// In general, json tags for omitting
-// empty and changing field names are respected
-// but this makes unexported fields ignored.
+// JSON tells the encoder that the struct in v
+// should be encoded obeying JSON struct tags.
+// Field names can be adjusted and omitempty
+// is obeyed.
 func JSON(v interface{}) interface{} {
 	return jsonValue{V: v}
-}
-
-type forceReflectValue struct {
-	V interface{}
-}
-
-// Reflect tells Encode that the value
-// should be logged with pure reflect instead
-// of using any of the interfaces.
-func Reflect(v interface{}) interface{} {
-	return forceReflectValue{V: v}
 }

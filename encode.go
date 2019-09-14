@@ -16,83 +16,62 @@ import (
 // Encode encodes the interface to a structured and easily
 // introspectable slogval.Value.
 func Encode(v interface{}) slogval.Value {
-	return encode(reflect.ValueOf(v))
+	return encodeInterface(v)
 }
 
-func encode(rv reflect.Value) slogval.Value {
-	if !rv.IsValid() {
-		// reflect.ValueOf(nil).IsValid == false
+func encode(rv reflect.Value, pure bool) slogval.Value {
+	if pure {
+		return encodeReflect(rv, true)
+	}
+	return encodeInterface(rv.Interface())
+}
+
+func encodeInterface(v interface{}) slogval.Value {
+	if v == nil {
 		return nil
 	}
 
-	// We always want to look at the actual type in the interface.
-	// Otherwise we cannot check if e.g. an error variable implements
-	// the Value interface. If this statement was not here, we would see
-	// the error variable always does not implement the Value interface
-	// but does implement Error. With this, we check the concrete value instead.
-	if rv.Kind() == reflect.Interface {
-		return encode(rv.Elem())
-	}
-
-	typ := rv.Type()
-	switch {
-	case implements(typ, (*slogval.Value)(nil)):
-		// We cannot use rv.Interface() directly, instead
-		// we rely on SlogValue() to return the slogval.Value.
-		v := rv.MethodByName("SlogValue").Call(nil)
-		return v[0].Interface().(slogval.Value)
-	case typ == reflect.TypeOf(jsonValue{}):
-		rv = rv.FieldByName("V").Elem()
-		typ = rv.Type()
+	switch v := v.(type) {
+	case jsonValue:
+		rv := reflect.ValueOf(v.V)
 		if rv.Kind() != reflect.Struct {
-			return encode(rv)
+			return Encode(v.V)
 		}
-		m := make(slogval.Map, 0, typ.NumField())
-		m = reflectStruct(m, rv, typ, true)
+		m := make(slogval.Map, 0, rv.NumField())
+		m = reflectStruct(m, rv, rv.Type(), true, false)
 		return m
-	case typ == reflect.TypeOf(forceReflectValue{}):
-		return reflectValue(rv.FieldByName("V").Elem())
-	case implements(typ, (*Value)(nil)):
-		m := rv.MethodByName("LogValue")
-		lv := m.Call(nil)
-		return encode(lv[0])
-	case implements(typ, (*encoding.TextMarshaler)(nil)):
-		return marshalText(rv)
-	case implements(typ, (*xerrors.Formatter)(nil)):
-		return extractXErrorChain(rv)
-	case implements(typ, (*error)(nil)):
-		m := rv.MethodByName("Error")
-		s := m.Call(nil)
-		return slogval.String(s[0].String())
-	case implements(typ, (*fmt.Stringer)(nil)):
-		if implements(typ, (*proto.Message)(nil)) {
-			// We do not want a flat string for protobufs.
-			// The reflection based struct handler below will ensure
-			// protobufs values have structure in logs.
-			break
+	case []Field:
+		m := make(slogval.Map, 0, len(v))
+		for _, f := range v {
+			m = m.Append(f.LogKey(), Encode(f.LogValue()))
 		}
-		s := rv.MethodByName("String").Call(nil)
-		return slogval.String(s[0].String())
+		return m
+	case Value:
+		return Encode(v.LogValue())
+	case proto.Message:
+		return encodeReflect(reflect.ValueOf(v), false)
+	case encoding.TextMarshaler:
+		return marshalText(v)
+	case xerrors.Formatter:
+		return extractXErrorChain(v)
+	case error, fmt.Stringer:
+		return Encode(fmt.Sprintf("%+v", v))
+	default:
+		return encodeReflect(reflect.ValueOf(v), false)
 	}
-
-	// Fallback to reflection.
-	return reflectValue(rv)
 }
 
-func marshalText(rv reflect.Value) slogval.Value {
-	rs := rv.MethodByName("MarshalText").Call(nil)
-	bytes := rs[0]
-	err := rs[1]
-
-	if !err.IsNil() {
-		return Encode(map[string]reflect.Value{
+func marshalText(v encoding.TextMarshaler) slogval.Value {
+	b, err := v.MarshalText()
+	if err != nil {
+		return Encode(map[string]error{
 			"marshalTextError": err,
 		})
 	}
-	return Encode(string(bytes.Bytes()))
+	return Encode(string(b))
 }
 
-func reflectValue(rv reflect.Value) slogval.Value {
+func encodeReflect(rv reflect.Value, pure bool) slogval.Value {
 	if !rv.IsValid() {
 		// reflect.ValueOf(nil).IsValid == false
 		return nil
@@ -118,42 +97,44 @@ func reflectValue(rv reflect.Value) slogval.Value {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return slogval.Uint(rv.Uint())
 	case reflect.Ptr:
-		return encode(rv.Elem())
+		return encode(rv.Elem(), pure)
+	case reflect.Interface:
+		return encode(rv.Elem(), pure)
 	case reflect.Slice, reflect.Array:
 		// Ordered map.
-		if typ == reflect.TypeOf([]Field(nil)) {
+		if typ == reflect.TypeOf(slogval.Map(nil)) {
 			m := make(slogval.Map, 0, rv.Len())
 			for i := 0; i < rv.Len(); i++ {
 				f := rv.Index(i)
-				key := f.MethodByName("LogKey").Call(nil)[0].String()
-				val := f.MethodByName("LogValue").Call(nil)[0]
-				m = m.Append(key, encode(val))
+				key := f.FieldByName("Name").String()
+				val := f.FieldByName("Value")
+				m = m.Append(key, encode(val, pure))
 			}
 			return m
 		}
 		list := make(slogval.List, rv.Len())
 		for i := 0; i < rv.Len(); i++ {
-			list[i] = encode(rv.Index(i))
+			list[i] = encode(rv.Index(i), pure)
 		}
 		return list
 	case reflect.Map:
 		m := make(slogval.Map, 0, rv.Len())
 		for _, k := range rv.MapKeys() {
 			mv := rv.MapIndex(k)
-			m = m.Append(fmt.Sprintf("%v", k), encode(mv))
+			m = m.Append(fmt.Sprintf("%v", k), encode(mv, pure))
 		}
 		m.Sort()
 		return m
 	case reflect.Struct:
 		m := make(slogval.Map, 0, typ.NumField())
-		m = reflectStruct(m, rv, typ, false)
+		m = reflectStruct(m, rv, typ, false, pure)
 		return m
 	default:
 		return slogval.String(fmt.Sprintf("%+v", rv))
 	}
 }
 
-func reflectStruct(m slogval.Map, rv reflect.Value, structTyp reflect.Type, json bool) slogval.Map {
+func reflectStruct(m slogval.Map, rv reflect.Value, structTyp reflect.Type, json, pure bool) slogval.Map {
 	for i := 0; i < structTyp.NumField(); i++ {
 		typ := structTyp.Field(i)
 		rv := rv.Field(i)
@@ -168,33 +149,31 @@ func reflectStruct(m slogval.Map, rv reflect.Value, structTyp reflect.Type, json
 			continue
 		}
 
-		tag := typ.Tag.Get("json")
-		if tag == "-" {
-			continue
+		tagFieldName := snakecase(typ.Name)
+		if json {
+			tag := typ.Tag.Get("json")
+			if tag == "-" {
+				continue
+			}
+
+			var opts map[string]struct{}
+			tagFieldName, opts = parseTag(tag)
+			if _, ok := opts["omitempty"]; ok && isEmptyValue(rv) {
+				continue
+			}
 		}
 
-		tagFieldName, opts := parseTag(tag)
-		if _, ok := opts["omitempty"]; ok && isEmptyValue(rv) {
-			continue
+		pure := pure
+		if typ.PkgPath != "" {
+			// We need to use pure reflection as the field is unexported.
+			pure = true
 		}
 
 		if typ.Anonymous {
-			m = reflectStruct(m, rv, typ.Type, json)
-			continue
-		}
-		if tagFieldName == "" {
-			tagFieldName = snakecase(typ.Name)
-		}
-
-		// If the field is unexported, we want to use
-		// reflectValue to encode as we cannot call any
-		// methods on it so the interfaces are useless.
-		if typ.PkgPath == "" {
-			m = m.Append(tagFieldName, encode(rv))
+			m = reflectStruct(m, rv, typ.Type, json, pure)
 		} else {
-			m = m.Append(tagFieldName, reflectValue(rv))
+			m = m.Append(tagFieldName, encode(rv, pure))
 		}
-
 	}
 	return m
 }
@@ -279,33 +258,24 @@ func (p *xerrorPrinter) Detail() bool {
 }
 
 // The value passed in must implement xerrors.Formatter.
-func extractXErrorChain(rv reflect.Value) slogval.List {
+func extractXErrorChain(f xerrors.Formatter) slogval.List {
 	errs := slogval.List{}
 
-	formatError := func(p xerrors.Printer) error {
-		m := rv.MethodByName("FormatError")
-		err := m.Call([]reflect.Value{reflect.ValueOf(p)})
-		next, _ := err[0].Interface().(error)
-		return next
-	}
 	for {
 		p := &xerrorPrinter{}
-		next := formatError(p)
-
+		next := f.FormatError(p)
 		errs = append(errs, Encode(p.e))
 
-		if next != nil {
-			var ok bool
-			f, ok := next.(xerrors.Formatter)
-			if ok {
-				formatError = func(p xerrors.Printer) error {
-					return f.FormatError(p)
-				}
-				continue
-			}
-			errs = append(errs, Encode(next))
+		if next == nil {
+			return errs
 		}
-		return errs
+
+		var ok bool
+		f, ok = next.(xerrors.Formatter)
+		if !ok {
+			errs = append(errs, Encode(next))
+			return errs
+		}
 	}
 }
 
