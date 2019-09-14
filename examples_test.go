@@ -26,7 +26,8 @@ func Example_test() {
 			xerrors.Errorf("wrap1: %w",
 				xerrors.Errorf("wrap2: %w",
 					io.EOF),
-			)),
+			),
+		),
 	)
 
 	// t.go:55: 2019-09-13 23:19:03.468 [INFO]	<examples_test.go:43>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "wowow"}} ...
@@ -49,7 +50,8 @@ func TestExample(t *testing.T) {
 			xerrors.Errorf("wrap1: %w",
 				xerrors.Errorf("wrap2: %w",
 					io.EOF),
-			)),
+			),
+		),
 	)
 }
 

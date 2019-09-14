@@ -34,7 +34,8 @@ slogtest.Info(t, "my message here",
         xerrors.Errorf("wrap1: %w",
             xerrors.Errorf("wrap2: %w",
                 io.EOF),
-        )),
+        ),
+    ),
 )
 ```
 
