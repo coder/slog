@@ -304,9 +304,12 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 		}
 	}
 
-	if level == LevelFatal {
+	switch level {
+	case LevelCritical, LevelError, LevelFatal:
 		l.Sync()
-		os.Exit(1)
+		if level == LevelFatal {
+			os.Exit(1)
+		}
 	}
 }
 
