@@ -394,6 +394,11 @@ func makeLogger() Logger {
 func Tee(ls ...Logger) Logger {
 	l := makeLogger()
 	for _, l2 := range ls {
+		// Just the zero value logger.
+		if len(l2.sinks) == 0 {
+			continue
+		}
+
 		l.sinks = append(l.sinks, l2.sinks...)
 
 		l2.helpersMu.Lock()
