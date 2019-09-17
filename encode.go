@@ -55,7 +55,10 @@ func encodeInterface(v interface{}) slogval.Value {
 	case xerrors.Formatter:
 		return extractXErrorChain(v)
 	case error, fmt.Stringer:
-		return Encode(fmt.Sprintf("%+v", v))
+		// Cannot use %+v here as if its not a xerrors.Formatter
+		// then fmt will use its reflection encoder for the value
+		// instead of v.String() or v.Error().
+		return Encode(fmt.Sprintf("%v", v))
 	default:
 		return encodeReflect(reflect.ValueOf(v), false)
 	}
