@@ -44,6 +44,14 @@ func TestEncode(t *testing.T) {
 					},
 				},
 			},
+		}, {
+			name: "embeddedFields",
+			in: struct {
+				string
+				int
+				float32
+				*Meow
+			}{"meow", 3, 4, &Meow{"wow"}},
 		},
 	}
 
@@ -55,4 +63,8 @@ func TestEncode(t *testing.T) {
 			t.Log(slog.Encode(tc.in))
 		})
 	}
+}
+
+type Meow struct {
+	meow string
 }

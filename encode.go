@@ -172,10 +172,11 @@ func reflectStruct(m slogval.Map, rv reflect.Value, structTyp reflect.Type, json
 			pure = true
 		}
 
-		if typ.Anonymous {
-			m = reflectStruct(m, rv, typ.Type, json, pure)
+		v := encode(rv, pure)
+		if sm, ok := v.(slogval.Map); ok {
+			m = append(m, sm...)
 		} else {
-			m = m.Append(tagFieldName, encode(rv, pure))
+			m = m.Append(tagFieldName, v)
 		}
 	}
 	return m
