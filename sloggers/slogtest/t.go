@@ -74,30 +74,30 @@ func (ts testSink) Sync() error {
 
 var ctx = context.Background()
 
+func l(t testing.TB) slog.Logger {
+	return Make(t, nil)
+}
+
 // Debug logs the given msg and fields to t via t.Log at the debug level.
 func Debug(t testing.TB, msg string, fields ...slog.Field) {
-	l := Make(t, nil)
-	l.Helper()
-	l.Debug(ctx, msg, fields...)
+	slog.Helper()
+	l(t).Debug(ctx, msg, fields...)
 }
 
 // Info logs the given msg and fields to t via t.Log at the info level.
 func Info(t testing.TB, msg string, fields ...slog.Field) {
-	l := Make(t, nil)
-	l.Helper()
-	l.Info(ctx, msg, fields...)
+	slog.Helper()
+	l(t).Info(ctx, msg, fields...)
 }
 
 // Error logs the given msg and fields to t via t.Error at the error level.
 func Error(t testing.TB, msg string, fields ...slog.Field) {
-	l := Make(t, nil)
-	l.Helper()
-	l.Error(ctx, msg, fields...)
+	slog.Helper()
+	l(t).Error(ctx, msg, fields...)
 }
 
 // Fatal logs the given msg and fields to t via t.Fatal at the fatal level.
 func Fatal(t testing.TB, msg string, fields ...slog.Field) {
-	l := Make(t, nil)
-	l.Helper()
-	l.Fatal(ctx, msg, fields...)
+	slog.Helper()
+	l(t).Fatal(ctx, msg, fields...)
 }
