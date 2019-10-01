@@ -147,7 +147,7 @@ type Sink interface {
 
 // Make creates a logger that writes logs to sink.
 func Make(s Sink) Logger {
-	l := makeLogger()
+	var l Logger
 	l.sinks = []sink{
 		{
 			sink:  s,
@@ -190,12 +190,12 @@ func (s sink) withContext(ctx context.Context) sink {
 	return s.withFields(f)
 }
 
+var helpersMu sync.Mutex
+var helpers = make(map[string]struct{})
+
 // Logger allows logging a ordered slice of fields
 // to an underlying set of sinks.
 type Logger struct {
-	helpersMu *sync.Mutex
-	helpers   map[string]struct{}
-
 	sinks []sink
 	skip  int
 }
@@ -237,15 +237,15 @@ func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 
 // Helper marks the calling function as a helper
 // and skips it for source location information.
-func (l Logger) Helper() {
+func Helper() {
 	_, _, fn := location(1)
-	l.addHelper(fn)
+	addHelper(fn)
 }
 
-func (l Logger) addHelper(fn string) {
-	l.helpersMu.Lock()
-	l.helpers[fn] = struct{}{}
-	l.helpersMu.Unlock()
+func addHelper(fn string) {
+	helpersMu.Lock()
+	helpers[fn] = struct{}{}
+	helpersMu.Unlock()
 }
 
 // With returns a Logger that prepends the given fields on every
@@ -287,9 +287,9 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 		Fields:      fields,
 		SpanContext: trace.FromContext(ctx).SpanContext(),
 	}
-	l.helpersMu.Lock()
-	ent = ent.fillLoc(l.helpers, l.skip+2)
-	l.helpersMu.Unlock()
+	helpersMu.Lock()
+	ent = ent.fillLoc(helpers, l.skip+2)
+	helpersMu.Unlock()
 
 	for _, s := range l.sinks {
 		slevel := Level(atomic.LoadInt64(s.level))
@@ -383,16 +383,9 @@ func location(skip int) (file string, line int, fn string) {
 	return file, line, f.Name()
 }
 
-func makeLogger() Logger {
-	return Logger{
-		helpersMu: &sync.Mutex{},
-		helpers:   make(map[string]struct{}),
-	}
-}
-
 // Tee enables logging to multiple loggers.
 func Tee(ls ...Logger) Logger {
-	l := makeLogger()
+	var l Logger
 	for _, l2 := range ls {
 		// Just the zero value logger.
 		if len(l2.sinks) == 0 {
@@ -400,12 +393,6 @@ func Tee(ls ...Logger) Logger {
 		}
 
 		l.sinks = append(l.sinks, l2.sinks...)
-
-		l2.helpersMu.Lock()
-		for h := range l2.helpers {
-			l.addHelper(h)
-		}
-		l2.helpersMu.Unlock()
 	}
 	return l
 }
