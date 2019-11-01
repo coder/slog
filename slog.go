@@ -322,7 +322,7 @@ func (l Logger) Sync() {
 		err := s.sink.Sync()
 		// Certain devices do not support sync, maybe because they are synchronous by default.
 		if err != nil && !errors.Is(err, syscall.EINVAL) {
-			fmt.Fprintf(os.Stderr, "slog: sink with name %v and type %T failed to sync: %+v", s.name, s.sink, err)
+			fmt.Fprintf(os.Stderr, "slog: sink with name %v and type %T failed to sync: %+v\n", s.name, s.sink, err)
 			continue
 		}
 	}
