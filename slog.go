@@ -202,6 +202,7 @@ func (l Logger) Fatal(ctx context.Context, msg string, fields ...F) {
 
 // Helper marks the calling function as a helper
 // and skips it for source location information.
+// It's the slog equivalent of *testing.T.Helper().
 func Helper() {
 	_, _, fn := location(1)
 	addHelper(fn)

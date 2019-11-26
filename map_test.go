@@ -1,17 +1,16 @@
-package slog_test
+package slog
 
 import (
 	"encoding/json"
 	"strings"
 	"testing"
 
-	"go.coder.com/slog"
 	"go.coder.com/slog/internal/assert"
 )
 
 func TestMapJSON(t *testing.T) {
-	m := slog.Map{
-		{"wow", slog.Map{
+	m := Map{
+		{"wow", Map{
 			{"nested", true},
 			{"much", 3},
 			{"list", []string{
@@ -40,4 +39,65 @@ func TestMapJSON(t *testing.T) {
 `)
 
 	assert.Equalf(t, exp, string(act), "unexpected JSON")
+}
+
+func Test_snakecase(t *testing.T) {
+	t.Parallel()
+
+	t.Run("table", func(t *testing.T) {
+		t.Parallel()
+
+		tcs := []struct {
+			s   string
+			exp string
+		}{
+			{
+				"meowBar",
+				"meow_bar",
+			},
+			{
+				"MeowBar",
+				"meow_bar",
+			},
+			{
+				"MEOWBar",
+				"meow_bar",
+			},
+			{
+				"Meow123BAR",
+				"meow_123_bar",
+			},
+			{
+				"BöseÜberraschung",
+				"böse_überraschung",
+			},
+			{
+				"GL11Version",
+				"gl_11_version",
+			},
+			{
+				"SimpleXMLParser",
+				"simple_xml_parser",
+			},
+			{
+				"PDFLoader",
+				"pdf_loader",
+			},
+			{
+				"HTML",
+				"html",
+			},
+		}
+
+		for i, tc := range tcs {
+			tc := tc
+			i := i
+			t.Run("", func(t *testing.T) {
+				t.Parallel()
+
+				out := snakecase(tc.s)
+				assert.Equalf(t, tc.exp, out, "snakecase gave unexpected output for case %d", i)
+			})
+		}
+	})
 }

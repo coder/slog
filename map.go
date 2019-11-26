@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"unicode"
 
-	"github.com/fatih/camelcase"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/xerrors"
 )
@@ -226,12 +226,55 @@ func parseTag(tag string) (name string, opts map[string]struct{}) {
 	return s[0], opts
 }
 
+// Adapted from https://github.com/fatih/camelcase/blob/9db1b65eb38bb28986b93b521af1b7891ee1b04d/camelcase.go#L10
 func snakecase(s string) string {
-	splits := camelcase.Split(s)
-	for i, s := range splits {
-		splits[i] = strings.ToLower(s)
+	const (
+		lower = iota + 1
+		upper
+		digit
+	)
+
+	class := func(r rune) int {
+		// https://golang.org/ref/spec#Identifiers
+		switch {
+		case unicode.IsLower(r):
+			return lower
+		case unicode.IsUpper(r):
+			return upper
+		default:
+			return digit
+		}
 	}
-	return strings.Join(splits, "_")
+
+	var res strings.Builder
+	runes := []rune(s)
+	var prevClass int
+	for i, r := range runes {
+		c := class(r)
+
+		// If this rune is uppercase and the next one is lowercase,
+		// then we have a new field.
+		if i+1 < len(runes) && c == upper && class(runes[i+1]) == lower {
+			// This indicates to the below code that this is a new field
+			// and then on the next iteration, it ensures another field
+			// is not detected due to the class change.
+			prevClass = upper
+			c = lower
+		}
+
+		// If the class has changed then we have a new field.
+		if prevClass != c {
+			if i > 0 {
+				res.WriteRune('_')
+			}
+		}
+
+		res.WriteRune(unicode.ToLower(r))
+
+		prevClass = c
+	}
+
+	return res.String()
 }
 
 // This function requires that variable v be a pointer

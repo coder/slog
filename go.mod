@@ -6,7 +6,6 @@ require (
 	cloud.google.com/go v0.43.0
 	cloud.google.com/go/logging v1.0.0
 	github.com/alecthomas/chroma v0.6.6
-	github.com/fatih/camelcase v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/golang/protobuf v1.3.2
 	github.com/google/go-cmp v0.3.2-0.20190829225427-b1c9c4891a65

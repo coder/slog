@@ -20,14 +20,13 @@ go get go.coder.com/slog
 - First class [context.Context](https://blog.golang.org/context) support
 - First class [testing.TB](https://godoc.org/go.coder.com/slog/slogtest) support
 - Beautiful human readable logging output
-    -  Prints multiline fields and errors nicely
+  - Prints multiline fields and errors nicely
 - Machine readable JSON output
 - [GCP Stackdriver](https://godoc.org/go.coder.com/slog/sloggers/slogstackdriver) support
 - [Tee](https://godoc.org/go.coder.com/slog#Tee) multiple loggers
 - [Stdlib](https://godoc.org/go.coder.com/slog#Stdlib) log adapter
 - Skip caller frames with [slog.Helper](https://godoc.org/go.coder.com/slog#Helper)
 - Can encode any Go structure including private fields
-- Can be configured to encode any value via `json.Marshal` as well
 
 ## Example
 
@@ -48,17 +47,17 @@ slogtest.Info(t, "my message here",
 
 ![Example output screenshot](https://i.imgur.com/o8uW4Oy.png)
 
-## Design justifications
+## Why?
 
-See [#9](https://github.com/cdr/slog/issues/9)
+We have been using Go at [Coder](https://github.com/cdr) for several years during
+which we used Uber's [zap](https://github.com/uber-go/zap) for logging.
 
-## Comparison
+It's a fantastic library for performance but the API and developer experience is not great.
 
-### zap
+The API surface is extremely large. See [godoc](https://godoc.org/go.uber.org/zap). And that's not including
+zap's subpackage [zapcore](https://godoc.org/go.uber.org/zap/zapcore) which is a beast of its own.
 
-https://github.com/uber-go/zap
-
-See [#6](https://github.com/cdr/slog/issues/6).
+The sprawling API makes it hard to understand, use and extend.
 
 ## Contributing
 
