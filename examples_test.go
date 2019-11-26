@@ -55,7 +55,7 @@ func TestExample(t *testing.T) {
 }
 
 func TestJSON(t *testing.T) {
-	l := slogjson.Make(os.Stderr)
+	l := slogjson.Make(os.Stdout)
 	l.Info(context.Background(), "my message\r here",
 		slog.F{"field_name", "something or the other"},
 		slog.F{"some_map", slog.Map{

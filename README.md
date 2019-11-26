@@ -19,8 +19,15 @@ go get go.coder.com/slog
 - Tiny codebase
 - First class [context.Context](https://blog.golang.org/context) support
 - First class [testing.TB](https://godoc.org/go.coder.com/slog/slogtest) support
-- Beautiful logging output by default
-- Multiple adapters
+- Beautiful human readable logging output
+    -  Prints multiline fields and errors nicely
+- Machine readable JSON output
+- [GCP Stackdriver](https://godoc.org/go.coder.com/slog/sloggers/slogstackdriver) support
+- [Tee](https://godoc.org/go.coder.com/slog#Tee) multiple loggers
+- [Stdlib](https://godoc.org/go.coder.com/slog#Stdlib) log adapter
+- Skip caller frames with [slog.Helper](https://godoc.org/go.coder.com/slog#Helper)
+- Can encode any Go structure including private fields
+- Can be configured to encode any value via `json.Marshal` as well
 
 ## Example
 
