@@ -1,4 +1,4 @@
-// Package humanfmt contains the code to format slog.Entry
+// Package humanfmt contains the code to format slog.SinkEntry
 // into a human readable format.
 package humanfmt
 
@@ -17,7 +17,6 @@ import (
 	"golang.org/x/xerrors"
 
 	"go.coder.com/slog"
-	"go.coder.com/slog/slogval"
 )
 
 func c(attrs ...color.Attribute) *color.Color {
@@ -33,7 +32,7 @@ func c(attrs ...color.Attribute) *color.Color {
 // We also do not indent the fields as go's test does that automatically
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
-func Entry(ent slog.Entry, enableColor bool) string {
+func Entry(ent slog.SinkEntry, enableColor bool) string {
 	var ents string
 	// Simplified RFC3339 format.
 	ts := ent.Time.Format(`2006-01-02 15:04:05.000`)
@@ -71,10 +70,10 @@ func Entry(ent slog.Entry, enableColor bool) string {
 	ents += msg
 
 	if ent.SpanContext != (trace.SpanContext{}) {
-		ent.Fields = append(slog.Map(
-			slog.F("trace", ent.SpanContext.TraceID),
-			slog.F("span", ent.SpanContext.SpanID),
-		), ent.Fields...)
+		ent.Fields = append(slog.Map{
+			{"trace", ent.SpanContext.TraceID},
+			{"span", ent.SpanContext.SpanID},
+		}, ent.Fields...)
 	}
 
 	for i, f := range ent.Fields {
@@ -83,7 +82,7 @@ func Entry(ent slog.Entry, enableColor bool) string {
 		}
 
 		var s string
-		switch v := f.LogValue().(type) {
+		switch v := f.Value.(type) {
 		case string:
 			s = v
 		case error, xerrors.Formatter:
@@ -96,13 +95,12 @@ func Entry(ent slog.Entry, enableColor bool) string {
 
 		// Remove this field.
 		ent.Fields = append(ent.Fields[:i], ent.Fields[i+1:]...)
-		multilineKey = f.LogKey()
+		multilineKey = f.Name
 		multilineVal = s
 	}
 
-	m, ok := slog.Encode(ent.Fields).(slogval.Map)
-	if ok && len(m) > 0 {
-		fields, err := json.MarshalIndent(m, "", "")
+	if len(ent.Fields) > 0 {
+		fields, err := json.MarshalIndent(ent.Fields, "", "")
 		if err == nil {
 			fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
 			fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))

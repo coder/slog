@@ -30,7 +30,7 @@ type humanSink struct {
 	color bool
 }
 
-func (s humanSink) LogEntry(ctx context.Context, ent slog.Entry) error {
+func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 	str := humanfmt.Entry(ent, s.color)
 	lines := strings.Split(str, "\n")
 

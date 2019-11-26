@@ -1,53 +1,82 @@
 package slog
 
 import (
+	"bytes"
 	"encoding"
+	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/fatih/camelcase"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/xerrors"
-
-	"go.coder.com/slog/slogval"
 )
 
-// Encode encodes the interface to a structured and easily
-// introspectable slogval.Value.
-func Encode(v interface{}) slogval.Value {
-	return encodeInterface(v)
+// Map represents an ordered map of fields.
+type Map []F
+
+var _ json.Marshaler = Map(nil)
+
+// MarshalJSON implements json.Marshaler.
+func (m Map) MarshalJSON() ([]byte, error) {
+	b := &bytes.Buffer{}
+	b.WriteString("{")
+	for i, f := range m {
+		fieldName, err := json.Marshal(f.Name)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshal field name: %w", err)
+		}
+
+		fieldValue, err := json.Marshal(f.Value)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshal field value: %w", err)
+		}
+
+		b.WriteString("\n")
+		b.Write(fieldName)
+		b.WriteString(":")
+		b.Write(fieldValue)
+
+		if i < len(m)-1 {
+			b.WriteString(",")
+		}
+	}
+	b.WriteString(`}`)
+
+	return b.Bytes(), nil
 }
 
-func encode(rv reflect.Value, pure bool) slogval.Value {
+func encode(rv reflect.Value, pure bool) interface{} {
 	if pure {
 		return encodeReflect(rv, true)
 	}
 	return encodeInterface(rv.Interface())
 }
 
-func encodeInterface(v interface{}) slogval.Value {
+func encodeInterface(v interface{}) interface{} {
 	if v == nil {
 		return nil
 	}
 
 	switch v := v.(type) {
-	case jsonValue:
+	case JSON:
 		rv := reflect.ValueOf(v.V)
 		if rv.Kind() != reflect.Struct {
-			return Encode(v.V)
+			return encodeInterface(v.V)
 		}
-		m := make(slogval.Map, 0, rv.NumField())
+		m := make(Map, 0, rv.NumField())
 		m = reflectStruct(m, rv, rv.Type(), true, false)
 		return m
-	case []Field:
-		m := make(slogval.Map, 0, len(v))
+	case Map:
+		m := make(Map, 0, len(v))
 		for _, f := range v {
-			m = m.Append(f.LogKey(), Encode(f.LogValue()))
+			m = append(m, F{f.Name, encodeInterface(f.Value)})
 		}
 		return m
 	case Value:
-		return Encode(v.LogValue())
+		return encodeInterface(v.LogValue())
 	case proto.Message:
 		return encodeReflect(reflect.ValueOf(v), false)
 	case encoding.TextMarshaler:
@@ -58,23 +87,23 @@ func encodeInterface(v interface{}) slogval.Value {
 		// Cannot use %+v here as if its not a xerrors.Formatter
 		// then fmt will use its reflection encoder for the value
 		// instead of v.String() or v.Error().
-		return Encode(fmt.Sprintf("%v", v))
+		return encodeInterface(fmt.Sprintf("%v", v))
 	default:
 		return encodeReflect(reflect.ValueOf(v), false)
 	}
 }
 
-func marshalText(v encoding.TextMarshaler) slogval.Value {
+func marshalText(v encoding.TextMarshaler) interface{} {
 	b, err := v.MarshalText()
 	if err != nil {
-		return Encode(map[string]error{
+		return encodeInterface(map[string]error{
 			"marshalTextError": err,
 		})
 	}
-	return Encode(string(b))
+	return encodeInterface(string(b))
 }
 
-func encodeReflect(rv reflect.Value, pure bool) slogval.Value {
+func encodeReflect(rv reflect.Value, pure bool) interface{} {
 	if !rv.IsValid() {
 		// reflect.ValueOf(nil).IsValid == false
 		return nil
@@ -90,54 +119,57 @@ func encodeReflect(rv reflect.Value, pure bool) slogval.Value {
 	typ := rv.Type()
 	switch rv.Kind() {
 	case reflect.String:
-		return slogval.String(rv.String())
+		return rv.String()
 	case reflect.Bool:
-		return slogval.Bool(rv.Bool())
+		return rv.Bool()
 	case reflect.Float32, reflect.Float64:
-		return slogval.Float(rv.Float())
+		return rv.Float()
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		return slogval.Int(rv.Int())
+		return rv.Int()
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return slogval.Uint(rv.Uint())
+		return rv.Uint()
 	case reflect.Ptr:
 		return encode(rv.Elem(), pure)
 	case reflect.Interface:
 		return encode(rv.Elem(), pure)
 	case reflect.Slice, reflect.Array:
 		// Ordered map.
-		if typ == reflect.TypeOf(slogval.Map(nil)) {
-			m := make(slogval.Map, 0, rv.Len())
+		if typ == reflect.TypeOf(Map(nil)) {
+			m := make(Map, 0, rv.Len())
 			for i := 0; i < rv.Len(); i++ {
 				f := rv.Index(i)
 				key := f.FieldByName("Name").String()
 				val := f.FieldByName("Value")
-				m = m.Append(key, encode(val, pure))
+				m = append(m, F{key, encode(val, pure)})
 			}
 			return m
 		}
-		list := make(slogval.List, rv.Len())
+		list := make([]interface{}, rv.Len())
 		for i := 0; i < rv.Len(); i++ {
 			list[i] = encode(rv.Index(i), pure)
 		}
 		return list
 	case reflect.Map:
-		m := make(slogval.Map, 0, rv.Len())
+		m := make(Map, 0, rv.Len())
 		for _, k := range rv.MapKeys() {
 			mv := rv.MapIndex(k)
-			m = m.Append(fmt.Sprintf("%v", k), encode(mv, pure))
+			m = append(m, F{fmt.Sprintf("%v", k), encode(mv, pure)})
 		}
-		m.Sort()
+		// Ensure stable key order.
+		sort.Slice(m, func(i, j int) bool {
+			return m[i].Name < m[j].Name
+		})
 		return m
 	case reflect.Struct:
-		m := make(slogval.Map, 0, typ.NumField())
+		m := make(Map, 0, typ.NumField())
 		m = reflectStruct(m, rv, typ, false, pure)
 		return m
 	default:
-		return slogval.String(fmt.Sprintf("%+v", rv))
+		return fmt.Sprintf("%+v", rv)
 	}
 }
 
-func reflectStruct(m slogval.Map, rv reflect.Value, structTyp reflect.Type, json, pure bool) slogval.Map {
+func reflectStruct(m Map, rv reflect.Value, structTyp reflect.Type, json, pure bool) Map {
 	for i := 0; i < structTyp.NumField(); i++ {
 		typ := structTyp.Field(i)
 		rv := rv.Field(i)
@@ -173,10 +205,10 @@ func reflectStruct(m slogval.Map, rv reflect.Value, structTyp reflect.Type, json
 		}
 
 		v := encode(rv, pure)
-		if sm, ok := v.(slogval.Map); ok {
+		if sm, ok := v.(Map); ok {
 			m = append(m, sm...)
 		} else {
-			m = m.Append(tagFieldName, v)
+			m = append(m, F{tagFieldName, v})
 		}
 	}
 	return m
@@ -226,7 +258,7 @@ func (e wrapError) Error() string {
 }
 
 func (e wrapError) LogValue() interface{} {
-	return JSON(e)
+	return JSON{e}
 }
 
 type xerrorPrinter struct {
@@ -248,7 +280,7 @@ func (p *xerrorPrinter) write(s string) {
 	case p.e.Loc == "":
 		p.e.Loc = s
 	default:
-		panic(fmt.Sprintf("slogval: unexpected String from xerrors.FormatError: %q", s))
+		panic(fmt.Sprintf("slog: unexpected String from xerrors.FormatError: %q", s))
 	}
 }
 
@@ -262,13 +294,13 @@ func (p *xerrorPrinter) Detail() bool {
 }
 
 // The value passed in must implement xerrors.Formatter.
-func extractXErrorChain(f xerrors.Formatter) slogval.List {
-	errs := slogval.List{}
+func extractXErrorChain(f xerrors.Formatter) []interface{} {
+	var errs []interface{}
 
 	for {
 		p := &xerrorPrinter{}
 		next := f.FormatError(p)
-		errs = append(errs, Encode(p.e))
+		errs = append(errs, encodeInterface(p.e))
 
 		if next == nil {
 			return errs
@@ -277,7 +309,7 @@ func extractXErrorChain(f xerrors.Formatter) slogval.List {
 		var ok bool
 		f, ok = next.(xerrors.Formatter)
 		if !ok {
-			errs = append(errs, Encode(next))
+			errs = append(errs, encodeInterface(next))
 			return errs
 		}
 	}

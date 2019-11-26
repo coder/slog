@@ -48,31 +48,30 @@ type jsonSink struct {
 	color bool
 }
 
-func (s jsonSink) LogEntry(ctx context.Context, ent slog.Entry) error {
-	m := slog.Map(
-		slog.F("ts", ent.Time),
-		slog.F("level", ent.Level),
-		slog.F("component", ent.LoggerName),
-		slog.F("msg", ent.Message),
-		slog.F("caller", fmt.Sprintf("%v:%v", ent.File, ent.Line)),
-		slog.F("func", ent.Func),
-	)
+func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
+	m := slog.Map{
+		{"ts", ent.Time},
+		{"level", ent.Level},
+		{"component", ent.LoggerName},
+		{"msg", ent.Message},
+		{"caller", fmt.Sprintf("%v:%v", ent.File, ent.Line)},
+		{"func", ent.Func},
+	}
 
 	if ent.SpanContext != (trace.SpanContext{}) {
 		m = append(m,
-			slog.F("trace", ent.SpanContext.TraceID),
-			slog.F("span", ent.SpanContext.SpanID),
+			slog.F{"trace", ent.SpanContext.TraceID},
+			slog.F{"span", ent.SpanContext.SpanID},
 		)
 	}
 
 	if len(ent.Fields) > 0 {
 		m = append(m,
-			slog.F("fields", ent.Fields),
+			slog.F{"fields", ent.Fields},
 		)
 	}
 
-	v := slog.Encode(m)
-	buf, err := json.Marshal(v)
+	buf, err := json.Marshal(m)
 	if err != nil {
 		return xerrors.Errorf("slogjson: failed to encode entry to JSON: %w", err)
 	}

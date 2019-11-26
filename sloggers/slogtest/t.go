@@ -47,7 +47,7 @@ type testSink struct {
 // The testing package logs to stdout and not stderr.
 var stdoutColor = humanfmt.IsTTY(os.Stdout) || os.Getenv("FORCE_COLOR") != ""
 
-func (ts testSink) LogEntry(ctx context.Context, ent slog.Entry) error {
+func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 	s := humanfmt.Entry(ent, stdoutColor)
 
 	switch ent.Level {
@@ -79,25 +79,25 @@ func l(t testing.TB) slog.Logger {
 }
 
 // Debug logs the given msg and fields to t via t.Log at the debug level.
-func Debug(t testing.TB, msg string, fields ...slog.Field) {
+func Debug(t testing.TB, msg string, fields ...slog.F) {
 	slog.Helper()
 	l(t).Debug(ctx, msg, fields...)
 }
 
 // Info logs the given msg and fields to t via t.Log at the info level.
-func Info(t testing.TB, msg string, fields ...slog.Field) {
+func Info(t testing.TB, msg string, fields ...slog.F) {
 	slog.Helper()
 	l(t).Info(ctx, msg, fields...)
 }
 
 // Error logs the given msg and fields to t via t.Error at the error level.
-func Error(t testing.TB, msg string, fields ...slog.Field) {
+func Error(t testing.TB, msg string, fields ...slog.F) {
 	slog.Helper()
 	l(t).Error(ctx, msg, fields...)
 }
 
 // Fatal logs the given msg and fields to t via t.Fatal at the fatal level.
-func Fatal(t testing.TB, msg string, fields ...slog.Field) {
+func Fatal(t testing.TB, msg string, fields ...slog.F) {
 	slog.Helper()
 	l(t).Fatal(ctx, msg, fields...)
 }

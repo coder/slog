@@ -1,9 +1,9 @@
 # slog
 
-[![GoDoc](https://godoc.org/go.coder.com/slog?status.svg)](https://godoc.org/go.coder.com/slog)
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/cdr/slog?include_prereleases&sort=semver)](https://github.com/cdr/slog/releases)
-[![Codecov](https://img.shields.io/codecov/c/github/cdr/slog.svg?color=success)](https://codecov.io/gh/cdr/slog)
-[![CI](https://img.shields.io/circleci/build/github/cdr/slog?label=ci)](https://github.com/cdr/slog/commits/master)
+[![GitHub Release](https://img.shields.io/github/v/release/cdr/sog?color=6b9ded&sort=semver)](https://github.com/cdr/sog/releases)
+[![GoDoc](https://godoc.org/nhooyr.io/websocket?status.svg)](https://godoc.org/nhooyr.io/websocket)
+[![Coveralls](https://img.shields.io/coveralls/github/cdr/sog?color=65d6a4)](https://coveralls.io/github/cdr/sog)
+[![CI Status](https://github.com/cdr/sog/workflows/ci/badge.svg)](https://github.com/cdr/sog/actions)
 
 slog is a minimal structured logging library for Go.
 

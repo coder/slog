@@ -1,4 +1,4 @@
-package slogval_test
+package slog_test
 
 import (
 	"encoding/json"
@@ -10,18 +10,18 @@ import (
 )
 
 func TestMapJSON(t *testing.T) {
-	m := slog.Map(
-		slog.F("wow", slog.Map(
-			slog.F("nested", true),
-			slog.F("much", 3),
-			slog.F("list", []string{
+	m := slog.Map{
+		{"wow", slog.Map{
+			{"nested", true},
+			{"much", 3},
+			{"list", []string{
 				"3",
 				"5",
-			}),
-		)),
-	)
+			}},
+		}},
+	}
 
-	act, err := json.MarshalIndent(slog.Encode(m), "", strings.Repeat(" ", 2))
+	act, err := json.MarshalIndent(m, "", strings.Repeat(" ", 2))
 	if err != nil {
 		t.Fatalf("failed to encode map to JSON: %+v", err)
 	}

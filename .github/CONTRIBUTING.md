@@ -17,7 +17,7 @@ Capitalize the first word in the commit message title.
 
 The commit message title should use the verb tense + phrase that completes the blank in
 
-> This change modifies slog to \_\_\_\_\_\_\_\_\_
+> This change modifies websocket to \_\_\_\_\_\_\_\_\_
 
 Be sure to [correctly link](https://help.github.com/en/articles/closing-issues-using-keywords)
 to an existing issue if one exists. In general, create an issue before a PR to get some
@@ -27,26 +27,19 @@ CI must pass on your changes for them to be merged.
 
 ### CI
 
-CI will ensure your code is formatted correctly, passes linting and tests.
-It will collect coverage and report it to [codecov](https://codecov.io/gh/cdr/slog)
-and also upload a `out/coverage.html` artifact that you can click on to interactively
-browse coverage.
+CI will ensure your code is formatted, lints and passes tests.
+It will collect coverage and report it to [coveralls](https://coveralls.io/github/cdr/slog)
+and also upload a html `coverage` artifact that you can download to browse coverage.
 
-You can run CI locally. The various steps are located in [ci/\*.sh](../ci).
-
-1. [fmt.sh](../ci/fmt.sh) which requires node (specifically prettier).
-1. [lint.sh](../ci/lint.sh) which requires [shellcheck](https://github.com/koalaman/shellcheck#installing).
-1. [test.sh](../ci/test.sh)
-1. [run.sh](../ci/run.sh) which runs the above scripts in order.
-
-For coverage details locally, see `ci/out/coverage.html` after running [test.sh](../ci/test.sh).
+You can run CI locally.
 
 See [ci/image/Dockerfile](../ci/image/Dockerfile) for the installation of the CI dependencies on Ubuntu.
 
-You can also run tests normally with `go test`. [test.sh](../ci/test.sh) just passes a default set of flags to
-`go test` to collect coverage and also prettify the output.
+1. `make fmt` performs code generation and formatting.
+1. `make lint` performs linting.
+1. `make test` runs tests.
+1. `make` runs the above targets.
 
-You can pass flags to [test.sh](../ci/test.sh) if you want to run a specific test or otherwise
-control the behaviour of `go test` but also get coverage.
+For coverage details locally, see `ci/out/coverage.html` after running `make test`.
 
-Coverage percentage from codecov and the CI scripts will be different because they are calculated differently.
+You can run tests normally with `go test`. `make test` wraps around `go test` to collect coverage.
