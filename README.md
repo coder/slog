@@ -26,10 +26,10 @@ go get go.coder.com/slog
 
 ```go
 slogtest.Info(t, "my message here",
-    slog.F("field_name", "something or the other"),
-    slog.F("some_map", slog.Map(
-        slog.F("nested_fields", "wowow"),
-    )),
+    slog.F{"field_name", "something or the other"},
+    slog.F{"some_map", slog.Map{
+        {"nested_fields", "wowow"},
+    }},
     slog.Error(
         xerrors.Errorf("wrap1: %w",
             xerrors.Errorf("wrap2: %w",
