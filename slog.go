@@ -2,13 +2,11 @@ package slog
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"runtime"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 
 	"go.opencensus.io/trace"
@@ -320,8 +318,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field
 func (l Logger) Sync() {
 	for _, s := range l.sinks {
 		err := s.sink.Sync()
-		// Certain devices do not support sync, maybe because they are synchronous by default.
-		if err != nil && !errors.Is(err, syscall.EINVAL) {
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "slog: sink with name %v and type %T failed to sync: %+v\n", s.name, s.sink, err)
 			continue
 		}

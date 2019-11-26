@@ -2,9 +2,11 @@
 package syncwriter
 
 import (
+	"errors"
 	"io"
 	"os"
 	"sync"
+	"syscall"
 )
 
 // Writer implements a concurrency safe io.Writer wrapper.
@@ -39,19 +41,20 @@ func (w *Writer) Sync() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if f, ok := w.w.(*os.File); ok {
-		// We do not want to sync if the writer is os.Stdout or os.Stderr
-		// as that is unsupported on both Linux and MacOS and will return
-		// an error about the fd being an invalid argument.
+	s, ok := w.w.(syncer)
+	if !ok {
+		return nil
+	}
+	err := s.Sync()
+	if _, ok := w.w.(*os.File); ok {
+		// Opened files do not necessarily support syncing.
+		// E.g. stdout and stderr both do not so we need
+		// to ignore these errors.
 		// See https://github.com/uber-go/zap/issues/370
-		if f == os.Stdout || f == os.Stderr {
+		// See https://github.com/cdr/slog/pull/43
+		if errors.Is(err, syscall.EINVAL) {
 			return nil
 		}
-		return f.Sync()
 	}
-
-	if s, ok := w.w.(syncer); ok {
-		return s.Sync()
-	}
-	return nil
+	return err
 }
