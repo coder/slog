@@ -1,4 +1,5 @@
-package slog
+// Package slog implements minimal structured logging.
+package slog // import "go.coder.com/slog"
 
 import (
 	"context"
@@ -12,71 +13,35 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// Field represents a log field.
-type Field interface {
-	LogKey() string
-	Value
+// F represents a log field.
+type F struct {
+	Name  string
+	Value interface{}
 }
 
 // Value represents a log value.
-// The value returned will be logged.
-// Your own types can implement this interface to
-// override their logging appearance.
+// Implement LogValue in your own types to override
+// the value encoded when logging.
 type Value interface {
 	LogValue() interface{}
 }
 
-// ValueFunc is a convenient function wrapper around Value.
-type ValueFunc func() interface{}
-
-// LogValue implements Value.
-func (v ValueFunc) LogValue() interface{} {
-	return v()
-}
-
-type unparsedField struct {
-	name string
-	v    interface{}
-}
-
-func (f unparsedField) LogKey() string {
-	return f.name
-}
-
-func (f unparsedField) LogValue() interface{} {
-	return f.v
-}
-
-// F is used to log arbitrary fields with the logger.
-func F(name string, v interface{}) Field {
-	return unparsedField{
-		name: name,
-		v:    v,
-	}
-}
-
-// Map is used to create an ordered map of fields that can be
-// logged.
-func Map(fs ...Field) []Field {
-	return fs
-}
-
 // Error is the standard key used for logging a Go error value.
-func Error(err error) Field {
-	return unparsedField{
-		name: "error",
-		v:    err,
+func Error(err error) F {
+	return F{
+		Name:  "error",
+		Value: err,
 	}
 }
 
 type fieldsKey struct{}
 
-func fieldsWithContext(ctx context.Context, fields []Field) context.Context {
+func fieldsWithContext(ctx context.Context, fields Map) context.Context {
 	return context.WithValue(ctx, fieldsKey{}, fields)
 }
 
-func fieldsFromContext(ctx context.Context) []Field {
-	l, _ := ctx.Value(fieldsKey{}).([]Field)
+func fieldsFromContext(ctx context.Context) Map {
+	l, _ := ctx.Value(fieldsKey{}).(Map)
 	return l
 }
 
@@ -84,15 +49,15 @@ func fieldsFromContext(ctx context.Context) []Field {
 // Any logs written with the provided context will have
 // the given logs prepended.
 // It will append to any fields already in ctx.
-func Context(ctx context.Context, fields ...Field) context.Context {
+func Context(ctx context.Context, fields ...F) context.Context {
 	f1 := fieldsFromContext(ctx)
 	f2 := combineFields(f1, fields)
 	return fieldsWithContext(ctx, f2)
 }
 
-// Entry represents the structure of a log entry.
+// SinkEntry represents the structure of a log entry.
 // It is the argument to the sink when logging.
-type Entry struct {
+type SinkEntry struct {
 	Time time.Time
 
 	Level   Level
@@ -106,7 +71,7 @@ type Entry struct {
 
 	SpanContext trace.SpanContext
 
-	Fields []Field
+	Fields Map
 }
 
 // Level represents a log level.
@@ -141,7 +106,7 @@ func (l Level) String() string {
 
 // Sink is the destination of a Logger.
 type Sink interface {
-	LogEntry(ctx context.Context, e Entry) error
+	LogEntry(ctx context.Context, e SinkEntry) error
 	Sync() error
 }
 
@@ -162,16 +127,16 @@ type sink struct {
 	name   string
 	sink   Sink
 	level  *int64
-	fields []Field
+	fields Map
 }
 
-func combineFields(f1, f2 []Field) []Field {
-	f3 := make([]Field, 0, len(f1)+len(f2))
+func combineFields(f1, f2 Map) Map {
+	f3 := make(Map, 0, len(f1)+len(f2))
 	f3 = append(f3, f1...)
 	f3 = append(f3, f2...)
 	return f3
 }
-func (s sink) withFields(fields []Field) sink {
+func (s sink) withFields(fields Map) sink {
 	s.fields = combineFields(s.fields, fields)
 	return s
 }
@@ -206,32 +171,32 @@ func (l Logger) clone() Logger {
 }
 
 // Debug logs the msg and fields at LevelDebug.
-func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Debug(ctx context.Context, msg string, fields ...F) {
 	l.log(ctx, LevelDebug, msg, fields)
 }
 
 // Info logs the msg and fields at LevelInfo.
-func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Info(ctx context.Context, msg string, fields ...F) {
 	l.log(ctx, LevelInfo, msg, fields)
 }
 
 // Warn logs the msg and fields at LevelWarn.
-func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Warn(ctx context.Context, msg string, fields ...F) {
 	l.log(ctx, LevelWarn, msg, fields)
 }
 
 // Error logs the msg and fields at LevelError.
-func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Error(ctx context.Context, msg string, fields ...F) {
 	l.log(ctx, LevelError, msg, fields)
 }
 
 // Critical logs the msg and fields at LevelCritical.
-func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Critical(ctx context.Context, msg string, fields ...F) {
 	l.log(ctx, LevelCritical, msg, fields)
 }
 
 // Fatal logs the msg and fields at LevelFatal.
-func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Fatal(ctx context.Context, msg string, fields ...F) {
 	l.log(ctx, LevelFatal, msg, fields)
 }
 
@@ -251,7 +216,7 @@ func addHelper(fn string) {
 // With returns a Logger that prepends the given fields on every
 // logged entry.
 // It will append to any fields already in the Logger.
-func (l Logger) With(fields ...Field) Logger {
+func (l Logger) With(fields ...F) Logger {
 	l = l.clone()
 	for i, s := range l.sinks {
 		l.sinks[i] = s.withFields(fields)
@@ -279,8 +244,8 @@ func (l Logger) SetLevel(level Level) {
 	}
 }
 
-func (l Logger) log(ctx context.Context, level Level, msg string, fields []Field) {
-	ent := Entry{
+func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
+	ent := SinkEntry{
 		Time:        time.Now().UTC(),
 		Level:       level,
 		Message:     msg,
@@ -325,14 +290,14 @@ func (l Logger) Sync() {
 	}
 }
 
-func (ent Entry) fillFromFrame(f runtime.Frame) Entry {
+func (ent SinkEntry) fillFromFrame(f runtime.Frame) SinkEntry {
 	ent.Func = f.Function
 	ent.File = f.File
 	ent.Line = f.Line
 	return ent
 }
 
-func (ent Entry) fillLoc(helpers map[string]struct{}, skip int) Entry {
+func (ent SinkEntry) fillLoc(helpers map[string]struct{}, skip int) SinkEntry {
 	// Copied from testing.T
 	const maxStackLen = 50
 	var pc [maxStackLen]uintptr
@@ -363,7 +328,7 @@ func (ent Entry) fillLoc(helpers map[string]struct{}, skip int) Entry {
 	}
 }
 
-func (s sink) entry(ctx context.Context, ent Entry) Entry {
+func (s sink) entry(ctx context.Context, ent SinkEntry) SinkEntry {
 	s = s.withContext(ctx)
 	s = s.withFields(ent.Fields)
 	s = s.named(ent.LoggerName)
@@ -387,24 +352,14 @@ func location(skip int) (file string, line int, fn string) {
 func Tee(ls ...Logger) Logger {
 	var l Logger
 	for _, l2 := range ls {
-		// Just the zero value logger.
-		if len(l2.sinks) == 0 {
-			continue
-		}
-
 		l.sinks = append(l.sinks, l2.sinks...)
 	}
 	return l
 }
 
-type jsonValue struct {
+// JSON wraps around another type to indicate that it should be
+// encoded via json.Marshal instead of via the default
+// reflection based encoder.
+type JSON struct {
 	V interface{}
-}
-
-// JSON tells the encoder that the struct in v
-// should be encoded obeying JSON struct tags.
-// Field names can be adjusted and omitempty
-// is obeyed.
-func JSON(v interface{}) interface{} {
-	return jsonValue{V: v}
 }

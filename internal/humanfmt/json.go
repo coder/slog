@@ -12,7 +12,7 @@ import (
 // Adapted from https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/styles/bw.go#L7
 // https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/formatters/tty_indexed.go
 // https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/lexers/j/json.go
-var nhooyrJSON = chroma.MustNewStyle("nhooyrJSON", chroma.StyleEntries{
+var cdrJSON = chroma.MustNewStyle("cdrJSON", chroma.StyleEntries{
 	// Magenta.
 	chroma.Keyword: "#7f007f",
 	// Magenta.
@@ -31,7 +31,7 @@ func highlightJSON(buf []byte) []byte {
 		return buf
 	}
 	b := bytes.NewBuffer(buf[:0])
-	err = formatters.TTY8.Format(b, nhooyrJSON, it)
+	err = formatters.TTY8.Format(b, cdrJSON, it)
 	if err != nil {
 		os.Stderr.WriteString("slogjson: failed to format JSON entry: " + err.Error())
 		return buf

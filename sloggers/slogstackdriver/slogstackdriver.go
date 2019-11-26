@@ -77,18 +77,16 @@ type stackdriverSink struct {
 	ec        *errorreporting.Client
 }
 
-func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.Entry) error {
+func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 	if ent.Message != "" {
-		ent.Fields = append(slog.Map(), ent.Fields...)
+		ent.Fields = append(slog.Map{}, ent.Fields...)
 		// https://cloud.google.com/logging/docs/view/overview#expanding
-		ent.Fields = append(ent.Fields, slog.F("message", ent.Message))
+		ent.Fields = append(ent.Fields, slog.F{"message", ent.Message})
 	}
 	e := logging.Entry{
 		Timestamp: ent.Time,
 		Severity:  sev(ent.Level),
-		// Can optimize in the future by directly translating the slogval into
-		// a protobuf structpb value instead of marshalling to JSON first.
-		Payload: slog.Encode(ent.Fields),
+		Payload:   ent.Fields,
 		SourceLocation: &logpb.LogEntrySourceLocation{
 			File:     ent.File,
 			Line:     int64(ent.Line),
@@ -116,7 +114,7 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.Entry) error {
 	return nil
 }
 
-func errorReportingEntry(ent slog.Entry) errorreporting.Entry {
+func errorReportingEntry(ent slog.SinkEntry) errorreporting.Entry {
 	errEnt := errorreporting.Entry{
 		Error: xerrors.New(ent.Message),
 		Stack: debug.Stack(),
