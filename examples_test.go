@@ -48,7 +48,8 @@ func TestExample(t *testing.T) {
 		slog.Error(
 			xerrors.Errorf("wrap1: %w",
 				xerrors.Errorf("wrap2: %w",
-					io.EOF),
+					io.EOF,
+				),
 			),
 		),
 	)

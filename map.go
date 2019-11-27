@@ -21,6 +21,8 @@ var _ json.Marshaler = Map(nil)
 
 // MarshalJSON implements json.Marshaler.
 func (m Map) MarshalJSON() ([]byte, error) {
+	m = encodeInterface(m).(Map)
+
 	b := &bytes.Buffer{}
 	b.WriteString("{")
 	for i, f := range m {

@@ -1,4 +1,8 @@
 // Package slog implements minimal structured logging.
+//
+// See https://cdr.dev/slog for more overview docs and a comparison with existing libraries.
+//
+//
 package slog // import "go.coder.com/slog"
 
 import (
