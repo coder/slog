@@ -1,6 +1,6 @@
 // Package slogtest contains the slogger for use
 // with Go's testing package.
-package slogtest // import "go.coder.com/slog/sloggers/slogtest"
+package slogtest // import "cdr.dev/slog/sloggers/slogtest"
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
-	"go.coder.com/slog"
-	"go.coder.com/slog/internal/humanfmt"
-	"go.coder.com/slog/sloggers/sloghuman"
+	"cdr.dev/slog"
+	"cdr.dev/slog/internal/humanfmt"
+	"cdr.dev/slog/sloggers/sloghuman"
 )
 
 // Ensure all stdlib logs go through slog.

@@ -1,7 +1,7 @@
 # slog
 
 [![GitHub Release](https://img.shields.io/github/v/release/cdr/slog?color=6b9ded&sort=semver)](https://github.com/cdr/slog/releases)
-[![GoDoc](https://godoc.org/go.coder.com/slog?status.svg)](https://godoc.org/go.coder.com/slog)
+[![GoDoc](https://godoc.org/cdr.dev/slog?status.svg)](https://godoc.org/cdr.dev/slog)
 [![Coveralls](https://img.shields.io/coveralls/github/cdr/slog?color=65d6a4)](https://coveralls.io/github/cdr/slog)
 [![CI Status](https://github.com/cdr/slog/workflows/ci/badge.svg)](https://github.com/cdr/slog/actions)
 
@@ -10,7 +10,7 @@ slog is a minimal structured logging library for Go.
 ## Install
 
 ```bash
-go get go.coder.com/slog
+go get cdr.dev/slog
 ```
 
 ## Features
@@ -18,14 +18,14 @@ go get go.coder.com/slog
 - Minimal API
 - Tiny codebase
 - First class [context.Context](https://blog.golang.org/context) support
-- First class [testing.TB](https://godoc.org/go.coder.com/slog/slogtest) support
+- First class [testing.TB](https://godoc.org/cdr.dev/slog/slogtest) support
 - Beautiful human readable logging output
   - Prints multiline fields and errors nicely
 - Machine readable JSON output
-- [GCP Stackdriver](https://godoc.org/go.coder.com/slog/sloggers/slogstackdriver) support
-- [Tee](https://godoc.org/go.coder.com/slog#Tee) multiple loggers
-- [Stdlib](https://godoc.org/go.coder.com/slog#Stdlib) log adapter
-- Skip caller frames with [slog.Helper](https://godoc.org/go.coder.com/slog#Helper)
+- [GCP Stackdriver](https://godoc.org/cdr.dev/slog/sloggers/slogstackdriver) support
+- [Tee](https://godoc.org/cdr.dev/slog#Tee) multiple loggers
+- [Stdlib](https://godoc.org/cdr.dev/slog#Stdlib) log adapter
+- Skip caller frames with [slog.Helper](https://godoc.org/cdr.dev/slog#Helper)
 - Can encode any Go structure including private fields
 
 ## Example
@@ -65,7 +65,7 @@ the API is in our opinion too dynamic. It's too easy to miss the key of a value 
 checking. It's less verbose but harder to read as there is less grouping each key value pair.
 
 We wanted an API that only accepted the equivalent of [zap.Any](https://godoc.org/go.uber.org/zap#Any) for every field.
-This is [slog.F](https://godoc.org/go.coder.com/slog#F).
+This is [slog.F](https://godoc.org/cdr.dev/slog#F).
 
 Second, we found the human readable format to be hard to read due to the lack appropriate colors for different levels
 and fields. `slog` colors distinct parts of each line to make it easier to scan logs. Even the JSON that represents

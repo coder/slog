@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.coder.com/slog/internal/assert"
+	"cdr.dev/slog/internal/assert"
 )
 
 func TestMapJSON(t *testing.T) {

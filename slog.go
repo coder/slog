@@ -2,8 +2,8 @@
 //
 // See https://cdr.dev/slog for more overview docs and a comparison with existing libraries.
 //
-//
-package slog // import "go.coder.com/slog"
+// Sink implementations available in sloghuman, slogjson, slogstackdriver and slogtest.
+package slog // import "cdr.dev/slog"
 
 import (
 	"context"

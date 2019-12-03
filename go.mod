@@ -1,4 +1,4 @@
-module go.coder.com/slog
+module cdr.dev/slog
 
 go 1.13
 

@@ -16,7 +16,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/xerrors"
 
-	"go.coder.com/slog"
+	"cdr.dev/slog"
 )
 
 func c(attrs ...color.Attribute) *color.Color {

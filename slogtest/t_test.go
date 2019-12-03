@@ -7,8 +7,8 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"go.coder.com/slog"
-	"go.coder.com/slog/sloggers/slogtest"
+	"cdr.dev/slog"
+	"cdr.dev/slog/sloggers/slogtest"
 )
 
 type meow struct {

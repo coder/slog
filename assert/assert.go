@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"go.coder.com/slog"
-	"go.coder.com/slog/sloggers/slogtest"
+	"cdr.dev/slog"
+	"cdr.dev/slog/sloggers/slogtest"
 )
 
 // Equal compares exp to act. If they are not equal, it will fatal the test

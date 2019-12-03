@@ -8,14 +8,14 @@
 //    "component": "comp.subcomp",
 //    "msg": "hi",
 //    "caller": "slog/examples_test.go:62",
-//    "func": "go.coder.com/slog/sloggers/slogtest_test.TestExampleTest",
+//    "func": "cdr.dev/slog/sloggers/slogtest_test.TestExampleTest",
 //    "trace": "<traceid>",
 //    "span": "<spanid>",
 //    "fields": {
 //      "myField": "fieldValue"
 //    }
 //  }
-package slogjson // import "go.coder.com/slog/sloggers/slogjson"
+package slogjson // import "cdr.dev/slog/sloggers/slogjson"
 
 import (
 	"context"
@@ -26,9 +26,9 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
-	"go.coder.com/slog"
-	"go.coder.com/slog/internal/humanfmt"
-	"go.coder.com/slog/internal/syncwriter"
+	"cdr.dev/slog"
+	"cdr.dev/slog/internal/humanfmt"
+	"cdr.dev/slog/internal/syncwriter"
 )
 
 // Make creates a logger that writes JSON logs
