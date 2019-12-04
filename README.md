@@ -55,50 +55,64 @@ for several years now.
 
 It's a fantastic library for performance but the API and developer experience is not great.
 
-First, the API surface is very large. See [godoc](https://godoc.org/go.uber.org/zap).
-That's not including zap's subpackage [zapcore](https://godoc.org/go.uber.org/zap/zapcore) which
-is itself very big.
+These are the main reasons we decided it was worth creating another log package for Go:
 
-The sprawling API has made it hard to understand, use and extend. zap's regular API is also very verbose
-to the explicit typing. While it does offer a [sugared API](https://godoc.org/go.uber.org/zap#hdr-Choosing_a_Logger)
-the API is in our opinion too dynamic. It's too easy to miss the key of a value since there is no static type
-checking. It's less verbose but harder to read as there is less grouping each key value pair.
+1. Very large API surface. Compare [zap](https://godoc.org/go.uber.org/zap) and
+   [zapcore](https://godoc.org/go.uber.org/zap/zapcore) to [slog](https://godoc.org/cdr.dev/slog)
 
-We wanted an API that only accepted the equivalent of [zap.Any](https://godoc.org/go.uber.org/zap#Any) for every field.
-This is [slog.F](https://godoc.org/cdr.dev/slog#F).
+   - The sprawling API has made it hard to understand, use and extend.
 
-Second, we found the human readable format to be hard to read due to the lack appropriate colors for different levels
-and fields. `slog` colors distinct parts of each line to make it easier to scan logs. Even the JSON that represents
-the fields in each log is syntax highlighted so that is very easy to scan. See the screenshot above.
+1. zap's typed API is too verbose.
 
-Third, zap logged multiline fields and errors stack traces as JSON strings which made them pretty much unreadable in the
-console. When using the human logger, slog automatically prints one multiline field after the log to make errors and
-such much easier to read. slog also automatically prints a Go 1.13 error chain as an array. See screenshot above.
+   - It does offer a [sugared API](https://godoc.org/go.uber.org/zap#hdr-Choosing_a_Logger)
+     but it's too easy to pass an invalid fields list since there is no static type checking.
+     Furthermore, it's harder to read as there is no syntax grouping for each key value pair.
+   - We wanted an API that only accepted the equivalent of [zap.Any](https://godoc.org/go.uber.org/zap#Any) for every field.
+     This is [slog.F](https://godoc.org/cdr.dev/slog#F).
 
-Fourth, zap does not support `context.Context`. We wanted to be able to pull up all relevant logs for a given trace,
-user or request. With zap, we'd have to manually plug these fields in for every relevant log or use `With` on `zap.Logger`
-to set the appropriate fields and pass it around. This got very verbose. `slog` lets you set fields in a `context.Context`
-such that any log with the context prints those fields.
+1. zap's human readable format is not easy to read.
 
-Fifth, we found it hard and confusing to extend zap. There are too many structures and configuration options. We wanted
-a very simple and easy to understand extension model. With slog, there is only the idea of a Sink and Logger. Logger
-is the concrete type used to provide the high level API. Sink is the interface that must be implemented for a new
-logging backend.
+   - Lack of appropriate colors for different levels and fields
+     - slog colors distinct parts of each line to make it easier to scan logs. Even the JSON that represents
+       the fields in each log is syntax highlighted so that is very easy to scan. See the screenshot above.
+   - zap logs multiline fields and errors stack traces as JSON strings which made them unreadable in a terminal.
+     - slog automatically prints one multiline field after the log to make errors and such much easier to read.
+       slog also automatically prints a Go 1.13 error chain as an array. See screenshot above.
 
-Sixth, we found ourselves often implementing zap's [ObjectMarshaler](https://godoc.org/go.uber.org/zap/zapcore#ObjectMarshaler) to
-log Go structures. This was very verbose and most of the time we just ended up only implementing `fmt.Stringer` and using `zap.Stringer`
-instead. We wanted it to be automatic, even for private fields. slog handles this transparently for us. It will automatically
-log Go structures with their fields separate, including private fields.
+1. Lack of [context.Context](https://blog.golang.org/context) support.
 
-Seventh, t.Helper style APIf
+   - We wanted to be able to pull up all relevant logs for a given trace, user or request. With zap, we were plugging
+     these fields in for every relevant log or passing around a logger with the fields set. This became very verbose.
+     - `slog` lets you set fields in a `context.Context` such that any log with the context prints those fields.
 
-Eight, tighter integration with `*testing.T`.
+1. zap is hard and confusing to extend. There are too many structures and configuration options.
 
-These are the main reasons we decided it was worth creating another log package for Go.
+   - With slog, the extension model is based on the single method Sink interface. Logger is the
+     concrete type around Sink used to provide the high level API.
 
-## Contributing
+1. We found ourselves often implementing zap's [ObjectMarshaler](https://godoc.org/go.uber.org/zap/zapcore#ObjectMarshaler)
+   to log Go structures.
 
-See [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
+   - This was very verbose and most of the time we ended up only implementing `fmt.Stringer` and using `zap.Stringer`
+     instead.
+   - slog handles Go structures transparently, including private fields. One
+     may implement [`slog.Value`](https://godoc.org/go.coder.com/slog#Value) to override the representation,
+     use struct tags to ignore or rename fields and even reuse the
+     [`json.Marshal`](https://golang.org/pkg/encoding/json/#Marshal) representation
+     with [`slog.JSON`](https://godoc.org/go.coder.com/slog#JSON).
+
+1. We had many helper functions for logging but we wanted the line reported to be of the parent function.
+   zap has an [API](https://godoc.org/go.uber.org/zap#AddCallerSkip) for this but it's verbose and requires
+   passing the logger around explicitly.
+
+   - slog takes inspriation from Go's stdlib and implements [`slog.Helper`](https://godoc.org/go.coder.com/slog#Helper) which works just like
+     [`t.Helper`](https://golang.org/pkg/testing/#T.Helper)
+
+1. We wanted tighter integration with stdlib's [`testing`](https://golang.org/pkg/testing) package.
+   - zap has [zaptest](https://godoc.org/go.uber.org/zap/zaptest) but the API surface is large and doesn't
+     integrate well. It has no support for failing on any ERROR logs nor does it have a stateless API
+     that logs directly to a [`testing.TB`](https://golang.org/pkg/testing/#TB) without creating a
+     intermediary logger.
 
 ## Users
 
