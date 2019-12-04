@@ -10,7 +10,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/xerrors"
 )
 
@@ -79,7 +78,7 @@ func encodeInterface(v interface{}) interface{} {
 		return m
 	case Value:
 		return encodeInterface(v.LogValue())
-	case proto.Message:
+	case protoMessage:
 		return encodeReflect(reflect.ValueOf(v), false)
 	case encoding.TextMarshaler:
 		return marshalText(v)
@@ -176,7 +175,7 @@ func reflectStruct(m Map, rv reflect.Value, structTyp reflect.Type, json, pure b
 		typ := structTyp.Field(i)
 		rv := rv.Field(i)
 
-		if implements(structTyp, (*proto.Message)(nil)) && strings.HasPrefix(typ.Name, "XXX_") {
+		if implements(structTyp, (*protoMessage)(nil)) && strings.HasPrefix(typ.Name, "XXX_") {
 			// Have to ignore XXX_ fields for protobuf messages.
 			continue
 		}
@@ -377,4 +376,9 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.IsNil()
 	}
 	return false
+}
+
+type protoMessage interface {
+	// Avoids the dependency on github.com/golang/protobuf/proto to be explicit here.
+	ProtoMessage()
 }
