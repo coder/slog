@@ -27,6 +27,8 @@ go get cdr.dev/slog
 - [Stdlib](https://godoc.org/cdr.dev/slog#Stdlib) log adapter
 - Skip caller frames with [slog.Helper](https://godoc.org/cdr.dev/slog#Helper)
 - Can encode any Go structure including private fields
+- Transparently logs [opencensus](https://godoc.org/go.opencensus.io/trace) trace and span IDs
+- [Single dependency](https://godoc.org/cdr.dev/slog?imports) on go.opencensus.io
 
 ## Example
 
