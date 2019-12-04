@@ -96,16 +96,16 @@ These are the main reasons we decided it was worth creating another log package 
    - This was very verbose and most of the time we ended up only implementing `fmt.Stringer` and using `zap.Stringer`
      instead.
    - slog handles Go structures transparently, including private fields. One
-     may implement [`slog.Value`](https://godoc.org/go.coder.com/slog#Value) to override the representation,
+     may implement [`slog.Value`](https://godoc.org/cdr.dev/slog#Value) to override the representation,
      use struct tags to ignore or rename fields and even reuse the
      [`json.Marshal`](https://golang.org/pkg/encoding/json/#Marshal) representation
-     with [`slog.JSON`](https://godoc.org/go.coder.com/slog#JSON).
+     with [`slog.JSON`](https://godoc.org/cdr.dev/slog#JSON).
 
 1. We had many helper functions for logging but we wanted the line reported to be of the parent function.
    zap has an [API](https://godoc.org/go.uber.org/zap#AddCallerSkip) for this but it's verbose and requires
    passing the logger around explicitly.
 
-   - slog takes inspriation from Go's stdlib and implements [`slog.Helper`](https://godoc.org/go.coder.com/slog#Helper) which works just like
+   - slog takes inspriation from Go's stdlib and implements [`slog.Helper`](https://godoc.org/cdr.dev/slog#Helper) which works just like
      [`t.Helper`](https://golang.org/pkg/testing/#T.Helper)
 
 1. We wanted tighter integration with stdlib's [`testing`](https://golang.org/pkg/testing) package.
