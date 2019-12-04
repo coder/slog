@@ -1,5 +1,9 @@
 // Package slog implements minimal structured logging.
-package slog // import "go.coder.com/slog"
+//
+// See https://cdr.dev/slog for more overview docs and a comparison with existing libraries.
+//
+// Sink implementations available in sloghuman, slogjson, slogstackdriver and slogtest.
+package slog // import "cdr.dev/slog"
 
 import (
 	"context"
@@ -202,6 +206,7 @@ func (l Logger) Fatal(ctx context.Context, msg string, fields ...F) {
 
 // Helper marks the calling function as a helper
 // and skips it for source location information.
+// It's the slog equivalent of *testing.T.Helper().
 func Helper() {
 	_, _, fn := location(1)
 	addHelper(fn)

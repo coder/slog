@@ -1,6 +1,6 @@
 // Package sloghuman contains the slogger
 // that writes logs in a human readable format.
-package sloghuman // import "go.coder.com/slog/sloggers/sloghuman"
+package sloghuman // import "cdr.dev/slog/sloggers/sloghuman"
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"os"
 	"strings"
 
-	"go.coder.com/slog"
-	"go.coder.com/slog/internal/humanfmt"
-	"go.coder.com/slog/internal/syncwriter"
+	"cdr.dev/slog"
+	"cdr.dev/slog/internal/humanfmt"
+	"cdr.dev/slog/internal/syncwriter"
 )
 
 // Make creates a logger that writes logs in a human

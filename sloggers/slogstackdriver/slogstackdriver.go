@@ -1,5 +1,5 @@
 // Package slogstackdriver contains the slogger for GCP.
-package slogstackdriver // import "go.coder.com/slog/sloggers/slogstackdriver"
+package slogstackdriver // import "cdr.dev/slog/sloggers/slogstackdriver"
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 	"golang.org/x/xerrors"
 	logpb "google.golang.org/genproto/googleapis/logging/v2"
 
-	"go.coder.com/slog"
+	"cdr.dev/slog"
 )
 
 // Config for the stackdriver logger.
