@@ -2,6 +2,7 @@ package slog
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -38,7 +39,7 @@ func TestMapJSON(t *testing.T) {
 }
 `)
 
-	assert.Equalf(t, exp, string(act), "unexpected JSON")
+	assert.Equal(t, exp, string(act), "JSON")
 }
 
 func Test_snakecase(t *testing.T) {
@@ -91,12 +92,11 @@ func Test_snakecase(t *testing.T) {
 
 		for i, tc := range tcs {
 			tc := tc
-			i := i
-			t.Run("", func(t *testing.T) {
+			t.Run(strconv.Itoa(i), func(t *testing.T) {
 				t.Parallel()
 
 				out := snakecase(tc.s)
-				assert.Equalf(t, tc.exp, out, "snakecase gave unexpected output for case %d", i)
+				assert.Equal(t, tc.exp, out, "snakecase")
 			})
 		}
 	})

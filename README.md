@@ -18,7 +18,8 @@ go get cdr.dev/slog
 - Minimal API
 - Tiny codebase
 - First class [context.Context](https://blog.golang.org/context) support
-- First class [testing.TB](https://godoc.org/cdr.dev/slog/slogtest) support
+- First class [testing.TB](https://godoc.org/cdr.dev/slog/sloggers/slogtest) support
+  - Package [assert](https://godoc.org/cdr.dev/slog/sloggers/slogtest/assert) provides test assertion helpers
 - Beautiful human readable logging output
     - Prints multiline fields and errors nicely
 - Machine readable JSON output
