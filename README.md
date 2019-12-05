@@ -73,9 +73,9 @@ Here is a list of reasons how we improved on zap with slog.
    - We wanted an API that only accepted the equivalent of [zap.Any](https://godoc.org/go.uber.org/zap#Any) for every field.
      This is [slog.F](https://godoc.org/cdr.dev/slog#F).
 
-1. `sloggers/sloghuman` uses a very human readable format
+1. [`sloghuman`](https://godoc.org/cdr.dev/slog/sloggers/sloghuman) uses a very human readable format
 
-   - slog colors distinct parts of each line to make it easier to scan logs. Even the JSON that represents
+   - It colors distinct parts of each line to make it easier to scan logs. Even the JSON that represents
      the fields in each log is syntax highlighted so that is very easy to scan. See the screenshot above.
      - zap lacks appropriate colors for different levels and fields
    - slog automatically prints one multiline field after the log to make errors and such much easier to read.
@@ -83,8 +83,8 @@ Here is a list of reasons how we improved on zap with slog.
      - zap logs multiline fields and errors stack traces as JSON strings which made them unreadable in a terminal.
 
 1. Full [context.Context](https://blog.golang.org/context) support
-   `slog` lets you set fields in a `context.Context` such that any log with the context prints those fields.
 
+   - `slog` lets you set fields in a `context.Context` such that any log with the context prints those fields.
    - We wanted to be able to pull up all relevant logs for a given trace, user or request. With zap, we were plugging
      these fields in for every relevant log or passing around a logger with the fields set. This became very verbose.
 
@@ -105,9 +105,9 @@ Here is a list of reasons how we improved on zap with slog.
      instead.
 
 1. slog takes inspriation from Go's stdlib and implements [`slog.Helper`](https://godoc.org/cdr.dev/slog#Helper) which works just like
-   [`t.Helper`](https://golang.org/pkg/testing/#T.Helper) to mark the calling function as a helper and skip it when
-   reporting location info.
+   [`t.Helper`](https://golang.org/pkg/testing/#T.Helper).
 
+   - It marks the calling function as a helper and skips it when reporting location info.
    - We had many helper functions for logging but we wanted the line reported to be of the parent function.
      zap has an [API](https://godoc.org/go.uber.org/zap#AddCallerSkip) for this but it's verbose and requires
      passing the logger around explicitly.
