@@ -75,12 +75,13 @@ Here is a list of reasons how we improved on zap with slog.
 
 1. [`sloghuman`](https://godoc.org/cdr.dev/slog/sloggers/sloghuman) uses a very human readable format
 
-   - It colors distinct parts of each line to make it easier to scan logs. Even the JSON that represents
-     the fields in each log is syntax highlighted so that is very easy to scan. See the screenshot above.
-     - zap lacks appropriate colors for different levels and fields
-   - slog automatically prints one multiline field after the log to make errors and such much easier to read.
-     slog also automatically prints a Go 1.13 error chain as an array. See screenshot above.
-     - zap logs multiline fields and errors stack traces as JSON strings which made them unreadable in a terminal.
+    - It colors distinct parts of each line to make it easier to scan logs. Even the JSON that represents
+      the fields in each log is syntax highlighted so that is very easy to scan. See the screenshot above.
+        - zap lacks appropriate colors for different levels and fields
+    - slog automatically prints one multiline field after the log to make errors and such much easier to read.
+        - zap logs multiline fields and errors stack traces as JSON strings which made them unreadable in a terminal.
+    - When logging to JSON, slog automatically converts a [`golang.org/x/xerrors`](https://golang.org/x/xerrors) chain
+      into an array with fields for the location and wrapping messages.
 
 1. Full [context.Context](https://blog.golang.org/context) support
 
