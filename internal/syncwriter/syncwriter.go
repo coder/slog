@@ -52,7 +52,7 @@ func (w *Writer) Sync() error {
 		// to ignore these errors.
 		// See https://github.com/uber-go/zap/issues/370
 		// See https://github.com/cdr/slog/pull/43
-		if errors.Is(err, syscall.EINVAL) {
+		if errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTTY) {
 			return nil
 		}
 	}

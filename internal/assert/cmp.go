@@ -1,27 +1,14 @@
-// Package assert is a helper package for asserting equality and
-// generating diffs in tests.
 package assert
 
 import (
 	"reflect"
-	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-// Equalf compares exp to act. If they are not equal, it will fatal the test
-// with the passed msg, args and also a diff of the differences.
-func Equalf(t *testing.T, exp, act interface{}, msg string, v ...interface{}) {
-	if diff := diff(exp, act); diff != "" {
-		t.Fatalf(msg+": %v", append(v, diff)...)
-	}
-}
-
-// diff returns a diff between exp and act.
-// The empty string is returned if they are identical.
-// See https://github.com/google/go-cmp/issues/40#issuecomment-328615283
-// Copied from https://github.com/nhooyr/websocket/blob/1b874731eab56c69c8bb3ebf8a029020c7863fc9/cmp_test.go
-func diff(exp, act interface{}) string {
+// CmpDiff compares exp to act and returns a human readable string representing their diff.
+// https://github.com/google/go-cmp/issues/40#issuecomment-328615283
+func CmpDiff(exp, act interface{}) string {
 	return cmp.Diff(exp, act, deepAllowUnexported(exp, act))
 }
 

@@ -2,7 +2,7 @@
 //
 // See https://cdr.dev/slog for more overview docs and a comparison with existing libraries.
 //
-// Sink implementations available in sloghuman, slogjson, slogstackdriver and slogtest.
+// Sink implementations available in the sloggers subpackage.
 package slog // import "cdr.dev/slog"
 
 import (
@@ -166,9 +166,6 @@ func (s sink) withContext(ctx context.Context) sink {
 	return s.withFields(f)
 }
 
-var helpersMu sync.Mutex
-var helpers = make(map[string]struct{})
-
 // Logger allows logging a ordered slice of fields
 // to an underlying set of sinks.
 type Logger struct {
@@ -211,18 +208,14 @@ func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelFatal, msg, fields)
 }
 
+var helpers sync.Map
+
 // Helper marks the calling function as a helper
 // and skips it for source location information.
 // It's the slog equivalent of *testing.T.Helper().
 func Helper() {
 	_, _, fn := location(1)
-	addHelper(fn)
-}
-
-func addHelper(fn string) {
-	helpersMu.Lock()
-	helpers[fn] = struct{}{}
-	helpersMu.Unlock()
+	helpers.LoadOrStore(fn, struct{}{})
 }
 
 // With returns a Logger that prepends the given fields on every
@@ -264,9 +257,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 		Fields:      fields,
 		SpanContext: trace.FromContext(ctx).SpanContext(),
 	}
-	helpersMu.Lock()
-	ent = ent.fillLoc(helpers, l.skip+2)
-	helpersMu.Unlock()
+	ent = ent.fillLoc(l.skip + 2)
 
 	for _, s := range l.sinks {
 		slevel := Level(atomic.LoadInt64(s.level))
@@ -309,7 +300,7 @@ func (ent SinkEntry) fillFromFrame(f runtime.Frame) SinkEntry {
 	return ent
 }
 
-func (ent SinkEntry) fillLoc(helpers map[string]struct{}, skip int) SinkEntry {
+func (ent SinkEntry) fillLoc(skip int) SinkEntry {
 	// Copied from testing.T
 	const maxStackLen = 50
 	var pc [maxStackLen]uintptr
@@ -329,7 +320,7 @@ func (ent SinkEntry) fillLoc(helpers map[string]struct{}, skip int) SinkEntry {
 
 	frame := first
 	for {
-		if _, ok := helpers[frame.Function]; !ok {
+		if _, ok := helpers.Load(frame.Function); !ok {
 			// Found a frame that wasn't inside a helper function.
 			return ent.fillFromFrame(frame)
 		}

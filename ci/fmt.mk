@@ -19,7 +19,7 @@ goimports: gen
 	goimports -w "-local=$$(go list -m)" .
 
 prettier:
-	prettier --write --print-width=120 --no-semi --trailing-comma=all --loglevel=warn $$(git ls-files "*.yml" "*.md")
+	prettier --write --print-width=120 --no-semi --trailing-comma=all --loglevel=warn $$(git ls-files "*.yml")
 
 gen:
 	go generate ./...

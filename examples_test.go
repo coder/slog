@@ -19,14 +19,14 @@ func Example_test() {
 
 	slogtest.Info(t, "my message here",
 		slog.F("field_name", "something or the other"),
-		slog.F("field_name", "something or the other"),
 		slog.F("some_map", slog.M(
 			slog.F("nested_fields", "wowow"),
 		)),
 		slog.Error(
 			xerrors.Errorf("wrap1: %w",
 				xerrors.Errorf("wrap2: %w",
-					io.EOF),
+					io.EOF,
+				),
 			),
 		),
 	)
@@ -67,7 +67,8 @@ func TestJSON(t *testing.T) {
 		slog.Error(
 			xerrors.Errorf("wrap1: %w",
 				xerrors.Errorf("wrap2: %w",
-					io.EOF),
+					io.EOF,
+				),
 			)),
 	)
 
