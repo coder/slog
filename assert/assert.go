@@ -13,13 +13,13 @@ import (
 
 // Equal compares exp to act. If they are not equal, it will fatal the test
 // with the passed msg, fields and also a diff of the differences.
-func Equal(t testing.TB, exp, act interface{}, msg string, fields ...slog.F) {
+func Equal(t testing.TB, exp, act interface{}, msg string, fields ...slog.Field) {
 	slog.Helper()
 	equal(t, exp, act, msg, fields)
 }
 
 // Success calls Equal with exp = nil and act = err.
-func Success(t testing.TB, err error, msg string, fields ...slog.F) {
+func Success(t testing.TB, err error, msg string, fields ...slog.Field) {
 	slog.Helper()
 	if err != nil {
 		fields = append(fields, slog.Error(err))
@@ -28,7 +28,7 @@ func Success(t testing.TB, err error, msg string, fields ...slog.F) {
 }
 
 // True asserts that act is true.
-func True(t testing.TB, act bool, msg string, fields ...slog.F) {
+func True(t testing.TB, act bool, msg string, fields ...slog.Field) {
 	slog.Helper()
 	equal(t, true, act, msg, fields)
 }
@@ -36,7 +36,7 @@ func True(t testing.TB, act bool, msg string, fields ...slog.F) {
 func equal(t testing.TB, exp, act interface{}, msg string, fields slog.Map, opts ...cmp.Option) {
 	slog.Helper()
 	if diff := diff(exp, act); diff != "" {
-		fields = append(fields, slog.F{"diff", diff})
+		fields = append(fields, slog.F("diff", diff))
 		slogtest.Fatal(t, "equal assertion failed: "+msg, fields...)
 	}
 }

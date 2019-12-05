@@ -70,10 +70,10 @@ func Entry(ent slog.SinkEntry, enableColor bool) string {
 	ents += msg
 
 	if ent.SpanContext != (trace.SpanContext{}) {
-		ent.Fields = append(slog.Map{
-			{"trace", ent.SpanContext.TraceID},
-			{"span", ent.SpanContext.SpanID},
-		}, ent.Fields...)
+		ent.Fields = append(slog.M(
+			slog.F("trace", ent.SpanContext.TraceID),
+			slog.F("span", ent.SpanContext.SpanID),
+		), ent.Fields...)
 	}
 
 	for i, f := range ent.Fields {

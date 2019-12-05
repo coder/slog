@@ -26,23 +26,23 @@ go get cdr.dev/slog
 - [Tee](https://godoc.org/cdr.dev/slog#Tee) multiple loggers
 - [Stdlib](https://godoc.org/cdr.dev/slog#Stdlib) log adapter
 - Skip caller frames with [slog.Helper](https://godoc.org/cdr.dev/slog#Helper)
-- Can encode any Go structure including private fields
-- Transparently logs [opencensus](https://godoc.org/go.opencensus.io/trace) trace and span IDs
+- Transparently encode any Go structure including private fields
+- Transparently log [opencensus](https://godoc.org/go.opencensus.io/trace) trace and span IDs
 - [Single dependency](https://godoc.org/cdr.dev/slog?imports) on go.opencensus.io
 
 ## Example
 
 ```go
 slogtest.Info(t, "my message here",
-    slog.F{"field_name", "something or the other"},
-    slog.F{"some_map", slog.Map{
-        {"nested_fields", "wowow"},
-    }},
+    slog.F("field_name", "something or the other"),
+    slog.F("field_name", "something or the other"),
+    slog.F("some_map", slog.M(
+        slog.F("nested_fields", "wowow"),
+    )),
     slog.Error(
         xerrors.Errorf("wrap1: %w",
             xerrors.Errorf("wrap2: %w",
-                io.EOF,
-            ),
+                io.EOF),
         ),
     ),
 )
@@ -57,22 +57,23 @@ for several years now.
 
 It's a fantastic library for performance but the API and developer experience is not great.
 
-These are the main reasons we decided it was worth creating another log package for Go:
+Here is a list of reasons how we improved on zap with slog.
 
-1. Very large API surface. Compare [zap](https://godoc.org/go.uber.org/zap) and
-   [zapcore](https://godoc.org/go.uber.org/zap/zapcore) to [slog](https://godoc.org/cdr.dev/slog)
+1. `slog` has a minimal API surface.
+   Compare [slog](https://godoc.org/cdr.dev/slog) to [zap](https://godoc.org/go.uber.org/zap) and [zapcore](https://godoc.org/go.uber.org/zap/zapcore).
 
-   - The sprawling API has made it hard to understand, use and extend.
+   - The sprawling API makes zap hard to understand, use and extend.
 
-1. zap's typed API is too verbose.
+1. `slog` has a concise semi typed API.
 
-   - It does offer a [sugared API](https://godoc.org/go.uber.org/zap#hdr-Choosing_a_Logger)
+   - We found zap's fully typed API cumbersome. It does offer a
+     [sugared API](https://godoc.org/go.uber.org/zap#hdr-Choosing_a_Logger)
      but it's too easy to pass an invalid fields list since there is no static type checking.
      Furthermore, it's harder to read as there is no syntax grouping for each key value pair.
    - We wanted an API that only accepted the equivalent of [zap.Any](https://godoc.org/go.uber.org/zap#Any) for every field.
      This is [slog.F](https://godoc.org/cdr.dev/slog#F).
 
-1. zap's human readable format is not easy to read.
+1. `slog` uses a very
 
    - Lack of appropriate colors for different levels and fields
      - slog colors distinct parts of each line to make it easier to scan logs. Even the JSON that represents

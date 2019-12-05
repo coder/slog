@@ -18,15 +18,17 @@ func Example_test() {
 	var t testing.TB
 
 	slogtest.Info(t, "my message here",
-		slog.F{"field_name", "something or the other"},
-		slog.F{"field_name", "something or the other"},
-		slog.F{"some_map", slog.Map{
-			{"nested_fields", "wowow"},
-		}},
-		slog.Error(xerrors.Errorf("wrap1: %w",
-			xerrors.Errorf("wrap2: %w",
-				io.EOF),
+		slog.F("field_name", "something or the other"),
+		slog.F("field_name", "something or the other"),
+		slog.F("some_map", slog.M(
+			slog.F("nested_fields", "wowow"),
 		)),
+		slog.Error(
+			xerrors.Errorf("wrap1: %w",
+				xerrors.Errorf("wrap2: %w",
+					io.EOF),
+			),
+		),
 	)
 
 	// t.go:55: 2019-09-13 23:19:03.468 [INFO]	<examples_test.go:43>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "wowow"}} ...
@@ -41,10 +43,10 @@ func Example_test() {
 
 func TestExample(t *testing.T) {
 	slogtest.Info(t, "my message here",
-		slog.F{"field_name", "something or the other"},
-		slog.F{"some_map", slog.Map{
-			{"nested_fields", "wowow"},
-		}},
+		slog.F("field_name", "something or the other"),
+		slog.F("some_map", slog.M(
+			slog.F("nested_fields", "wowow"),
+		)),
 		slog.Error(
 			xerrors.Errorf("wrap1: %w",
 				xerrors.Errorf("wrap2: %w",
@@ -58,10 +60,10 @@ func TestExample(t *testing.T) {
 func TestJSON(t *testing.T) {
 	l := slogjson.Make(os.Stdout)
 	l.Info(context.Background(), "my message\r here",
-		slog.F{"field_name", "something or the other"},
-		slog.F{"some_map", slog.Map{
-			slog.F{"nested_fields", "wowow"},
-		}},
+		slog.F("field_name", "something or the other"),
+		slog.F("some_map", slog.M(
+			slog.F("nested_fields", "wowow"),
+		)),
 		slog.Error(
 			xerrors.Errorf("wrap1: %w",
 				xerrors.Errorf("wrap2: %w",

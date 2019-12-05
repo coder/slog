@@ -17,10 +17,20 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// F represents a log field.
-type F struct {
+// Field represents a log field.
+type Field struct {
 	Name  string
 	Value interface{}
+}
+
+// F is a convenience constructor for Field.
+func F(name string, value interface{}) Field {
+	return Field{Name: name, Value: value}
+}
+
+// M is a convenience constructor for Map
+func M(fs ...Field) Map {
+	return fs
 }
 
 // Value represents a log value.
@@ -31,11 +41,8 @@ type Value interface {
 }
 
 // Error is the standard key used for logging a Go error value.
-func Error(err error) F {
-	return F{
-		Name:  "error",
-		Value: err,
-	}
+func Error(err error) Field {
+	return F("error", err)
 }
 
 type fieldsKey struct{}
@@ -53,7 +60,7 @@ func fieldsFromContext(ctx context.Context) Map {
 // Any logs written with the provided context will have
 // the given logs prepended.
 // It will append to any fields already in ctx.
-func Context(ctx context.Context, fields ...F) context.Context {
+func Context(ctx context.Context, fields ...Field) context.Context {
 	f1 := fieldsFromContext(ctx)
 	f2 := combineFields(f1, fields)
 	return fieldsWithContext(ctx, f2)
@@ -175,32 +182,32 @@ func (l Logger) clone() Logger {
 }
 
 // Debug logs the msg and fields at LevelDebug.
-func (l Logger) Debug(ctx context.Context, msg string, fields ...F) {
+func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelDebug, msg, fields)
 }
 
 // Info logs the msg and fields at LevelInfo.
-func (l Logger) Info(ctx context.Context, msg string, fields ...F) {
+func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelInfo, msg, fields)
 }
 
 // Warn logs the msg and fields at LevelWarn.
-func (l Logger) Warn(ctx context.Context, msg string, fields ...F) {
+func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelWarn, msg, fields)
 }
 
 // Error logs the msg and fields at LevelError.
-func (l Logger) Error(ctx context.Context, msg string, fields ...F) {
+func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelError, msg, fields)
 }
 
 // Critical logs the msg and fields at LevelCritical.
-func (l Logger) Critical(ctx context.Context, msg string, fields ...F) {
+func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelCritical, msg, fields)
 }
 
 // Fatal logs the msg and fields at LevelFatal.
-func (l Logger) Fatal(ctx context.Context, msg string, fields ...F) {
+func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelFatal, msg, fields)
 }
 
@@ -221,7 +228,7 @@ func addHelper(fn string) {
 // With returns a Logger that prepends the given fields on every
 // logged entry.
 // It will append to any fields already in the Logger.
-func (l Logger) With(fields ...F) Logger {
+func (l Logger) With(fields ...Field) Logger {
 	l = l.clone()
 	for i, s := range l.sinks {
 		l.sinks[i] = s.withFields(fields)

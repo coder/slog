@@ -14,7 +14,7 @@ import (
 )
 
 // Map represents an ordered map of fields.
-type Map []F
+type Map []Field
 
 var _ json.Marshaler = Map(nil)
 
@@ -27,12 +27,12 @@ func (m Map) MarshalJSON() ([]byte, error) {
 	for i, f := range m {
 		fieldName, err := json.Marshal(f.Name)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to marshal field name: %w", err)
+			return nil, fmt.Errorf("failed to marshal field name: %w", err)
 		}
 
 		fieldValue, err := json.Marshal(f.Value)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to marshal field value: %w", err)
+			return nil, fmt.Errorf("failed to marshal field value: %w", err)
 		}
 
 		b.WriteString("\n")
@@ -73,7 +73,7 @@ func encodeInterface(v interface{}) interface{} {
 	case Map:
 		m := make(Map, 0, len(v))
 		for _, f := range v {
-			m = append(m, F{f.Name, encodeInterface(f.Value)})
+			m = append(m, F(f.Name, encodeInterface(f.Value)))
 		}
 		return m
 	case Value:
@@ -141,7 +141,7 @@ func encodeReflect(rv reflect.Value, pure bool) interface{} {
 				f := rv.Index(i)
 				key := f.FieldByName("Name").String()
 				val := f.FieldByName("Value")
-				m = append(m, F{key, encode(val, pure)})
+				m = append(m, F(key, encode(val, pure)))
 			}
 			return m
 		}
@@ -154,7 +154,7 @@ func encodeReflect(rv reflect.Value, pure bool) interface{} {
 		m := make(Map, 0, rv.Len())
 		for _, k := range rv.MapKeys() {
 			mv := rv.MapIndex(k)
-			m = append(m, F{fmt.Sprintf("%v", k), encode(mv, pure)})
+			m = append(m, F(fmt.Sprintf("%v", k), encode(mv, pure)))
 		}
 		// Ensure stable key order.
 		sort.Slice(m, func(i, j int) bool {
@@ -209,7 +209,7 @@ func reflectStruct(m Map, rv reflect.Value, structTyp reflect.Type, json, pure b
 		if sm, ok := v.(Map); ok {
 			m = append(m, sm...)
 		} else {
-			m = append(m, F{tagFieldName, v})
+			m = append(m, F(tagFieldName, v))
 		}
 	}
 	return m

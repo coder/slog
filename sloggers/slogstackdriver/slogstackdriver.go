@@ -79,9 +79,9 @@ type stackdriverSink struct {
 
 func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 	if ent.Message != "" {
-		ent.Fields = append(slog.Map{}, ent.Fields...)
+		ent.Fields = slog.M(ent.Fields...)
 		// https://cloud.google.com/logging/docs/view/overview#expanding
-		ent.Fields = append(ent.Fields, slog.F{"message", ent.Message})
+		ent.Fields = append(ent.Fields, slog.F("message", ent.Message))
 	}
 	e := logging.Entry{
 		Timestamp: ent.Time,
