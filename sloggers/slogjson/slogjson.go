@@ -27,7 +27,6 @@ import (
 	"golang.org/x/xerrors"
 
 	"cdr.dev/slog"
-	"cdr.dev/slog/internal/humanfmt"
 	"cdr.dev/slog/internal/syncwriter"
 )
 
@@ -38,14 +37,12 @@ import (
 // it will be called when syncing.
 func Make(w io.Writer) slog.Logger {
 	return slog.Make(jsonSink{
-		w:     syncwriter.New(w),
-		color: humanfmt.IsTTY(w),
+		w: syncwriter.New(w),
 	})
 }
 
 type jsonSink struct {
-	w     *syncwriter.Writer
-	color bool
+	w *syncwriter.Writer
 }
 
 func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {

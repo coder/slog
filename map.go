@@ -287,7 +287,7 @@ func snakecase(s string) string {
 // to an interface and then use the Elem() method on the
 // pointer reflect type to grab the type of the interface.
 func implements(typ reflect.Type, v interface{}) bool {
-	return typ.Implements(reflect.TypeOf(v).Elem())
+	return typ.Implements(reflect.TypeOf(v).Elem()) || reflect.PtrTo(typ).Implements(reflect.TypeOf(v).Elem())
 }
 
 type wrapError struct {
