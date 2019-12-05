@@ -19,7 +19,7 @@ go get cdr.dev/slog
 - Tiny codebase
 - First class [context.Context](https://blog.golang.org/context) support
 - First class [testing.TB](https://godoc.org/cdr.dev/slog/sloggers/slogtest) support
-  - Package [assert](https://godoc.org/cdr.dev/slog/sloggers/slogtest/assert) provides test assertion helpers
+  - Package [slogtest/assert](https://godoc.org/cdr.dev/slog/sloggers/slogtest/assert) provides test assertion helpers
 - Beautiful human readable logging output
     - Prints multiline fields and errors nicely
 - Machine readable JSON output
@@ -109,7 +109,8 @@ Here is a list of reasons how we improved on zap with slog.
       passing the logger around explicitly.
 
 1. Tight integration with stdlib's [`testing`](https://golang.org/pkg/testing) package
-    - You can configure `slogtest` to exit on any ERROR logs and it has a global stateless API
-      that takes a `*testing.T` so you do not need to create a logger first.
+    - You can configure [`slogtest`](https://godoc.org/cdr.dev/slog/sloggers/slogtest) to exit on any ERROR logs
+      and it has a global stateless API that takes a `*testing.T` so you do not need to create a logger first.
+    - Test assertion helpers are provided in [slogtest/assert](https://godoc.org/cdr.dev/slog/sloggers/slogtest/assert). 
     - zap has [zaptest](https://godoc.org/go.uber.org/zap/zaptest) but the API surface is large and doesn't
-      integrate well. It does not support either of the features described above.
+      integrate well. It does not support any of the features described above.
