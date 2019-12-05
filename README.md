@@ -101,7 +101,7 @@ Here is a list of reasons how we improved on zap with slog.
       very verbose and most of the time we ended up only implementing `fmt.Stringer` and using `zap.Stringer`
       instead.
 
-1. slog takes inspriation from Go's stdlib and implements [`slog.Helper`](https://godoc.org/cdr.dev/slog#Helper)
+1. slog takes inspiration from Go's stdlib and implements [`slog.Helper`](https://godoc.org/cdr.dev/slog#Helper)
    which works just like [`t.Helper`](https://golang.org/pkg/testing/#T.Helper)
     - It marks the calling function as a helper and skips it when reporting location info.
     - We had many helper functions for logging but we wanted the line reported to be of the parent function.
