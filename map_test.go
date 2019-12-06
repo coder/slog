@@ -1,103 +1,188 @@
-package slog
+package slog_test
 
 import (
+	"bytes"
 	"encoding/json"
-	"strconv"
+	"fmt"
+	"io"
+	"runtime"
 	"strings"
 	"testing"
 
+	"golang.org/x/xerrors"
+
+	"cdr.dev/slog"
 	"cdr.dev/slog/internal/assert"
 )
 
-func TestMapJSON(t *testing.T) {
-	m := Map{
-		{"wow", Map{
-			{"nested", true},
-			{"much", 3},
-			{"list", []string{
-				"3",
-				"5",
-			}},
-		}},
-	}
+var _, mapTestFile, _, _ = runtime.Caller(0)
 
-	act, err := json.MarshalIndent(m, "", strings.Repeat(" ", 2))
-	if err != nil {
-		t.Fatalf("failed to encode map to JSON: %+v", err)
-	}
-
-	exp := strings.TrimSpace(`
-{
-  "wow": {
-    "nested": true,
-    "much": 3,
-    "list": [
-      "3",
-      "5"
-    ]
-  }
-}
-`)
-
-	assert.Equal(t, exp, string(act), "JSON")
-}
-
-func Test_snakecase(t *testing.T) {
+func TestMap(t *testing.T) {
 	t.Parallel()
 
-	t.Run("table", func(t *testing.T) {
+	test := func(t *testing.T, m slog.Map, exp string) {
+		exp = indentJSON(t, exp)
+		act := marshalJSON(t, m)
+		assert.Equal(t, exp, act, "JSON")
+	}
+
+	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
 
-		tcs := []struct {
-			s   string
-			exp string
-		}{
-			{
-				"meowBar",
-				"meow_bar",
-			},
-			{
-				"MeowBar",
-				"meow_bar",
-			},
-			{
-				"MEOWBar",
-				"meow_bar",
-			},
-			{
-				"Meow123BAR",
-				"meow_123_bar",
-			},
-			{
-				"BöseÜberraschung",
-				"böse_überraschung",
-			},
-			{
-				"GL11Version",
-				"gl_11_version",
-			},
-			{
-				"SimpleXMLParser",
-				"simple_xml_parser",
-			},
-			{
-				"PDFLoader",
-				"pdf_loader",
-			},
-			{
-				"HTML",
-				"html",
-			},
+		type Meow struct {
+			Wow       string `json:"meow"`
+			Something int    `json:",omitempty"`
+			Ignored   bool   `json:"-"`
 		}
 
-		for i, tc := range tcs {
-			tc := tc
-			t.Run(strconv.Itoa(i), func(t *testing.T) {
-				t.Parallel()
+		test(t, slog.M(
+			slog.Error(
+				xerrors.Errorf("wrap1: %w",
+					xerrors.Errorf("wrap2: %w",
+						io.EOF,
+					),
+				),
+			),
+			slog.F("meow", struct {
+				Izi string `json:"izi"`
+				M   *Meow  `json:"Amazing"`
 
-				out := snakecase(tc.s)
-				assert.Equal(t, tc.exp, out, "snakecase")
-			})
-		}
+				ignored bool
+			}{
+				Izi: "sogood",
+				M: &Meow{
+					Wow:       "",
+					Something: 0,
+					Ignored:   true,
+				},
+			}),
+		), `{
+			"error": [
+				{
+					"msg": "wrap1",
+					"fun": "cdr.dev/slog_test.TestMap.func2",
+					"loc": "`+mapTestFile+`:40" 
+				},
+				{
+					"msg": "wrap2",
+					"fun": "cdr.dev/slog_test.TestMap.func2",
+					"loc": "`+mapTestFile+`:41" 
+				},
+				"EOF"
+			],
+			"meow": {
+				"izi": "sogood",
+				"Amazing": {
+					"meow": ""
+				}
+			}
+		}`)
 	})
+
+	t.Run("badJSON", func(t *testing.T) {
+		t.Parallel()
+
+		mapTestFile = strings.Replace(mapTestFile, "_test", "", 1)
+
+		test(t, slog.M(
+			slog.F("meow", indentJSON),
+		), `{
+			"meow": {
+				"error": [
+					{
+						"msg": "failed to marshal to JSON",
+						"fun": "cdr.dev/slog.encode",
+						"loc": "`+mapTestFile+`:84"
+					},
+					"json: unsupported type: func(*testing.T, string) string"
+				],
+				"type": "func(*testing.T, string) string",
+				"value": "`+fmt.Sprint(interface{}(indentJSON))+`"
+			}
+		}`)
+	})
+
+	t.Run("basic", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("wow", slog.M(
+				slog.F("nested", true),
+				slog.F("much", 3),
+				slog.F("list", []string{
+					"3",
+					"5",
+				}),
+			)),
+		), `{
+			"wow": {
+				"nested": true,
+				"much": 3,
+				"list": [
+					"3",
+					"5"
+				]
+			}
+		}`)
+	})
+
+	t.Run("slice", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("meow", []string{
+				"1",
+				"2",
+				"3",
+			}),
+		), `{
+			"meow": [
+				"1",
+				"2",
+				"3"
+			]
+		}`)
+	})
+
+	t.Run("forceJSON", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("error", slog.JSON(io.EOF)),
+		), `{
+			"error": {}
+		}`)
+	})
+
+	t.Run("value", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("error", meow{1}),
+		), `{
+			"error": "xdxd"
+		}`)
+	})
+}
+
+type meow struct {
+	a int
+}
+
+func (m meow) LogValue() interface{} {
+	return "xdxd"
+}
+
+func indentJSON(t *testing.T, j string) string {
+	b := &bytes.Buffer{}
+	err := json.Indent(b, []byte(j), "", strings.Repeat(" ", 4))
+	assert.Success(t, err, "indent JSON")
+
+	return b.String()
+}
+
+func marshalJSON(t *testing.T, m slog.Map) string {
+	actb, err := json.Marshal(m)
+	assert.Success(t, err, "marshal map to JSON")
+	return indentJSON(t, string(actb))
 }

@@ -2,46 +2,67 @@ package slogtest_test
 
 import (
 	"context"
-	"io"
 	"testing"
 
-	"golang.org/x/xerrors"
-
-	"cdr.dev/slog"
+	"cdr.dev/slog/internal/assert"
 	"cdr.dev/slog/sloggers/slogtest"
 )
 
-type meow struct {
-	a int
-}
-
-func (m meow) LogValue() interface{} {
-	return "xdxd"
-}
-
-func TestExampleTest(t *testing.T) {
+func TestStateless(t *testing.T) {
 	t.Parallel()
 
-	slogtest.Info(t, "my message here",
-		slog.F("field_name", "something or the other"),
-		slog.F("some_map", slog.M(
-			slog.F("nested_fields", "wowow"),
-		)),
-		slog.Error(xerrors.Errorf("wrap2: %w",
-			xerrors.Errorf("wrap1: %w",
-				io.EOF,
-			),
-		)),
-		slog.F("hi3", slog.M(
-			slog.F("meow", meow{1}),
-			slog.F("meow", meow{2}),
-			slog.F("meow", meow{3}),
-		)),
-	)
+	tb := &fakeTB{}
+	slogtest.Debug(tb, "hello")
+	slogtest.Info(tb, "hello")
 
-	l := slogtest.Make(t, nil).With(
-		slog.F("hi", "anmol"),
-	)
-	stdlibLog := slog.Stdlib(context.Background(), l)
-	stdlibLog.Println("stdlib")
+	slogtest.Error(tb, "hello")
+	assert.Equal(t, 1, tb.errors, "errors")
+
+	defer func() {
+		recover()
+		assert.Equal(t, 1, tb.fatals, "fatals")
+	}()
+
+	slogtest.Fatal(tb, "hello")
+}
+
+func TestIgnoreErrors(t *testing.T) {
+	t.Parallel()
+
+	tb := &fakeTB{}
+	l := slogtest.Make(tb, &slogtest.Options{
+		IgnoreErrors: true,
+	})
+
+	l.Error(bg, "hello")
+	assert.Equal(t, 0, tb.errors, "errors")
+
+	defer func() {
+		recover()
+		assert.Equal(t, 0, tb.fatals, "fatals")
+	}()
+
+	l.Fatal(bg, "hello")
+}
+
+var bg = context.Background()
+
+type fakeTB struct {
+	testing.TB
+
+	errors int
+	fatals int
+}
+
+func (tb *fakeTB) Helper() {}
+
+func (tb *fakeTB) Log(v ...interface{}) {}
+
+func (tb *fakeTB) Error(v ...interface{}) {
+	tb.errors++
+}
+
+func (tb *fakeTB) Fatal(v ...interface{}) {
+	tb.fatals++
+	panic("")
 }

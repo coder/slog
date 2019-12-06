@@ -16,7 +16,6 @@ go get cdr.dev/slog
 ## Features
 
 - Minimal API
-- Tiny codebase
 - First class [context.Context](https://blog.golang.org/context) support
 - First class [testing.TB](https://godoc.org/cdr.dev/slog/sloggers/slogtest) support
   - Package [slogtest/assert](https://godoc.org/cdr.dev/slog/sloggers/slogtest/assert) provides test assertion helpers
@@ -92,10 +91,9 @@ Here is a list of reasons how we improved on zap with slog.
     - zap is hard and confusing to extend. There are too many structures and configuration options.
 
 1. Automatic structured logging of Go structures (including private fields)
-    - One may implement [`slog.Value`](https://godoc.org/cdr.dev/slog#Value) to override the representation,
-      use struct tags to ignore or rename fields and even reuse the
-      [`json.Marshal`](https://golang.org/pkg/encoding/json/#Marshal) representation
-      with [`slog.JSON`](https://godoc.org/cdr.dev/slog#JSON).
+    - One may implement [`slog.Value`](https://godoc.org/cdr.dev/slog#Value) to override the representation or
+      even reuse [`json.Marshal`](https://golang.org/pkg/encoding/json/#Marshal) struct tags with
+      [`slog.JSON`](https://godoc.org/cdr.dev/slog#JSON).
     - With zap, We found ourselves often implementing zap's
       [ObjectMarshaler](https://godoc.org/go.uber.org/zap/zapcore#ObjectMarshaler) to log Go structures. This was
       very verbose and most of the time we ended up only implementing `fmt.Stringer` and using `zap.Stringer`
@@ -110,7 +108,7 @@ Here is a list of reasons how we improved on zap with slog.
 
 1. Tight integration with stdlib's [`testing`](https://golang.org/pkg/testing) package
     - You can configure [`slogtest`](https://godoc.org/cdr.dev/slog/sloggers/slogtest) to exit on any ERROR logs
-      and it has a global stateless API that takes a `*testing.T` so you do not need to create a logger first.
+      and it has a global stateless API that takes a `testing.TB` so you do not need to create a logger first.
     - Test assertion helpers are provided in [slogtest/assert](https://godoc.org/cdr.dev/slog/sloggers/slogtest/assert). 
     - zap has [zaptest](https://godoc.org/go.uber.org/zap/zaptest) but the API surface is large and doesn't
       integrate well. It does not support any of the features described above.

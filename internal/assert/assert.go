@@ -2,6 +2,7 @@
 package assert
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -47,4 +48,31 @@ func ErrorContains(t testing.TB, err error, sub, name string) {
 	if !strings.Contains(errs, sub) {
 		t.Fatalf("error string %q from %v does not contain %q", errs, name, sub)
 	}
+}
+
+// True asserts true == act.
+func True(t testing.TB, act bool, name string) {
+	t.Helper()
+	Equal(t, true, act, name)
+}
+
+// False asserts false == act.
+func False(t testing.TB, act bool, name string) {
+	t.Helper()
+	Equal(t, false, act, name)
+}
+
+// Len asserts n == len(a).
+func Len(t testing.TB, n int, a interface{}, name string) {
+	t.Helper()
+	act := reflect.ValueOf(a).Len()
+	if n != act {
+		t.Fatalf("unexpected length %v of %v: %v", act, name, act)
+	}
+}
+
+// Nil asserts v == nil.
+func Nil(t testing.TB, v interface{}, name string) {
+	t.Helper()
+	Equal(t, nil, v, name)
 }

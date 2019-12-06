@@ -110,7 +110,7 @@ var levelStrings = map[Level]string{
 func (l Level) String() string {
 	s, ok := levelStrings[l]
 	if !ok {
-		return fmt.Sprintf(`"unknown_level: %v"`, int(l))
+		return fmt.Sprintf("slog.Level(%v)", int(l))
 	}
 	return s
 }
@@ -212,7 +212,7 @@ var helpers sync.Map
 
 // Helper marks the calling function as a helper
 // and skips it for source location information.
-// It's the slog equivalent of *testing.T.Helper().
+// It's the slog equivalent of testing.TB.Helper().
 func Helper() {
 	_, _, fn := location(1)
 	helpers.LoadOrStore(fn, struct{}{})
@@ -267,7 +267,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 		}
 		err := s.sink.LogEntry(ctx, s.entry(ctx, ent))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "slog: sink with name %v and type %T failed to log entry: %+v", s.name, s.sink, err)
+			errorf("slog: sink with name %v and type %T failed to log entry: %+v", s.name, s.sink, err)
 			continue
 		}
 	}
@@ -276,9 +276,14 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 	case LevelCritical, LevelError, LevelFatal:
 		l.Sync()
 		if level == LevelFatal {
-			os.Exit(1)
+			exit(1)
 		}
 	}
+}
+
+var exit = os.Exit
+var errorf = func(f string, v ...interface{}) {
+	println(fmt.Sprintf(f, v...))
 }
 
 // Sync calls Sync on the sinks underlying the logger.
@@ -287,7 +292,7 @@ func (l Logger) Sync() {
 	for _, s := range l.sinks {
 		err := s.sink.Sync()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "slog: sink with name %v and type %T failed to sync: %+v\n", s.name, s.sink, err)
+			errorf("slog: sink with name %v and type %T failed to sync: %+v\n", s.name, s.sink, err)
 			continue
 		}
 	}
@@ -308,25 +313,14 @@ func (ent SinkEntry) fillLoc(skip int) SinkEntry {
 	// Skip two extra frames to account for this function
 	// and runtime.Callers itself.
 	n := runtime.Callers(skip+2, pc[:])
-	if n == 0 {
-		panic("slog: zero callers found")
-	}
-
 	frames := runtime.CallersFrames(pc[:n])
-	first, more := frames.Next()
-	if !more {
-		return ent.fillFromFrame(first)
-	}
-
-	frame := first
 	for {
-		if _, ok := helpers.Load(frame.Function); !ok {
-			// Found a frame that wasn't inside a helper function.
+		frame, more := frames.Next()
+		_, helper := helpers.Load(frame.Function)
+		if !helper || !more {
+			// Found a frame that wasn't a helper function.
+			// Or we ran out of frames to check.
 			return ent.fillFromFrame(frame)
-		}
-		frame, more = frames.Next()
-		if !more {
-			return ent.fillFromFrame(first)
 		}
 	}
 }
@@ -343,10 +337,7 @@ func (s sink) entry(ctx context.Context, ent SinkEntry) SinkEntry {
 }
 
 func location(skip int) (file string, line int, fn string) {
-	pc, file, line, ok := runtime.Caller(skip + 1)
-	if !ok {
-		panic("slog: zero callers found")
-	}
+	pc, file, line, _ := runtime.Caller(skip + 1)
 	f := runtime.FuncForPC(pc)
 	return file, line, f.Name()
 }
@@ -358,11 +349,4 @@ func Tee(ls ...Logger) Logger {
 		l.sinks = append(l.sinks, l2.sinks...)
 	}
 	return l
-}
-
-// JSON wraps around another type to indicate that it should be
-// encoded via json.Marshal instead of via the default
-// reflection based encoder.
-type JSON struct {
-	V interface{}
 }

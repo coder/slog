@@ -5,8 +5,9 @@ package sloghuman // import "cdr.dev/slog/sloggers/sloghuman"
 import (
 	"context"
 	"io"
-	"os"
 	"strings"
+
+	"golang.org/x/xerrors"
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/humanfmt"
@@ -20,18 +21,17 @@ import (
 // it will be called when syncing.
 func Make(w io.Writer) slog.Logger {
 	return slog.Make(&humanSink{
-		w:     syncwriter.New(w),
-		color: humanfmt.IsTTY(w) || os.Getenv("FORCE_COLOR") != "",
+		w: syncwriter.New(w),
 	})
 }
 
 type humanSink struct {
-	w     *syncwriter.Writer
-	color bool
+	w  *syncwriter.Writer
+	w2 io.Writer
 }
 
 func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
-	str := humanfmt.Entry(ent, s.color)
+	str := humanfmt.Entry(s.w2, ent)
 	lines := strings.Split(str, "\n")
 
 	// We need to add 4 spaces before every field line for readability.
@@ -47,7 +47,10 @@ func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 
 	str = strings.Join(lines, "\n")
 
-	io.WriteString(s.w, str+"\n")
+	_, err := io.WriteString(s.w, str+"\n")
+	if err != nil {
+		return xerrors.Errorf("sloghuman: failed to write entry: %w", err)
+	}
 	return nil
 }
 
