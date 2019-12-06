@@ -27,16 +27,21 @@ type Config struct {
 //
 // See https://cloud.google.com/logging/docs/agent
 func Make(w io.Writer, config *Config) slog.Logger {
+	if config == nil {
+		config = &Config{}
+	}
 	projectID, _ := metadata.ProjectID()
 
 	return slog.Make(stackdriverSink{
 		projectID: projectID,
 		w:         syncwriter.New(w),
+		labels:    config.Labels,
 	})
 }
 
 type stackdriverSink struct {
 	projectID string
+	labels    slog.Map
 	w         *syncwriter.Writer
 }
 
@@ -65,6 +70,10 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error
 			slog.F("logging.googleapis.com/spanId", ent.SpanContext.SpanID.String()),
 			slog.F("logging.googleapis.com/trace_sampled", ent.SpanContext.IsSampled()),
 		)
+	}
+
+	if len(s.labels) > 0 {
+		e = append(e, slog.F("logging.googleapis.com/labels", s.labels))
 	}
 
 	e = append(e, ent.Fields...)

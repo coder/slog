@@ -24,12 +24,14 @@ func TestStackdriver(t *testing.T) {
 
 	ctx, s := trace.StartSpan(bg, "meow")
 	b := &bytes.Buffer{}
-	l := slogstackdriver.Make(b, nil)
+	l := slogstackdriver.Make(b, &slogstackdriver.Config{
+		Labels: slog.M(slog.F("label", 2)),
+	})
 	l = l.Named("meow")
 	l.Error(ctx, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 
 	j := slogfmt.FilterJSONField(b.String(), "timestamp")
-	exp := fmt.Sprintf(`{"severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":"file:\"%v\" line:29 function:\"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver\" ","logging.googleapis.com/operation":"producer:\"meow\" ","logging.googleapis.com/trace":"projects//traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":false,"wowow":"me\nyou"}
+	exp := fmt.Sprintf(`{"severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":"file:\"%v\" line:31 function:\"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver\" ","logging.googleapis.com/operation":"producer:\"meow\" ","logging.googleapis.com/trace":"projects//traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":false,"logging.googleapis.com/labels":{"label":2},"wowow":"me\nyou"}
 `, slogstackdriverTestFile, s.SpanContext().TraceID, s.SpanContext().SpanID)
 	assert.Equal(t, exp, j, "entry")
 }
