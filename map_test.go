@@ -92,7 +92,7 @@ func TestMap(t *testing.T) {
 					{
 						"msg": "failed to marshal to JSON",
 						"fun": "cdr.dev/slog.encode",
-						"loc": "`+mapTestFile+`:84"
+						"loc": "`+mapTestFile+`:86"
 					},
 					"json: unsupported type: func(*testing.T, string) string"
 				],
@@ -148,7 +148,7 @@ func TestMap(t *testing.T) {
 		t.Parallel()
 
 		test(t, slog.M(
-			slog.F("error", slog.JSON(io.EOF)),
+			slog.F("error", slog.ForceJSON(io.EOF)),
 		), `{
 			"error": {}
 		}`)
@@ -169,7 +169,7 @@ type meow struct {
 	a int
 }
 
-func (m meow) LogValue() interface{} {
+func (m meow) SlogValue() interface{} {
 	return "xdxd"
 }
 
