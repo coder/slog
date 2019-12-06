@@ -26,7 +26,7 @@ go get cdr.dev/slog
 - [Tee](https://godoc.org/cdr.dev/slog#Tee) multiple loggers
 - [Stdlib](https://godoc.org/cdr.dev/slog#Stdlib) log adapter
 - Skip caller frames with [slog.Helper](https://godoc.org/cdr.dev/slog#Helper)
-- Transparently encode any Go structure including private fields
+- Encodes values as if with `json.Marshal`
 - Transparently log [opencensus](https://godoc.org/go.opencensus.io/trace) trace and span IDs
 - [Single dependency](https://godoc.org/cdr.dev/slog?imports) on go.opencensus.io
 
@@ -90,14 +90,13 @@ Here is a list of reasons how we improved on zap with slog.
     - A new backend only has to implement the simple Sink interface.
     - zap is hard and confusing to extend. There are too many structures and configuration options.
 
-1. Automatic structured logging of Go structures (including private fields)
-    - One may implement [`slog.Value`](https://godoc.org/cdr.dev/slog#Value) to override the representation or
-      even reuse [`json.Marshal`](https://golang.org/pkg/encoding/json/#Marshal) struct tags with
-      [`slog.JSON`](https://godoc.org/cdr.dev/slog#JSON).
+1. Structured logging of Go structures with `json.Marshal`
+    - All values will be logged with `json.Marshal` unless they implement `fmt.Stringer` or `error`.
+        - You can force JSON by using [`slog.JSON`](https://godoc.org/cdr.dev/slog#JSON). 
+    - One may implement [`slog.Value`](https://godoc.org/cdr.dev/slog#Value) to override the representation completely.
     - With zap, We found ourselves often implementing zap's
       [ObjectMarshaler](https://godoc.org/go.uber.org/zap/zapcore#ObjectMarshaler) to log Go structures. This was
-      very verbose and most of the time we ended up only implementing `fmt.Stringer` and using `zap.Stringer`
-      instead.
+      verbose and most of the time we ended up only implementing `fmt.Stringer` and using `zap.Stringer` instead.
 
 1. slog takes inspiration from Go's stdlib and implements [`slog.Helper`](https://godoc.org/cdr.dev/slog#Helper)
    which works just like [`t.Helper`](https://golang.org/pkg/testing/#T.Helper)
