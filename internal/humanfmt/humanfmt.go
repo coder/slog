@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"go.opencensus.io/trace"
@@ -19,6 +20,15 @@ import (
 
 	"cdr.dev/slog"
 )
+
+// StripTimestamp strips the timestamp from entry and returns
+// it and the rest of the entry.
+func StripTimestamp(ent string) (time.Time, string, error) {
+	ts := ent[:len(TimeFormat)]
+	rest := ent[len(TimeFormat):]
+	et, err := time.Parse(TimeFormat, ts)
+	return et, rest, err
+}
 
 // TimeFormat is a simplified RFC3339 format.
 const TimeFormat = "2006-01-02 15:04:05.000"

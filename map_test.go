@@ -153,6 +153,24 @@ func TestMap(t *testing.T) {
 			"error": {}
 		}`)
 	})
+
+	t.Run("value", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("error", meow{1}),
+		), `{
+			"error": "xdxd"
+		}`)
+	})
+}
+
+type meow struct {
+	a int
+}
+
+func (m meow) LogValue() interface{} {
+	return "xdxd"
 }
 
 func indentJSON(t *testing.T, j string) string {
