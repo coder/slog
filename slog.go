@@ -267,7 +267,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 		}
 		err := s.sink.LogEntry(ctx, s.entry(ctx, ent))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "slog: sink with name %v and type %T failed to log entry: %+v", s.name, s.sink, err)
+			ferrorf(os.Stderr, "slog: sink with name %v and type %T failed to log entry: %+v", s.name, s.sink, err)
 			continue
 		}
 	}
@@ -276,10 +276,13 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 	case LevelCritical, LevelError, LevelFatal:
 		l.Sync()
 		if level == LevelFatal {
-			os.Exit(1)
+			exit(1)
 		}
 	}
 }
+
+var exit = os.Exit
+var ferrorf = fmt.Fprintf
 
 // Sync calls Sync on the sinks underlying the logger.
 // Used it to ensure all logs are flushed during exit.
@@ -287,7 +290,7 @@ func (l Logger) Sync() {
 	for _, s := range l.sinks {
 		err := s.sink.Sync()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "slog: sink with name %v and type %T failed to sync: %+v\n", s.name, s.sink, err)
+			ferrorf(os.Stderr, "slog: sink with name %v and type %T failed to sync: %+v\n", s.name, s.sink, err)
 			continue
 		}
 	}
@@ -309,20 +312,13 @@ func (ent SinkEntry) fillLoc(skip int) SinkEntry {
 	// and runtime.Callers itself.
 	n := runtime.Callers(skip+2, pc[:])
 	frames := runtime.CallersFrames(pc[:n])
-	first, more := frames.Next()
-	if !more {
-		return ent.fillFromFrame(first)
-	}
-
-	frame := first
 	for {
-		if _, ok := helpers.Load(frame.Function); !ok {
-			// Found a frame that wasn't inside a helper function.
+		frame, more := frames.Next()
+		_, helper := helpers.Load(frame.Function)
+		if !helper || !more {
+			// Found a frame that wasn't a helper function.
+			// Or we ran out of frames to check.
 			return ent.fillFromFrame(frame)
-		}
-		frame, more = frames.Next()
-		if !more {
-			return ent.fillFromFrame(first)
 		}
 	}
 }

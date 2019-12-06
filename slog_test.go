@@ -18,7 +18,7 @@ type fakeSink struct {
 	entries     []slog.SinkEntry
 	logEntryErr error
 
-	synced  bool
+	syncs   int
 	syncErr error
 }
 
@@ -28,7 +28,7 @@ func (s *fakeSink) LogEntry(_ context.Context, e slog.SinkEntry) error {
 }
 
 func (s *fakeSink) Sync() error {
-	s.synced = true
+	s.syncs++
 	return s.syncErr
 }
 
@@ -49,8 +49,8 @@ func TestLogger(t *testing.T) {
 		l.Info(bg, "wow", slog.Error(io.EOF))
 		l.Error(bg, "meow", slog.Error(io.ErrUnexpectedEOF))
 
-		assert.True(t, s1.synced, "synced")
-		assert.Equal(t, 1, len(s1.entries), "len(entries)")
+		assert.Equal(t, 1, s1.syncs, "syncs")
+		assert.Len(t, 1, s1.entries, "entries")
 
 		assert.Equal(t, s1, s2, "sinks")
 	})
@@ -70,6 +70,7 @@ func TestLogger(t *testing.T) {
 		)
 		h(ctx)
 
+		assert.Len(t, 1, s.entries, "entries")
 		assert.Equal(t, slog.SinkEntry{
 			Time: s.entries[0].Time,
 
@@ -100,6 +101,7 @@ func TestLogger(t *testing.T) {
 
 		l.Info(ctx, "meow", slog.F("hi", "xd"))
 
+		assert.Len(t, 1, s.entries, "entries")
 		assert.Equal(t, slog.SinkEntry{
 			Time: s.entries[0].Time,
 
@@ -110,7 +112,7 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func3",
-			Line: 101,
+			Line: 102,
 
 			SpanContext: span.SpanContext(),
 
@@ -120,6 +122,46 @@ func TestLogger(t *testing.T) {
 				slog.F("hi", "xd"),
 			),
 		}, s.entries[0], "entry")
+	})
+
+	t.Run("levels", func(t *testing.T) {
+		t.Parallel()
+
+		s := &fakeSink{}
+		l := slog.Make(s)
+
+		l.Debug(bg, "")
+		l.Info(bg, "")
+		l.Warn(bg, "")
+		l.Error(bg, "")
+		l.Critical(bg, "")
+		l.Fatal(bg, "")
+
+		assert.Len(t, 6, s.entries, "entries")
+		assert.Equal(t, 3, s.syncs, "syncs")
+		assert.Equal(t, slog.LevelDebug, s.entries[0].Level, "level")
+		assert.Equal(t, slog.LevelInfo, s.entries[1].Level, "level")
+		assert.Equal(t, slog.LevelWarn, s.entries[2].Level, "level")
+		assert.Equal(t, slog.LevelError, s.entries[3].Level, "level")
+		assert.Equal(t, slog.LevelCritical, s.entries[4].Level, "level")
+		assert.Equal(t, slog.LevelFatal, s.entries[5].Level, "level")
+		assert.Equal(t, 1, slog.Exits, "exits")
+	})
+
+	t.Run("errors", func(t *testing.T) {
+		t.Parallel()
+
+		s := &fakeSink{
+			logEntryErr: io.EOF,
+			syncErr:     io.ErrClosedPipe,
+		}
+		l := slog.Make(s)
+
+		l.Info(bg, "")
+		l.Error(bg, "")
+		l.Sync()
+
+		assert.Equal(t, 4, slog.Errors, "errors")
 	})
 }
 
