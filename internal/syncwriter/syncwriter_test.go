@@ -1,6 +1,7 @@
 package syncwriter
 
 import (
+	"bytes"
 	"io"
 	"testing"
 
@@ -34,16 +35,12 @@ func Test_errorsIsAny(t *testing.T) {
 	assert.False(t, errorsIsAny(io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe), "err")
 }
 
-type writerFunc func(p []byte) (int, error)
-
-func (f writerFunc) Write(p []byte) (int, error) {
-	return f(p)
-}
-
 type syncWriter struct {
-	writerFunc
+	*bytes.Buffer
 	sw func() error
 }
+
+var _ syncer = &syncWriter{}
 
 func (sw syncWriter) Sync() error {
 	return sw.sw()

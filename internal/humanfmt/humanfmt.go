@@ -20,6 +20,9 @@ import (
 	"cdr.dev/slog"
 )
 
+// TimeFormat is a simplified RFC3339 format.
+const TimeFormat = "2006-01-02 15:04:05.000"
+
 func c(w io.Writer, attrs ...color.Attribute) *color.Color {
 	c := color.New(attrs...)
 	c.DisableColor()
@@ -38,8 +41,7 @@ func c(w io.Writer, attrs ...color.Attribute) *color.Color {
 // twice in test logs. So the Stderr logger indents all the fields itself.
 func Entry(w io.Writer, ent slog.SinkEntry) string {
 	var ents string
-	// Simplified RFC3339 format.
-	ts := ent.Time.Format(`2006-01-02 15:04:05.000`)
+	ts := ent.Time.Format(TimeFormat)
 	ents += ts + " "
 
 	level := "[" + ent.Level.String() + "]"
