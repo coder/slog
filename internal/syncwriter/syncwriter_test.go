@@ -3,6 +3,7 @@ package syncwriter
 import (
 	"bytes"
 	"io"
+	"os"
 	"testing"
 
 	"cdr.dev/slog/internal/assert"
@@ -29,6 +30,15 @@ func TestWriter_Sync(t *testing.T) {
 			},
 		}
 		assert.Equal(t, io.EOF, w.Sync(), "syncErr")
+	})
+
+	t.Run("stdout", func(t *testing.T) {
+		t.Parallel()
+
+		w := &Writer{
+			w: os.Stdout,
+		}
+		assert.Success(t, w.Sync(), "syncErr")
 	})
 }
 

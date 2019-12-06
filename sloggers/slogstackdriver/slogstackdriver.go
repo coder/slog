@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 
 	"cloud.google.com/go/compute/metadata"
 	"go.opencensus.io/trace"
@@ -26,12 +26,12 @@ type Config struct {
 // to stdout for stackdriver.
 //
 // See https://cloud.google.com/logging/docs/agent
-func Make(config Config) slog.Logger {
+func Make(w io.Writer, config *Config) slog.Logger {
 	projectID, _ := metadata.ProjectID()
 
 	return slog.Make(stackdriverSink{
 		projectID: projectID,
-		w:         syncwriter.New(os.Stdout),
+		w:         syncwriter.New(w),
 	})
 }
 
@@ -69,13 +69,10 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error
 
 	e = append(e, ent.Fields...)
 
-	buf, err := json.Marshal(e)
-	if err != nil {
-		return xerrors.Errorf("slogstackdriver: failed to encode entry to JSON: %w", err)
-	}
+	buf, _ := json.Marshal(e)
 
 	buf = append(buf, '\n')
-	_, err = s.w.Write(buf)
+	_, err := s.w.Write(buf)
 	if err != nil {
 		return xerrors.Errorf("slogstackdriver: failed to write JSON entry: %w", err)
 	}

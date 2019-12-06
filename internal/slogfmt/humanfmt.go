@@ -1,6 +1,5 @@
-// Package humanfmt contains the code to format slog.SinkEntry
-// into a human readable format.
-package humanfmt
+// Package slogfmt contains the code to format slog.SinkEntry.
+package slogfmt
 
 import (
 	"bytes"
@@ -9,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +20,11 @@ import (
 
 	"cdr.dev/slog"
 )
+
+// FilterJSONField filters the json field f from j.
+func FilterJSONField(j, f string) string {
+	return regexp.MustCompile(`"`+f+`":[^,]+,`).ReplaceAllString(j, "")
+}
 
 // StripTimestamp strips the timestamp from entry and returns
 // it and the rest of the entry.
@@ -42,14 +47,14 @@ func c(w io.Writer, attrs ...color.Attribute) *color.Color {
 	return c
 }
 
-// Entry returns a human readable format for ent.
+// HumanEntry returns a human readable format for ent.
 //
 // We never return with a trailing newline because Go's testing framework adds one
 // automatically and if we include one, then we'll get two newlines.
 // We also do not indent the fields as go's test does that automatically
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
-func Entry(w io.Writer, ent slog.SinkEntry) string {
+func HumanEntry(w io.Writer, ent slog.SinkEntry) string {
 	var ents string
 	ts := ent.Time.Format(TimeFormat)
 	ents += ts + " "

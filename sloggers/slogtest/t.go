@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"cdr.dev/slog"
-	"cdr.dev/slog/internal/humanfmt"
+	"cdr.dev/slog/internal/slogfmt"
 	"cdr.dev/slog/sloggers/sloghuman"
 )
 
@@ -46,7 +46,7 @@ type testSink struct {
 
 func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 	// The testing package logs to stdout and not stderr.
-	s := humanfmt.Entry(os.Stdout, ent)
+	s := slogfmt.HumanEntry(os.Stdout, ent)
 
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:

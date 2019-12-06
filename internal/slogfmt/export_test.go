@@ -1,3 +1,3 @@
-package humanfmt
+package slogfmt
 
 var ForceColorWriter = forceColorWriter

@@ -1,4 +1,4 @@
-package humanfmt
+package slogfmt
 
 import (
 	"bytes"

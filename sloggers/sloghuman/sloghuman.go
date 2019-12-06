@@ -10,7 +10,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"cdr.dev/slog"
-	"cdr.dev/slog/internal/humanfmt"
+	"cdr.dev/slog/internal/slogfmt"
 	"cdr.dev/slog/internal/syncwriter"
 )
 
@@ -31,7 +31,7 @@ type humanSink struct {
 }
 
 func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
-	str := humanfmt.Entry(s.w2, ent)
+	str := slogfmt.HumanEntry(s.w2, ent)
 	lines := strings.Split(str, "\n")
 
 	// We need to add 4 spaces before every field line for readability.

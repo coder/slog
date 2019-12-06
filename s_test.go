@@ -6,7 +6,7 @@ import (
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/internal/humanfmt"
+	"cdr.dev/slog/internal/slogfmt"
 	"cdr.dev/slog/sloggers/sloghuman"
 )
 
@@ -20,7 +20,7 @@ func TestStdlib(t *testing.T) {
 	stdlibLog := slog.Stdlib(bg, l)
 	stdlibLog.Println("stdlib")
 
-	et, rest, err := humanfmt.StripTimestamp(b.String())
+	et, rest, err := slogfmt.StripTimestamp(b.String())
 	assert.Success(t, err, "strip timestamp")
 	assert.False(t, et.IsZero(), "timestamp")
 	assert.Equal(t, " [INFO]\t(stdlib)\t<s_test.go:21>\tstdlib\t{\"hi\": \"we\"}\n", rest, "entry")
