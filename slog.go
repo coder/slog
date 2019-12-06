@@ -7,6 +7,7 @@ package slog // import "cdr.dev/slog"
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime"
@@ -212,7 +213,7 @@ var helpers sync.Map
 
 // Helper marks the calling function as a helper
 // and skips it for source location information.
-// It's the slog equivalent of *testing.T.Helper().
+// It's the slog equivalent of testing.TB.Helper().
 func Helper() {
 	_, _, fn := location(1)
 	helpers.LoadOrStore(fn, struct{}{})
@@ -360,9 +361,15 @@ func Tee(ls ...Logger) Logger {
 	return l
 }
 
-// JSON wraps around another type to indicate that it should be
-// encoded via json.Marshal instead of via the default
-// reflection based encoder.
+// JSON ensures the value is logged via json.Marshal even
+// in the presence of the fmt.Stringer and error interfaces.
 type JSON struct {
 	V interface{}
+}
+
+var _ json.Marshaler = JSON{}
+
+// MarshalJSON implements json.Marshaler.
+func (v JSON) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.V)
 }
