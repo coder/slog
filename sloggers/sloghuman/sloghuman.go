@@ -5,7 +5,6 @@ package sloghuman // import "cdr.dev/slog/sloggers/sloghuman"
 import (
 	"context"
 	"io"
-	"os"
 	"strings"
 
 	"cdr.dev/slog"
@@ -20,18 +19,17 @@ import (
 // it will be called when syncing.
 func Make(w io.Writer) slog.Logger {
 	return slog.Make(&humanSink{
-		w:     syncwriter.New(w),
-		color: humanfmt.IsTTY(w) || os.Getenv("FORCE_COLOR") != "",
+		w: syncwriter.New(w),
 	})
 }
 
 type humanSink struct {
-	w     *syncwriter.Writer
-	color bool
+	w  *syncwriter.Writer
+	w2 io.Writer
 }
 
 func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
-	str := humanfmt.Entry(ent, s.color)
+	str := humanfmt.Entry(s.w2, ent)
 	lines := strings.Split(str, "\n")
 
 	// We need to add 4 spaces before every field line for readability.

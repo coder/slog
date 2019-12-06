@@ -44,11 +44,9 @@ type testSink struct {
 	stdlib bool
 }
 
-// The testing package logs to stdout and not stderr.
-var stdoutColor = humanfmt.IsTTY(os.Stdout) || os.Getenv("FORCE_COLOR") != ""
-
 func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
-	s := humanfmt.Entry(ent, stdoutColor)
+	// The testing package logs to stdout and not stderr.
+	s := humanfmt.Entry(os.Stdout, ent)
 
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:

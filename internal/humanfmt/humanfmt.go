@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -19,9 +20,12 @@ import (
 	"cdr.dev/slog"
 )
 
-func c(attrs ...color.Attribute) *color.Color {
+func c(w io.Writer, attrs ...color.Attribute) *color.Color {
 	c := color.New(attrs...)
-	c.EnableColor()
+	c.DisableColor()
+	if shouldColor(w) {
+		c.EnableColor()
+	}
 	return c
 }
 
@@ -32,30 +36,24 @@ func c(attrs ...color.Attribute) *color.Color {
 // We also do not indent the fields as go's test does that automatically
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
-func Entry(ent slog.SinkEntry, enableColor bool) string {
+func Entry(w io.Writer, ent slog.SinkEntry) string {
 	var ents string
 	// Simplified RFC3339 format.
 	ts := ent.Time.Format(`2006-01-02 15:04:05.000`)
 	ents += ts + " "
 
 	level := "[" + ent.Level.String() + "]"
-	if enableColor {
-		level = c(levelColor(ent.Level)).Sprint(level)
-	}
+	level = c(w, levelColor(ent.Level)).Sprint(level)
 	ents += fmt.Sprintf("%v\t", level)
 
 	if ent.LoggerName != "" {
 		component := "(" + quoteKey(ent.LoggerName) + ")"
-		if enableColor {
-			component = c(color.FgMagenta).Sprint(component)
-		}
+		component = c(w, color.FgMagenta).Sprint(component)
 		ents += fmt.Sprintf("%v\t", component)
 	}
 
 	loc := fmt.Sprintf("<%v:%v>", filepath.Base(ent.File), ent.Line)
-	if enableColor {
-		loc = c(color.FgCyan).Sprint(loc)
-	}
+	loc = c(w, color.FgCyan).Sprint(loc)
 	ents += fmt.Sprintf("%v\t", loc)
 
 	var multilineKey string
@@ -64,7 +62,7 @@ func Entry(ent slog.SinkEntry, enableColor bool) string {
 	if strings.Contains(msg, "\n") {
 		multilineKey = "msg"
 		multilineVal = msg
-		msg = "multiline message"
+		msg = "..."
 	}
 	msg = quote(msg)
 	ents += msg
@@ -100,25 +98,24 @@ func Entry(ent slog.SinkEntry, enableColor bool) string {
 	}
 
 	if len(ent.Fields) > 0 {
-		fields, err := json.MarshalIndent(ent.Fields, "", "")
-		if err == nil {
-			fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
-			fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
-			if enableColor {
-				fields = highlightJSON(fields)
-			}
-			ents += "\t" + string(fields)
-		} else {
-			ents += fmt.Sprintf("\thumanfmt: failed to marshal fields: %+v", err)
+		// No error is guaranteed due to slog.Map handling errors itself.
+		fields, _ := json.MarshalIndent(ent.Fields, "", "")
+		fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
+		fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
+		fields, err := highlightJSON(w, fields)
+		if err != nil {
+			println("humanfmt: failed to colorize fields JSON: " + err.Error())
 		}
+		ents += "\t" + string(fields)
 	}
 
 	if multilineVal != "" {
 		multilineVal = strings.TrimSpace(multilineVal)
-		if enableColor {
-			multilineKey = c(color.FgBlue).Sprintf(`"%v"`, multilineKey)
+		multilineKey = c(w, color.FgBlue).Sprintf(`"%v"`, multilineKey)
+		if msg != "..." {
+			ents += " ..."
 		}
-		ents += fmt.Sprintf(" ...\n%v: %v", multilineKey, multilineVal)
+		ents += fmt.Sprintf("\n%v: %v", multilineKey, multilineVal)
 	}
 
 	return ents
@@ -139,12 +136,21 @@ func levelColor(level slog.Level) color.Attribute {
 	}
 }
 
-// IsTTY checks whether the given writer is a *os.File TTY.
-func IsTTY(w io.Writer) bool {
+var forceColorWriter = io.Writer(&bytes.Buffer{})
+
+// isTTY checks whether the given writer is a *os.File TTY.
+func isTTY(w io.Writer) bool {
+	if w == forceColorWriter {
+		return true
+	}
 	f, ok := w.(interface {
 		Fd() uintptr
 	})
 	return ok && terminal.IsTerminal(int(f.Fd()))
+}
+
+func shouldColor(w io.Writer) bool {
+	return isTTY(w) || os.Getenv("FORCE_COLOR") != ""
 }
 
 // quotes quotes a string so that it is suitable

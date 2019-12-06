@@ -2,7 +2,7 @@ package humanfmt
 
 import (
 	"bytes"
-	"os"
+	"io"
 
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/formatters"
@@ -12,7 +12,7 @@ import (
 // Adapted from https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/styles/bw.go#L7
 // https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/formatters/tty_indexed.go
 // https://github.com/alecthomas/chroma/blob/2f5349aa18927368dbec6f8c11608bf61c38b2dd/lexers/j/json.go
-var cdrJSON = chroma.MustNewStyle("cdrJSON", chroma.StyleEntries{
+var style = chroma.MustNewStyle("slog", chroma.StyleEntries{
 	// Magenta.
 	chroma.Keyword: "#7f007f",
 	// Magenta.
@@ -23,18 +23,22 @@ var cdrJSON = chroma.MustNewStyle("cdrJSON", chroma.StyleEntries{
 	chroma.String: "#007f00",
 })
 
-func highlightJSON(buf []byte) []byte {
-	jsonLexer := chroma.Coalesce(jlexers.JSON)
+var jsonLexer = chroma.Coalesce(jlexers.JSON)
+
+func highlightJSON(w io.Writer, buf []byte) ([]byte, error) {
+	if !shouldColor(w) {
+		return buf, nil
+	}
+
 	it, err := jsonLexer.Tokenise(nil, string(buf))
 	if err != nil {
-		os.Stderr.WriteString("slogjson: failed to tokenize JSON entry: " + err.Error())
-		return buf
+		return buf, err
 	}
+
 	b := bytes.NewBuffer(buf[:0])
-	err = formatters.TTY8.Format(b, cdrJSON, it)
+	err = formatters.TTY8.Format(b, style, it)
 	if err != nil {
-		os.Stderr.WriteString("slogjson: failed to format JSON entry: " + err.Error())
-		return buf
+		return buf, err
 	}
-	return b.Bytes()
+	return b.Bytes(), nil
 }
