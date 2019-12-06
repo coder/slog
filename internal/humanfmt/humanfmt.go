@@ -102,10 +102,7 @@ func Entry(w io.Writer, ent slog.SinkEntry) string {
 		fields, _ := json.MarshalIndent(ent.Fields, "", "")
 		fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
 		fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
-		fields, err := highlightJSON(w, fields)
-		if err != nil {
-			println("humanfmt: failed to colorize fields JSON: " + err.Error())
-		}
+		fields = formatJSON(w, fields)
 		ents += "\t" + string(fields)
 	}
 

@@ -25,20 +25,29 @@ var style = chroma.MustNewStyle("slog", chroma.StyleEntries{
 
 var jsonLexer = chroma.Coalesce(jlexers.JSON)
 
-func highlightJSON(w io.Writer, buf []byte) ([]byte, error) {
+func formatJSON(w io.Writer, buf []byte) []byte {
 	if !shouldColor(w) {
-		return buf, nil
+		return buf
 	}
 
+	highlighted, err := colorizeJSON(buf)
+	if err != nil {
+		println("humanfmt: failed to colorize fields JSON: " + err.Error())
+		return buf
+	}
+	return highlighted
+}
+
+func colorizeJSON(buf []byte) ([]byte, error) {
 	it, err := jsonLexer.Tokenise(nil, string(buf))
 	if err != nil {
-		return buf, err
+		return nil, err
 	}
 
-	b := bytes.NewBuffer(buf[:0])
+	b := &bytes.Buffer{}
 	err = formatters.TTY8.Format(b, style, it)
 	if err != nil {
-		return buf, err
+		return nil, err
 	}
 	return b.Bytes(), nil
 }

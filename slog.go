@@ -267,7 +267,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 		}
 		err := s.sink.LogEntry(ctx, s.entry(ctx, ent))
 		if err != nil {
-			ferrorf(os.Stderr, "slog: sink with name %v and type %T failed to log entry: %+v", s.name, s.sink, err)
+			errorf("slog: sink with name %v and type %T failed to log entry: %+v", s.name, s.sink, err)
 			continue
 		}
 	}
@@ -282,7 +282,9 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 }
 
 var exit = os.Exit
-var ferrorf = fmt.Fprintf
+var errorf = func(f string, v ...interface{}) {
+	println(fmt.Sprintf(f, v...))
+}
 
 // Sync calls Sync on the sinks underlying the logger.
 // Used it to ensure all logs are flushed during exit.
@@ -290,7 +292,7 @@ func (l Logger) Sync() {
 	for _, s := range l.sinks {
 		err := s.sink.Sync()
 		if err != nil {
-			ferrorf(os.Stderr, "slog: sink with name %v and type %T failed to sync: %+v\n", s.name, s.sink, err)
+			errorf("slog: sink with name %v and type %T failed to sync: %+v\n", s.name, s.sink, err)
 			continue
 		}
 	}
