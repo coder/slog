@@ -34,6 +34,23 @@ func (m Map) MarshalJSON() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// JSON ensures the value is logged via json.Marshal even
+// in the presence of the fmt.Stringer and error interfaces.
+func JSON(v interface{}) interface{} {
+	return jsonVal{v: v}
+}
+
+type jsonVal struct {
+	v interface{}
+}
+
+var _ json.Marshaler = jsonVal{}
+
+// MarshalJSON implements json.Marshaler.
+func (v jsonVal) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.v)
+}
+
 func marshalArray(a []interface{}) []byte {
 	b := &bytes.Buffer{}
 	b.WriteByte('[')
@@ -95,10 +112,6 @@ type wrapError struct {
 	Fun string `json:"fun"`
 	// file:line
 	Loc string `json:"loc"`
-}
-
-func (e wrapError) LogValue() interface{} {
-	return JSON{e}
 }
 
 type xerrorPrinter struct {

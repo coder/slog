@@ -7,7 +7,6 @@ package slog // import "cdr.dev/slog"
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"runtime"
@@ -111,7 +110,7 @@ var levelStrings = map[Level]string{
 func (l Level) String() string {
 	s, ok := levelStrings[l]
 	if !ok {
-		return fmt.Sprintf(`"unknown_level: %v"`, int(l))
+		return fmt.Sprintf("slog.Level(%v)", int(l))
 	}
 	return s
 }
@@ -309,10 +308,6 @@ func (ent SinkEntry) fillLoc(skip int) SinkEntry {
 	// Skip two extra frames to account for this function
 	// and runtime.Callers itself.
 	n := runtime.Callers(skip+2, pc[:])
-	if n == 0 {
-		panic("slog: zero callers found")
-	}
-
 	frames := runtime.CallersFrames(pc[:n])
 	first, more := frames.Next()
 	if !more {
@@ -344,10 +339,7 @@ func (s sink) entry(ctx context.Context, ent SinkEntry) SinkEntry {
 }
 
 func location(skip int) (file string, line int, fn string) {
-	pc, file, line, ok := runtime.Caller(skip + 1)
-	if !ok {
-		panic("slog: zero callers found")
-	}
+	pc, file, line, _ := runtime.Caller(skip + 1)
 	f := runtime.FuncForPC(pc)
 	return file, line, f.Name()
 }
@@ -359,17 +351,4 @@ func Tee(ls ...Logger) Logger {
 		l.sinks = append(l.sinks, l2.sinks...)
 	}
 	return l
-}
-
-// JSON ensures the value is logged via json.Marshal even
-// in the presence of the fmt.Stringer and error interfaces.
-type JSON struct {
-	V interface{}
-}
-
-var _ json.Marshaler = JSON{}
-
-// MarshalJSON implements json.Marshaler.
-func (v JSON) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.V)
 }

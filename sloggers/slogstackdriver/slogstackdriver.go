@@ -96,10 +96,8 @@ func sev(level slog.Level) logpbtype.LogSeverity {
 		return logpbtype.LogSeverity_WARNING
 	case slog.LevelError:
 		return logpbtype.LogSeverity_ERROR
-	case slog.LevelCritical, slog.LevelFatal:
-		return logpbtype.LogSeverity_CRITICAL
 	default:
-		panic(fmt.Sprintf("slogstackdriver: unexpected level %v", level))
+		return logpbtype.LogSeverity_CRITICAL
 	}
 }
 

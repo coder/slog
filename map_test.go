@@ -15,6 +15,8 @@ import (
 	"cdr.dev/slog/internal/assert"
 )
 
+var _, mapTestFile, _, _ = runtime.Caller(0)
+
 func TestMap(t *testing.T) {
 	t.Parallel()
 
@@ -25,13 +27,13 @@ func TestMap(t *testing.T) {
 	}
 
 	t.Run("JSON", func(t *testing.T) {
+		t.Parallel()
+
 		type Meow struct {
 			Wow       string `json:"meow"`
 			Something int    `json:",omitempty"`
 			Ignored   bool   `json:"-"`
 		}
-
-		_, file, _, _ := runtime.Caller(0)
 
 		test(t, slog.M(
 			slog.Error(
@@ -59,12 +61,12 @@ func TestMap(t *testing.T) {
 				{
 					"msg": "wrap1",
 					"fun": "cdr.dev/slog_test.TestMap.func2",
-					"loc": "`+file+`:38" 
+					"loc": "`+mapTestFile+`:40" 
 				},
 				{
 					"msg": "wrap2",
 					"fun": "cdr.dev/slog_test.TestMap.func2",
-					"loc": "`+file+`:39" 
+					"loc": "`+mapTestFile+`:41" 
 				},
 				"EOF"
 			],
@@ -78,8 +80,9 @@ func TestMap(t *testing.T) {
 	})
 
 	t.Run("badJSON", func(t *testing.T) {
-		_, file, _, _ := runtime.Caller(0)
-		file = strings.Replace(file, "_test", "", 1)
+		t.Parallel()
+
+		mapTestFile = strings.Replace(mapTestFile, "_test", "", 1)
 
 		test(t, slog.M(
 			slog.F("meow", indentJSON),
@@ -89,7 +92,7 @@ func TestMap(t *testing.T) {
 					{
 						"msg": "failed to marshal to JSON",
 						"fun": "cdr.dev/slog.encode",
-						"loc": "`+file+`:67"
+						"loc": "`+mapTestFile+`:84"
 					},
 					"json: unsupported type: func(*testing.T, string) string"
 				],
@@ -124,6 +127,8 @@ func TestMap(t *testing.T) {
 	})
 
 	t.Run("slice", func(t *testing.T) {
+		t.Parallel()
+
 		test(t, slog.M(
 			slog.F("meow", []string{
 				"1",
@@ -136,6 +141,16 @@ func TestMap(t *testing.T) {
 				"2",
 				"3"
 			]
+		}`)
+	})
+
+	t.Run("forceJSON", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("error", slog.JSON(io.EOF)),
+		), `{
+			"error": {}
 		}`)
 	})
 }

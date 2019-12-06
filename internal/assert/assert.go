@@ -48,3 +48,9 @@ func ErrorContains(t testing.TB, err error, sub, name string) {
 		t.Fatalf("error string %q from %v does not contain %q", errs, name, sub)
 	}
 }
+
+// True asserts true == act.
+func True(t testing.TB, act interface{}, name string) {
+	t.Helper()
+	Equal(t, true, act, name)
+}

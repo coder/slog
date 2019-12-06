@@ -134,10 +134,8 @@ func levelColor(level slog.Level) color.Attribute {
 		return color.FgYellow
 	case slog.LevelError:
 		return color.FgRed
-	case slog.LevelCritical, slog.LevelFatal:
-		return color.FgHiRed
 	default:
-		panic("humanfmt: unexpected level: " + string(level))
+		return color.FgHiRed
 	}
 }
 
