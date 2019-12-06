@@ -56,6 +56,12 @@ func True(t testing.TB, act bool, name string) {
 	Equal(t, true, act, name)
 }
 
+// False asserts false == act.
+func False(t testing.TB, act bool, name string) {
+	t.Helper()
+	Equal(t, false, act, name)
+}
+
 // Len asserts n == len(a).
 func Len(t testing.TB, n int, a interface{}, name string) {
 	t.Helper()
@@ -63,4 +69,10 @@ func Len(t testing.TB, n int, a interface{}, name string) {
 	if n != act {
 		t.Fatalf("unexpected length %v of %v: %v", act, name, act)
 	}
+}
+
+// Nil asserts v == nil.
+func Nil(t testing.TB, v interface{}, name string) {
+	t.Helper()
+	Equal(t, nil, v, name)
 }
