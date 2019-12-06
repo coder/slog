@@ -7,6 +7,8 @@ import (
 	"io"
 	"strings"
 
+	"golang.org/x/xerrors"
+
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/humanfmt"
 	"cdr.dev/slog/internal/syncwriter"
@@ -45,7 +47,10 @@ func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 
 	str = strings.Join(lines, "\n")
 
-	io.WriteString(s.w, str+"\n")
+	_, err := io.WriteString(s.w, str+"\n")
+	if err != nil {
+		return xerrors.Errorf("sloghuman: failed to write entry: %w", err)
+	}
 	return nil
 }
 

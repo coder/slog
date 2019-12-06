@@ -12,11 +12,15 @@ func TestWriter_Sync(t *testing.T) {
 	t.Parallel()
 
 	t.Run("nonSyncWriter", func(t *testing.T) {
+		t.Parallel()
+
 		w := &Writer{}
 		assert.Nil(t, w.Sync(), "syncErr")
 	})
 
 	t.Run("syncWriter", func(t *testing.T) {
+		t.Parallel()
+
 		w := &Writer{
 			w: syncWriter{
 				sw: func() error {

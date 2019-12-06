@@ -68,13 +68,10 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 		)
 	}
 
-	buf, err := json.Marshal(m)
-	if err != nil {
-		return xerrors.Errorf("slogjson: failed to encode entry to JSON: %w", err)
-	}
+	buf, _ := json.Marshal(m)
 
 	buf = append(buf, '\n')
-	_, err = s.w.Write(buf)
+	_, err := s.w.Write(buf)
 	if err != nil {
 		return xerrors.Errorf("slogjson: failed to write JSON entry: %w", err)
 	}
