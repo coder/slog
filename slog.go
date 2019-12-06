@@ -34,10 +34,10 @@ func M(fs ...Field) Map {
 }
 
 // Value represents a log value.
-// Implement LogValue in your own types to override
+// Implement SlogValue in your own types to override
 // the value encoded when logging.
 type Value interface {
-	LogValue() interface{}
+	SlogValue() interface{}
 }
 
 // Error is the standard key used for logging a Go error value.

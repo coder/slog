@@ -34,9 +34,11 @@ func (m Map) MarshalJSON() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// JSON ensures the value is logged via json.Marshal even
-// in the presence of the fmt.Stringer and error interfaces.
-func JSON(v interface{}) interface{} {
+// ForceJSON ensures the value is logged via json.Marshal even
+// if it implements fmt.Stringer or error.
+//
+// See the ForceJSON example.
+func ForceJSON(v interface{}) interface{} {
 	return jsonVal{v: v}
 }
 
@@ -70,7 +72,7 @@ func marshalArray(a []interface{}) []byte {
 func encode(v interface{}) []byte {
 	switch v := v.(type) {
 	case Value:
-		return encode(v.LogValue())
+		return encode(v.SlogValue())
 	case []interface{}:
 		return marshalArray(v)
 	case xerrors.Formatter:

@@ -92,7 +92,7 @@ Here is a list of reasons how we improved on zap with slog.
 
 1. Structured logging of Go structures with `json.Marshal`
     - All values will be logged with `json.Marshal` unless they implement `fmt.Stringer` or `error`.
-        - You can force JSON by using [`slog.JSON`](https://godoc.org/cdr.dev/slog#JSON). 
+        - You can force JSON by using [`slog.ForceJSON`](https://godoc.org/cdr.dev/slog#ForceJSON). 
     - One may implement [`slog.Value`](https://godoc.org/cdr.dev/slog#Value) to override the representation completely.
     - With zap, We found ourselves often implementing zap's
       [ObjectMarshaler](https://godoc.org/go.uber.org/zap/zapcore#ObjectMarshaler) to log Go structures. This was
