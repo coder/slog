@@ -1,3 +1,3 @@
-package slogfmt
+package entryhuman
 
 var ForceColorWriter = forceColorWriter
