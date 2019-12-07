@@ -62,7 +62,7 @@ func TestLogger(t *testing.T) {
 		l := slog.Make(s)
 		h := func(ctx context.Context) {
 			slog.Helper()
-			l.Debug(ctx, "logging in helper")
+			l.Info(ctx, "logging in helper")
 		}
 
 		ctx := slog.With(bg, slog.F(
@@ -74,7 +74,7 @@ func TestLogger(t *testing.T) {
 		assert.Equal(t, slog.SinkEntry{
 			Time: s.entries[0].Time,
 
-			Level:   slog.LevelDebug,
+			Level:   slog.LevelInfo,
 			Message: "logging in helper",
 
 			File: slogTestFile,
@@ -129,6 +129,7 @@ func TestLogger(t *testing.T) {
 
 		s := &fakeSink{}
 		l := slog.Make(s)
+		l.SetLevel(slog.LevelDebug)
 
 		l.Debug(bg, "")
 		l.Info(bg, "")

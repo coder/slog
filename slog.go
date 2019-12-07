@@ -1,8 +1,10 @@
 // Package slog implements minimal structured logging.
 //
-// See https://cdr.dev/slog for more overview docs and a comparison with existing libraries.
+// See https://cdr.dev/slog for overview docs and a comparison with existing libraries.
 //
-// Sink implementations available in the sloggers subpackage.
+// The examples are the best way to understand how to use this library effectively.
+//
+// Sink implementations are in the sloggers subdirectory.
 package slog // import "cdr.dev/slog"
 
 import (
@@ -121,7 +123,8 @@ type Sink interface {
 	Sync() error
 }
 
-// Make creates a logger that writes logs to sink.
+// Make creates a logger that writes logs to sink
+// at LevelInfo.
 func Make(s Sink) Logger {
 	var l Logger
 	l.sinks = []sink{
@@ -130,7 +133,7 @@ func Make(s Sink) Logger {
 			level: new(int64),
 		},
 	}
-	l.SetLevel(LevelDebug)
+	l.SetLevel(LevelInfo)
 	return l
 }
 
