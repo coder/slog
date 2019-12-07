@@ -56,11 +56,11 @@ func fieldsFromContext(ctx context.Context) Map {
 	return l
 }
 
-// Context returns a context that contains the given fields.
+// With returns a context that contains the given fields.
 // Any logs written with the provided context will have
 // the given logs prepended.
 // It will append to any fields already in ctx.
-func Context(ctx context.Context, fields ...Field) context.Context {
+func With(ctx context.Context, fields ...Field) context.Context {
 	f1 := fieldsFromContext(ctx)
 	f2 := combineFields(f1, fields)
 	return fieldsWithContext(ctx, f2)

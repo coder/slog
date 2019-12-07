@@ -65,7 +65,7 @@ func TestLogger(t *testing.T) {
 			l.Debug(ctx, "logging in helper")
 		}
 
-		ctx := slog.Context(bg, slog.F(
+		ctx := slog.With(bg, slog.F(
 			"ctx", 1024),
 		)
 		h(ctx)
@@ -96,7 +96,7 @@ func TestLogger(t *testing.T) {
 		l = l.Named("hello2")
 
 		ctx, span := trace.StartSpan(bg, "trace")
-		ctx = slog.Context(ctx, slog.F("ctx", io.EOF))
+		ctx = slog.With(ctx, slog.F("ctx", io.EOF))
 		l = l.With(slog.F("with", 2))
 
 		l.Info(ctx, "meow", slog.F("hi", "xd"))
