@@ -1,8 +1,11 @@
 // Package slog implements minimal structured logging.
 //
-// See https://cdr.dev/slog for more overview docs and a comparison with existing libraries.
+// See https://cdr.dev/slog for overview docs and a comparison with existing libraries.
 //
-// Sink implementations available in the sloggers subpackage.
+// The examples are the best way to understand how to use this library effectively.
+//
+// This package only provides a high level API around Sink but does not provide any implementations.
+// The implementations are in the sloggers subdirectory.
 package slog // import "cdr.dev/slog"
 
 import (
@@ -56,11 +59,11 @@ func fieldsFromContext(ctx context.Context) Map {
 	return l
 }
 
-// Context returns a context that contains the given fields.
+// With returns a context that contains the given fields.
 // Any logs written with the provided context will have
 // the given logs prepended.
 // It will append to any fields already in ctx.
-func Context(ctx context.Context, fields ...Field) context.Context {
+func With(ctx context.Context, fields ...Field) context.Context {
 	f1 := fieldsFromContext(ctx)
 	f2 := combineFields(f1, fields)
 	return fieldsWithContext(ctx, f2)
@@ -121,7 +124,8 @@ type Sink interface {
 	Sync() error
 }
 
-// Make creates a logger that writes logs to sink.
+// Make creates a logger that writes logs to sink
+// at LevelInfo.
 func Make(s Sink) Logger {
 	var l Logger
 	l.sinks = []sink{
@@ -130,7 +134,7 @@ func Make(s Sink) Logger {
 			level: new(int64),
 		},
 	}
-	l.SetLevel(LevelDebug)
+	l.SetLevel(LevelInfo)
 	return l
 }
 

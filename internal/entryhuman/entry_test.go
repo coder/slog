@@ -1,4 +1,4 @@
-package slogfmt_test
+package entryhuman_test
 
 import (
 	"io/ioutil"
@@ -9,7 +9,7 @@ import (
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/internal/slogfmt"
+	"cdr.dev/slog/internal/entryhuman"
 )
 
 var kt = time.Date(2000, time.February, 5, 4, 4, 4, 4, time.UTC)
@@ -18,7 +18,7 @@ func TestEntry(t *testing.T) {
 	t.Parallel()
 
 	test := func(t *testing.T, in slog.SinkEntry, exp string) {
-		act := slogfmt.HumanEntry(ioutil.Discard, in)
+		act := entryhuman.Fmt(ioutil.Discard, in)
 		assert.Equal(t, exp, act, "entry")
 	}
 
@@ -71,7 +71,7 @@ line2`)
 	t.Run("color", func(t *testing.T) {
 		t.Parallel()
 
-		act := slogfmt.HumanEntry(slogfmt.ForceColorWriter, slog.SinkEntry{
+		act := entryhuman.Fmt(entryhuman.ForceColorWriter, slog.SinkEntry{
 			Level: slog.LevelCritical,
 			Fields: slog.M(
 				slog.F("hey", "hi"),

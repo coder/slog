@@ -11,7 +11,7 @@ import (
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/internal/slogfmt"
+	"cdr.dev/slog/internal/entryjson"
 	"cdr.dev/slog/sloggers/slogjson"
 )
 
@@ -27,7 +27,7 @@ func TestMake(t *testing.T) {
 	l := slogjson.Make(b)
 	l.Error(ctx, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 
-	j := slogfmt.FilterJSONField(b.String(), "ts")
+	j := entryjson.Filter(b.String(), "ts")
 	exp := fmt.Sprintf(`{"level":"ERROR","component":"","msg":"line1\n\nline2","caller":"%v:28","func":"cdr.dev/slog/sloggers/slogjson_test.TestMake","trace":"%v","span":"%v","fields":{"wowow":"me\nyou"}}
 `, slogjsonTestFile, s.SpanContext().TraceID, s.SpanContext().SpanID)
 	assert.Equal(t, exp, j, "entry")

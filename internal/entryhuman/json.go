@@ -1,4 +1,4 @@
-package slogfmt
+package entryhuman
 
 import (
 	"bytes"

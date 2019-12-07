@@ -67,7 +67,7 @@ func Len(t testing.TB, n int, a interface{}, name string) {
 	t.Helper()
 	act := reflect.ValueOf(a).Len()
 	if n != act {
-		t.Fatalf("unexpected length %v of %v: %v", act, name, act)
+		t.Fatalf("expected len(%v) == %v but got %v", name, n, act)
 	}
 }
 
