@@ -4,7 +4,7 @@
 //
 // The examples are the best way to understand how to use this library effectively.
 //
-// This package only provides a high level API around Sink but does not provide any implementations.
+// This package provides a high level API around the Sink interface.
 // The implementations are in the sloggers subdirectory.
 package slog // import "cdr.dev/slog"
 
