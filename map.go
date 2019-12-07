@@ -36,8 +36,6 @@ func (m Map) MarshalJSON() ([]byte, error) {
 
 // ForceJSON ensures the value is logged via json.Marshal even
 // if it implements fmt.Stringer or error.
-//
-// See the ForceJSON example.
 func ForceJSON(v interface{}) interface{} {
 	return jsonVal{v: v}
 }
