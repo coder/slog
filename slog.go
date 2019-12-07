@@ -89,6 +89,8 @@ type SinkEntry struct {
 }
 
 // Level represents a log level.
+//
+// The default logging level is LevelInfo.
 type Level int
 
 // The supported log levels.
