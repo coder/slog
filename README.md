@@ -32,6 +32,8 @@ go get cdr.dev/slog
 
 ## Example
 
+Many more examples available at [godoc](https://godoc.org/cdr.dev/slog#pkg-examples).
+
 ```go
 slogtest.Info(t, "my message here",
     slog.F("field_name", "something or the other"),
