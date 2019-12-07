@@ -16,7 +16,7 @@ import (
 )
 
 func Example() {
-	// Would be provided by the testing framework.
+	// Provided by the testing package in tests.
 	var t testing.TB
 
 	slogtest.Info(t, "my message here",
