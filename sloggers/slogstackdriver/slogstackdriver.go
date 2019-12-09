@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"cloud.google.com/go/compute/metadata"
 	"go.opencensus.io/trace"
@@ -58,9 +59,9 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error
 		}),
 	)
 
-	if ent.LoggerName != "" {
+	if len(ent.Loggers) > 0 {
 		e = append(e, slog.F("logging.googleapis.com/operation", &logpb.LogEntryOperation{
-			Producer: ent.LoggerName,
+			Producer: strings.Join(ent.Loggers, "."),
 		}))
 	}
 

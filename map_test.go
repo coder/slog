@@ -21,6 +21,7 @@ func TestMap(t *testing.T) {
 	t.Parallel()
 
 	test := func(t *testing.T, m slog.Map, exp string) {
+		t.Helper()
 		exp = indentJSON(t, exp)
 		act := marshalJSON(t, m)
 		assert.Equal(t, exp, act, "JSON")
@@ -61,12 +62,12 @@ func TestMap(t *testing.T) {
 				{
 					"msg": "wrap1",
 					"fun": "cdr.dev/slog_test.TestMap.func2",
-					"loc": "`+mapTestFile+`:40" 
+					"loc": "`+mapTestFile+`:41" 
 				},
 				{
 					"msg": "wrap2",
 					"fun": "cdr.dev/slog_test.TestMap.func2",
-					"loc": "`+mapTestFile+`:41" 
+					"loc": "`+mapTestFile+`:42" 
 				},
 				"EOF"
 			],
@@ -92,7 +93,7 @@ func TestMap(t *testing.T) {
 					{
 						"msg": "failed to marshal to JSON",
 						"fun": "cdr.dev/slog.encode",
-						"loc": "`+mapTestFile+`:84"
+						"loc": "`+mapTestFile+`:88"
 					},
 					"json: unsupported type: func(*testing.T, string) string"
 				],

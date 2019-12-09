@@ -108,7 +108,7 @@ func TestLogger(t *testing.T) {
 			Level:   slog.LevelInfo,
 			Message: "meow",
 
-			LoggerName: "hello.hello2",
+			Loggers: []string{"hello", "hello2"},
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func3",
