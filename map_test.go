@@ -83,7 +83,7 @@ func TestMap(t *testing.T) {
 	t.Run("badJSON", func(t *testing.T) {
 		t.Parallel()
 
-		mapTestFile = strings.Replace(mapTestFile, "_test", "", 1)
+		mapTestFile := strings.Replace(mapTestFile, "_test", "", 1)
 
 		test(t, slog.M(
 			slog.F("meow", indentJSON),
