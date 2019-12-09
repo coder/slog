@@ -177,7 +177,7 @@ func (s sink) withContext(ctx context.Context) sink {
 // Logger allows logging a ordered slice of fields
 // to an underlying set of sinks.
 //
-// All Logger's are safe for concurrent use.
+// Logger is safe for concurrent use.
 type Logger struct {
 	sinks []sink
 	skip  int
