@@ -77,7 +77,9 @@ type SinkEntry struct {
 	Level   Level
 	Message string
 
-	Loggers []string
+	// Names represents the chain of names on the
+	// logger constructed with Named.
+	Names []string
 
 	Func string
 	File string
@@ -340,9 +342,9 @@ func (ent SinkEntry) fillLoc(skip int) SinkEntry {
 func (s sink) entry(ctx context.Context, ent SinkEntry) SinkEntry {
 	s = s.withContext(ctx)
 	s = s.withFields(ent.Fields)
-	s = s.named(ent.Loggers...)
+	s = s.named(ent.Names...)
 
-	ent.Loggers = s.name
+	ent.Names = s.name
 	ent.Fields = s.fields
 
 	return ent

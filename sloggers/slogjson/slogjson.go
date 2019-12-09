@@ -54,8 +54,8 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 		slog.F("func", ent.Func),
 	)
 
-	if len(ent.Loggers) > 0 {
-		m = append(m, slog.F("component", ent.Loggers))
+	if len(ent.Names) > 0 {
+		m = append(m, slog.F("component", ent.Names))
 	}
 
 	if ent.SpanContext != (trace.SpanContext{}) {

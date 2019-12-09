@@ -59,9 +59,9 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error
 		}),
 	)
 
-	if len(ent.Loggers) > 0 {
+	if len(ent.Names) > 0 {
 		e = append(e, slog.F("logging.googleapis.com/operation", &logpb.LogEntryOperation{
-			Producer: strings.Join(ent.Loggers, "."),
+			Producer: strings.Join(ent.Names, "."),
 		}))
 	}
 

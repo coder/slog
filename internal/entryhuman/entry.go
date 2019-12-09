@@ -58,8 +58,8 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 	level = c(w, levelColor(ent.Level)).Sprint(level)
 	ents += fmt.Sprintf("%v\t", level)
 
-	if len(ent.Loggers) > 0 {
-		component := "(" + quoteKey(strings.Join(ent.Loggers, ".")) + ")"
+	if len(ent.Names) > 0 {
+		component := "(" + quoteKey(strings.Join(ent.Names, ".")) + ")"
 		component = c(w, color.FgMagenta).Sprint(component)
 		ents += fmt.Sprintf("%v\t", component)
 	}
