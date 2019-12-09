@@ -24,7 +24,7 @@ func NotEqual(t testing.TB, exp, act interface{}, name string) {
 	}
 }
 
-// Success asserts exp == nil.
+// Success asserts err == nil.
 func Success(t testing.TB, err error, name string) {
 	t.Helper()
 	if err != nil {

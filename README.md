@@ -35,7 +35,9 @@ go get cdr.dev/slog
 Many more examples available at [godoc](https://godoc.org/cdr.dev/slog#pkg-examples).
 
 ```go
-slogtest.Info(t, "my message here",
+log := sloghuman.Make(os.Stdout)
+
+log.Info(context.Background(), "my message here",
     slog.F("field_name", "something or the other"),
     slog.F("some_map", slog.M(
         slog.F("nested_fields", "wowow"),
@@ -50,7 +52,7 @@ slogtest.Info(t, "my message here",
 )
 ```
 
-![Example output screenshot](https://i.imgur.com/o8uW4Oy.png)
+![Example output screenshot](https://i.imgur.com/IkpYq2u.png)
 
 ## Why?
 

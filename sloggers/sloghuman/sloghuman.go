@@ -21,7 +21,8 @@ import (
 // it will be called when syncing.
 func Make(w io.Writer) slog.Logger {
 	return slog.Make(&humanSink{
-		w: syncwriter.New(w),
+		w:  syncwriter.New(w),
+		w2: w,
 	})
 }
 

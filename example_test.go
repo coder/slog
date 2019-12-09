@@ -16,6 +16,33 @@ import (
 )
 
 func Example() {
+	log := sloghuman.Make(os.Stdout)
+
+	log.Info(context.Background(), "my message here",
+		slog.F("field_name", "something or the other"),
+		slog.F("some_map", slog.M(
+			slog.F("nested_fields", "wowow"),
+		)),
+		slog.Error(
+			xerrors.Errorf("wrap1: %w",
+				xerrors.Errorf("wrap2: %w",
+					io.EOF,
+				),
+			),
+		),
+	)
+
+	// 2019-12-09 05:04:53.398 [INFO]	<example.go:16>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "wowow"}} ...
+	//  "error": wrap1:
+	//      main.main
+	//          /Users/nhooyr/src/cdr/scratch/example.go:22
+	//    - wrap2:
+	//      main.main
+	//          /Users/nhooyr/src/cdr/scratch/example.go:23
+	//    - EOF
+}
+
+func Example_testing() {
 	// Provided by the testing package in tests.
 	var t testing.TB
 
