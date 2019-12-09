@@ -121,6 +121,8 @@ func (l Level) String() string {
 }
 
 // Sink is the destination of a Logger.
+//
+// All sinks must be safe for concurrent use.
 type Sink interface {
 	LogEntry(ctx context.Context, e SinkEntry) error
 	Sync() error
@@ -174,6 +176,8 @@ func (s sink) withContext(ctx context.Context) sink {
 
 // Logger allows logging a ordered slice of fields
 // to an underlying set of sinks.
+//
+// All Logger's are safe for concurrent use.
 type Logger struct {
 	sinks []sink
 	skip  int
@@ -200,16 +204,22 @@ func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
 }
 
 // Error logs the msg and fields at LevelError.
+//
+// It will also Sync() before returning.
 func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelError, msg, fields)
 }
 
 // Critical logs the msg and fields at LevelCritical.
+//
+// It will also Sync() before returning.
 func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelCritical, msg, fields)
 }
 
 // Fatal logs the msg and fields at LevelFatal.
+//
+// It will also Sync() before returning.
 func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelFatal, msg, fields)
 }
@@ -278,8 +288,7 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 		}
 	}
 
-	switch level {
-	case LevelCritical, LevelError, LevelFatal:
+	if level >= LevelError {
 		l.Sync()
 		if level == LevelFatal {
 			exit(1)
@@ -293,7 +302,7 @@ var errorf = func(f string, v ...interface{}) {
 }
 
 // Sync calls Sync on the sinks underlying the logger.
-// Used it to ensure all logs are flushed during exit.
+// Use it to ensure all logs are flushed during exit.
 func (l Logger) Sync() {
 	for _, s := range l.sinks {
 		err := s.sink.Sync()
