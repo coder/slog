@@ -16,6 +16,10 @@ type Map []Field
 var _ json.Marshaler = Map(nil)
 
 // MarshalJSON implements json.Marshaler.
+//
+// It is guaranteed to return a nil error.
+// Any error marshalling a field will
+// become the field's value.
 func (m Map) MarshalJSON() ([]byte, error) {
 	b := &bytes.Buffer{}
 	b.WriteByte('{')
