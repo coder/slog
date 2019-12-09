@@ -52,7 +52,7 @@ log.Info(context.Background(), "my message here",
 )
 ```
 
-![Example output screenshot](https://i.imgur.com/IkpYq2u.png)
+![Example output screenshot](https://i.imgur.com/7MJM0VE.png)
 
 ## Why?
 
