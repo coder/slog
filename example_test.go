@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
 	"cdr.dev/slog"
@@ -48,26 +49,19 @@ func Example_testing() {
 
 	slogtest.Info(t, "my message here",
 		slog.F("field_name", "something or the other"),
-		slog.F("some_map", slog.M(
-			slog.F("nested_fields", "wowow"),
-		)),
-		slog.Error(
-			xerrors.Errorf("wrap1: %w",
-				xerrors.Errorf("wrap2: %w",
-					io.EOF,
-				),
-			),
-		),
 	)
 
-	// t.go:55: 2019-12-05 21:20:31.218 [INFO]	<examples_test.go:42>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "wowow"}} ...
-	//    "error": wrap1:
-	//        cdr.dev/slog_test.TestExample
-	//            /Users/nhooyr/src/cdr/slog/examples_test.go:48
-	//      - wrap2:
-	//        cdr.dev/slog_test.TestExample
-	//            /Users/nhooyr/src/cdr/slog/examples_test.go:49
-	//      - EOF
+	// t.go:55: 2019-12-05 21:20:31.218 [INFO]	<examples_test.go:42>	my message here	{"field_name": "something or the other"}
+}
+
+func Example_tracing() {
+	log := sloghuman.Make(os.Stdout)
+
+	ctx, _ := trace.StartSpan(context.Background(), "spanName")
+
+	log.Info(ctx, "my msg", slog.F("hello", "hi"))
+
+	// 2019-12-09 21:59:48.110 [INFO]	<example_test.go:62>	my msg	{"trace": "f143d018d00de835688453d8dc55c9fd", "span": "f214167bf550afc3", "hello": "hi"}
 }
 
 func ExampleWith() {
