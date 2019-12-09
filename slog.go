@@ -77,7 +77,9 @@ type SinkEntry struct {
 	Level   Level
 	Message string
 
-	LoggerName string
+	// Names represents the chain of names on the
+	// logger constructed with Named.
+	Names []string
 
 	Func string
 	File string
@@ -143,7 +145,7 @@ func Make(s Sink) Logger {
 }
 
 type sink struct {
-	name   string
+	name   []string
 	sink   Sink
 	level  *int64
 	fields Map
@@ -160,12 +162,9 @@ func (s sink) withFields(fields Map) sink {
 	return s
 }
 
-func (s sink) named(name string) sink {
-	if s.name == "" {
-		s.name = name
-	} else if name != "" {
-		s.name += "." + name
-	}
+func (s sink) named(names ...string) sink {
+	s.name = append([]string(nil), s.name...)
+	s.name = append(s.name, names...)
 	return s
 }
 
@@ -343,9 +342,9 @@ func (ent SinkEntry) fillLoc(skip int) SinkEntry {
 func (s sink) entry(ctx context.Context, ent SinkEntry) SinkEntry {
 	s = s.withContext(ctx)
 	s = s.withFields(ent.Fields)
-	s = s.named(ent.LoggerName)
+	s = s.named(ent.Names...)
 
-	ent.LoggerName = s.name
+	ent.Names = s.name
 	ent.Fields = s.fields
 
 	return ent
