@@ -56,10 +56,10 @@ log.Info(context.Background(), "my message here",
 
 ## Why?
 
-The logging library of choice at [Coder](https://github.com/cdr) has been Uber's [zap](https://github.com/uber-go/zap)
-for several years now.
+At [Coder](https://github.com/cdr) we’ve used Uber’s [zap](https://github.com/uber-go/zap) for several years.
+It is a fantastic library for performance. Thanks Uber!
 
-It's a fantastic library for performance but the API and developer experience is not great.
+However, we felt the API and developer experience could be improved. 
 
 Here is a list of reasons how we improved on zap with slog.
 
