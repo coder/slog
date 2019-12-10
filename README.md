@@ -92,6 +92,10 @@ Here is a list of reasons how we improved on zap with slog.
 
 1. Simple and easy to extend
     - A new backend only has to implement the simple Sink interface.
+    - The logger type provides a nice API around Sink and itself implements
+      Sink allowing for composition and wrapping. E.g. one could implement
+      a Sink that wraps around another sink to ensure no logs with a given
+      component are logged.
     - zap is hard and confusing to extend. There are too many structures and configuration options.
 
 1. Structured logging of Go structures with `json.Marshal`

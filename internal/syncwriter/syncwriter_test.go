@@ -1,7 +1,6 @@
 package syncwriter
 
 import (
-	"bytes"
 	"io"
 	"os"
 	"testing"
@@ -39,12 +38,17 @@ func TestWriter_Sync(t *testing.T) {
 		t.Parallel()
 
 		tw := newWriter(syncWriter{
-			sw: func() error {
+			wf: func([]byte) (int, error) {
+				return 0, io.EOF
+			},
+			sf: func() error {
 				return io.EOF
 			},
 		})
-		tw.w.Sync("test")
+		tw.w.Write("hello", nil)
 		assert.Equal(t, 1, tw.errors, "errors")
+		tw.w.Sync("test")
+		assert.Equal(t, 2, tw.errors, "errors")
 	})
 
 	t.Run("stdout", func(t *testing.T) {
@@ -53,6 +57,20 @@ func TestWriter_Sync(t *testing.T) {
 		tw := newWriter(os.Stdout)
 		tw.w.Sync("test")
 		assert.Equal(t, 0, tw.errors, "errors")
+	})
+
+	t.Run("errorf", func(t *testing.T) {
+		t.Parallel()
+
+		sw := New(syncWriter{
+			wf: func([]byte) (int, error) {
+				return 0, io.EOF
+			},
+			sf: func() error {
+				return io.EOF
+			},
+		})
+		sw.Write("hello", nil)
 	})
 }
 
@@ -64,12 +82,16 @@ func Test_errorsIsAny(t *testing.T) {
 }
 
 type syncWriter struct {
-	*bytes.Buffer
-	sw func() error
+	wf func([]byte) (int, error)
+	sf func() error
 }
 
 var _ syncer = &syncWriter{}
 
+func (sw syncWriter) Write(p []byte) (int, error) {
+	return sw.wf(p)
+}
+
 func (sw syncWriter) Sync() error {
-	return sw.sw()
+	return sw.sf()
 }
