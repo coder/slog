@@ -93,7 +93,7 @@ func TestMap(t *testing.T) {
 					{
 						"msg": "failed to marshal to JSON",
 						"fun": "cdr.dev/slog.encode",
-						"loc": "`+mapTestFile+`:88"
+						"loc": "`+mapTestFile+`:115"
 					},
 					"json: unsupported type: func(*testing.T, string) string"
 				],
@@ -162,6 +162,16 @@ func TestMap(t *testing.T) {
 			slog.F("error", meow{1}),
 		), `{
 			"error": "xdxd"
+		}`)
+	})
+
+	t.Run("nilSlice", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("slice", []string(nil)),
+		), `{
+			"slice": null
 		}`)
 	})
 }
