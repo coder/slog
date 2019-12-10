@@ -7,8 +7,6 @@ import (
 	"io"
 	"strings"
 
-	"golang.org/x/xerrors"
-
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/entryhuman"
 	"cdr.dev/slog/internal/syncwriter"
@@ -31,7 +29,7 @@ type humanSink struct {
 	w2 io.Writer
 }
 
-func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
+func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	str := entryhuman.Fmt(s.w2, ent)
 	lines := strings.Split(str, "\n")
 
@@ -48,13 +46,9 @@ func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 
 	str = strings.Join(lines, "\n")
 
-	_, err := io.WriteString(s.w, str+"\n")
-	if err != nil {
-		return xerrors.Errorf("sloghuman: failed to write entry: %w", err)
-	}
-	return nil
+	s.w.Write("sloghuman", []byte(str+"\n"))
 }
 
-func (s humanSink) Sync() error {
-	return s.w.Sync()
+func (s humanSink) Sync() {
+	s.w.Sync("sloghuman")
 }

@@ -24,7 +24,6 @@ import (
 	"io"
 
 	"go.opencensus.io/trace"
-	"golang.org/x/xerrors"
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/syncwriter"
@@ -45,7 +44,7 @@ type jsonSink struct {
 	w *syncwriter.Writer
 }
 
-func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
+func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	m := slog.M(
 		slog.F("ts", ent.Time),
 		slog.F("level", ent.Level),
@@ -74,13 +73,9 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 	buf, _ := json.Marshal(m)
 
 	buf = append(buf, '\n')
-	_, err := s.w.Write(buf)
-	if err != nil {
-		return xerrors.Errorf("slogjson: failed to write JSON entry: %w", err)
-	}
-	return nil
+	s.w.Write("slogjson", buf)
 }
 
-func (s jsonSink) Sync() error {
-	return s.w.Sync()
+func (s jsonSink) Sync() {
+	s.w.Sync("slogjson")
 }

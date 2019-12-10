@@ -3,6 +3,7 @@ package syncwriter
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -13,20 +14,28 @@ import (
 type Writer struct {
 	mu sync.Mutex
 	w  io.Writer
+
+	errorf func(f string, v ...interface{})
 }
 
 // New returns a new Writer that writes to w.
 func New(w io.Writer) *Writer {
 	return &Writer{
 		w: w,
+
+		errorf: func(f string, v ...interface{}) {
+			println(fmt.Sprintf(f, v...))
+		},
 	}
 }
 
-// Write implements io.Writer.
-func (w *Writer) Write(p []byte) (int, error) {
+func (w *Writer) Write(name string, p []byte) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return w.w.Write(p)
+	_, err := w.w.Write(p)
+	if err != nil {
+		w.errorf("%v: failed to write entry: %+v", name, err)
+	}
 }
 
 type syncer interface {
@@ -37,13 +46,13 @@ var _ syncer = &os.File{}
 
 // Sync calls Sync on the underlying writer
 // if possible.
-func (w *Writer) Sync() error {
+func (w *Writer) Sync(sinkName string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	s, ok := w.w.(syncer)
 	if !ok {
-		return nil
+		return
 	}
 	err := s.Sync()
 	if _, ok := w.w.(*os.File); ok {
@@ -53,10 +62,11 @@ func (w *Writer) Sync() error {
 		// See https://github.com/uber-go/zap/issues/370
 		// See https://github.com/cdr/slog/pull/43
 		if errorsIsAny(err, syscall.EINVAL, syscall.ENOTTY, syscall.EBADF) {
-			return nil
+			return
 		}
 	}
-	return err
+
+	w.errorf("failed to sync %v: %+v", sinkName, err)
 }
 
 func errorsIsAny(err error, errs ...error) bool {

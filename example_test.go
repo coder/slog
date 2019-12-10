@@ -64,6 +64,22 @@ func Example_tracing() {
 	// 2019-12-09 21:59:48.110 [INFO]	<example_test.go:62>	my msg	{"trace": "f143d018d00de835688453d8dc55c9fd", "span": "f214167bf550afc3", "hello": "hi"}
 }
 
+func Example_multiple() {
+	ctx := context.Background()
+	l := sloghuman.Make(os.Stdout)
+
+	f, err := os.OpenFile("stackdriver", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		l.Fatal(ctx, "failed to open stackdriver log file", slog.Error(err))
+	}
+
+	l = slog.Make(l, slogstackdriver.Make(f))
+
+	l.Info(ctx, "log to stdout and stackdriver")
+
+	// 2019-12-07 20:59:55.790 [INFO]	<example_test.go:46>	log to stdout and stackdriver
+}
+
 func ExampleWith() {
 	ctx := slog.With(context.Background(), slog.F("field", 1))
 
@@ -82,22 +98,6 @@ func ExampleStdlib() {
 	// 2019-12-07 20:54:23.986 [INFO]	(stdlib)	<example_test.go:29>	msg	{"field": 1}
 }
 
-func ExampleTee() {
-	ctx := context.Background()
-	l := sloghuman.Make(os.Stdout)
-
-	f, err := os.OpenFile("stackdriver", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		l.Fatal(ctx, "failed to open stackdriver log file", slog.Error(err))
-	}
-
-	l = slog.Tee(l, slogstackdriver.Make(f, nil))
-
-	l.Info(ctx, "log to stdout and stackdriver")
-
-	// 2019-12-07 20:59:55.790 [INFO]	<example_test.go:46>	log to stdout and stackdriver
-}
-
 func ExampleLogger_Named() {
 	ctx := context.Background()
 
@@ -108,14 +108,14 @@ func ExampleLogger_Named() {
 	// 2019-12-07 21:20:56.974 [INFO]	(http)	<example_test.go:85>	received request	{"remote address": "127.0.0.1"}
 }
 
-func ExampleLogger_SetLevel() {
+func ExampleLogger_Leveled() {
 	ctx := context.Background()
 
 	l := sloghuman.Make(os.Stdout)
 	l.Debug(ctx, "testing1")
 	l.Info(ctx, "received request")
 
-	l.SetLevel(slog.LevelDebug)
+	l = l.Leveled(slog.LevelDebug)
 
 	l.Debug(ctx, "testing2")
 

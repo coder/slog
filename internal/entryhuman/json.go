@@ -30,24 +30,13 @@ func formatJSON(w io.Writer, buf []byte) []byte {
 		return buf
 	}
 
-	highlighted, err := colorizeJSON(buf)
-	if err != nil {
-		println("humanfmt: failed to colorize fields JSON: " + err.Error())
-		return buf
-	}
+	highlighted, _ := colorizeJSON(buf)
 	return highlighted
 }
 
 func colorizeJSON(buf []byte) ([]byte, error) {
-	it, err := jsonLexer.Tokenise(nil, string(buf))
-	if err != nil {
-		return nil, err
-	}
-
+	it, _ := jsonLexer.Tokenise(nil, string(buf))
 	b := &bytes.Buffer{}
-	err = formatters.TTY8.Format(b, style, it)
-	if err != nil {
-		return nil, err
-	}
+	formatters.TTY8.Format(b, style, it)
 	return b.Bytes(), nil
 }

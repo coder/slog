@@ -9,36 +9,50 @@ import (
 	"cdr.dev/slog/internal/assert"
 )
 
+type testWriter struct {
+	w      *Writer
+	errors int
+}
+
 func TestWriter_Sync(t *testing.T) {
 	t.Parallel()
+
+	newWriter := func(w io.Writer) *testWriter {
+		tw := &testWriter{
+			w: New(w),
+		}
+		tw.w.errorf = func(f string, v ...interface{}) {
+			tw.errors++
+		}
+		return tw
+	}
 
 	t.Run("nonSyncWriter", func(t *testing.T) {
 		t.Parallel()
 
-		w := &Writer{}
-		assert.Nil(t, w.Sync(), "syncErr")
+		tw := newWriter(nil)
+		tw.w.Sync("test")
+		assert.Equal(t, 0, tw.errors, "errors")
 	})
 
 	t.Run("syncWriter", func(t *testing.T) {
 		t.Parallel()
 
-		w := &Writer{
-			w: syncWriter{
-				sw: func() error {
-					return io.EOF
-				},
+		tw := newWriter(syncWriter{
+			sw: func() error {
+				return io.EOF
 			},
-		}
-		assert.Equal(t, io.EOF, w.Sync(), "syncErr")
+		})
+		tw.w.Sync("test")
+		assert.Equal(t, 1, tw.errors, "errors")
 	})
 
 	t.Run("stdout", func(t *testing.T) {
 		t.Parallel()
 
-		w := &Writer{
-			w: os.Stdout,
-		}
-		assert.Success(t, w.Sync(), "syncErr")
+		tw := newWriter(os.Stdout)
+		tw.w.Sync("test")
+		assert.Equal(t, 0, tw.errors, "errors")
 	})
 }
 
