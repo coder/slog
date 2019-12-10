@@ -1,4 +1,4 @@
-// Package slogstackdriver contains the slogger for GCP.
+// Package slogstackdriver contains the slogger for google cloud's stackdriver.
 package slogstackdriver // import "cdr.dev/slog/sloggers/slogstackdriver"
 
 import (
@@ -48,9 +48,9 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 		}),
 	)
 
-	if len(ent.Names) > 0 {
+	if len(ent.LoggerNames) > 0 {
 		e = append(e, slog.F("logging.googleapis.com/operation", &logpb.LogEntryOperation{
-			Producer: strings.Join(ent.Names, "."),
+			Producer: strings.Join(ent.LoggerNames, "."),
 		}))
 	}
 

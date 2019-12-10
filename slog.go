@@ -4,8 +4,10 @@
 //
 // The examples are the best way to understand how to use this library effectively.
 //
-// This package provides a high level API around the Sink interface.
-// The implementations are in the sloggers subdirectory.
+// The Logger type implements a high level API around the Sink interface.
+// Logger implements Sink as well to allow composition.
+//
+// Implementations of the Sink interface are available in the sloggers subdirectory.
 package slog // import "cdr.dev/slog"
 
 import (
@@ -37,7 +39,7 @@ func (l Logger) LogEntry(ctx context.Context, e SinkEntry) {
 	}
 
 	e.Fields = l.fields.append(e.Fields)
-	e.Names = appendName(e.Names, l.names...)
+	e.LoggerNames = appendNames(l.names, e.LoggerNames...)
 
 	for _, s := range l.sinks {
 		s.LogEntry(ctx, e)
@@ -51,16 +53,17 @@ func (l Logger) Sync() {
 	}
 }
 
-// Logger wraps Sink with a easy to use API.
+// Logger wraps Sink with a nice API to log entries.
 //
 // Logger is safe for concurrent use.
 type Logger struct {
-	names  []string
-	sinks  []Sink
-	skip   int
-	fields Map
-	level  Level
+	sinks []Sink
+	level Level
 
+	names  []string
+	fields Map
+
+	skip int
 	exit func(int)
 }
 
@@ -91,7 +94,7 @@ func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
 
 // Error logs the msg and fields at LevelError.
 //
-// It will also Sync() before returning.
+// It will then Sync().
 func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelError, msg, fields)
 	l.Sync()
@@ -99,7 +102,7 @@ func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
 
 // Critical logs the msg and fields at LevelCritical.
 //
-// It will also Sync() before returning.
+// It will then Sync().
 func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelCritical, msg, fields)
 	l.Sync()
@@ -107,11 +110,51 @@ func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
 
 // Fatal logs the msg and fields at LevelFatal.
 //
-// It will also Sync() before returning.
+// It will then Sync() and os.Exit(1).
 func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelFatal, msg, fields)
 	l.Sync()
 	l.exit(1)
+}
+
+// With returns a Logger that prepends the given fields on every
+// logged entry.
+//
+// It will append to any fields already in the Logger.
+func (l Logger) With(fields ...Field) Logger {
+	l.fields = l.fields.append(fields)
+	return l
+}
+
+// Named appends the name to the set names
+// on the logger.
+func (l Logger) Named(name string) Logger {
+	l.names = appendNames(l.names, name)
+	return l
+}
+
+// Leveled returns a Logger that only logs entries
+// equal to or above the given level.
+func (l Logger) Leveled(level Level) Logger {
+	l.level = level
+	return l
+}
+
+func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
+	ent := l.entry(ctx, level, msg, fields)
+	l.LogEntry(ctx, ent)
+}
+
+func (l Logger) entry(ctx context.Context, level Level, msg string, fields Map) SinkEntry {
+	ent := SinkEntry{
+		Time:        time.Now().UTC(),
+		Level:       level,
+		Message:     msg,
+		Fields:      fieldsFromContext(ctx).append(fields),
+		SpanContext: trace.FromContext(ctx).SpanContext(),
+	}
+	ent = ent.fillLoc(l.skip + 3)
+	return ent
 }
 
 var helpers sync.Map
@@ -122,31 +165,6 @@ var helpers sync.Map
 func Helper() {
 	_, _, fn := location(1)
 	helpers.LoadOrStore(fn, struct{}{})
-}
-
-// With returns a Logger that prepends the given fields on every
-// logged entry.
-// It will append to any fields already in the Logger.
-func (l Logger) With(fields ...Field) Logger {
-	l.fields = l.fields.append(fields)
-	return l
-}
-
-// Named names the logger.
-// If there is already a name set, it will be joined by ".".
-// E.g. if the name is currently "my_component" and then later
-// the name "my_pkg" is set, then the final component will be
-// "my_component.my_pkg".
-func (l Logger) Named(name string) Logger {
-	l.names = appendName(l.names, name)
-	return l
-}
-
-// Leveled returns a Logger that only logs entries
-// equal to or above the given level.
-func (l Logger) Leveled(level Level) Logger {
-	l.level = level
-	return l
 }
 
 func (ent SinkEntry) fillFromFrame(f runtime.Frame) SinkEntry {
@@ -182,27 +200,14 @@ func location(skip int) (file string, line int, fn string) {
 	return file, line, f.Name()
 }
 
-func appendName(names []string, names2 ...string) []string {
-	names = append([]string(nil), names...)
-	names = append(names, names2...)
-	return names
-}
-
-func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
-	ent := l.entry(ctx, level, msg, fields)
-	l.LogEntry(ctx, ent)
-}
-
-func (l Logger) entry(ctx context.Context, level Level, msg string, fields Map) SinkEntry {
-	ent := SinkEntry{
-		Time:        time.Now().UTC(),
-		Level:       level,
-		Message:     msg,
-		Fields:      fieldsFromContext(ctx).append(fields),
-		SpanContext: trace.FromContext(ctx).SpanContext(),
+func appendNames(names []string, names2 ...string) []string {
+	if len(names2) == 0 {
+		return names
 	}
-	ent = ent.fillLoc(l.skip + 3)
-	return ent
+	names3 := make([]string, 0, len(names)+len(names2))
+	names3 = append(names3, names...)
+	names3 = append(names3, names2...)
+	return names3
 }
 
 // Field represents a log field.
@@ -222,6 +227,7 @@ func M(fs ...Field) Map {
 }
 
 // Value represents a log value.
+//
 // Implement SlogValue in your own types to override
 // the value encoded when logging.
 type Value interface {
@@ -245,8 +251,9 @@ func fieldsFromContext(ctx context.Context) Map {
 }
 
 // With returns a context that contains the given fields.
-// Any logs written with the provided context will have
-// the given logs prepended.
+//
+// Any logs written with the provided context will have the given logs prepended.
+//
 // It will append to any fields already in ctx.
 func With(ctx context.Context, fields ...Field) context.Context {
 	f1 := fieldsFromContext(ctx)
@@ -262,9 +269,7 @@ type SinkEntry struct {
 	Level   Level
 	Message string
 
-	// Names represents the chain of names on the
-	// logger constructed with Named.
-	Names []string
+	LoggerNames []string
 
 	Func string
 	File string
@@ -279,6 +284,8 @@ type SinkEntry struct {
 type Level int
 
 // The supported log levels.
+//
+// The default level is Info.
 const (
 	LevelDebug Level = iota
 	LevelInfo
@@ -297,17 +304,11 @@ var levelStrings = map[Level]string{
 	LevelFatal:    "FATAL",
 }
 
+// String implements fmt.Stringer.
 func (l Level) String() string {
 	s, ok := levelStrings[l]
 	if !ok {
 		return fmt.Sprintf("slog.Level(%v)", int(l))
 	}
 	return s
-}
-
-func (f1 Map) append(f2 Map) Map {
-	f3 := make(Map, 0, len(f1)+len(f2))
-	f3 = append(f3, f1...)
-	f3 = append(f3, f2...)
-	return f3
 }

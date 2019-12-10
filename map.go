@@ -147,3 +147,10 @@ func (p *xerrorPrinter) write(s string) {
 		p.e.Loc = s
 	}
 }
+
+func (m Map) append(m2 Map) Map {
+	m3 := make(Map, 0, len(m)+len(m2))
+	m3 = append(m3, m...)
+	m3 = append(m3, m2...)
+	return m3
+}

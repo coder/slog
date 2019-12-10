@@ -58,10 +58,10 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 	level = c(w, levelColor(ent.Level)).Sprint(level)
 	ents += fmt.Sprintf("%v\t", level)
 
-	if len(ent.Names) > 0 {
-		component := "(" + quoteKey(strings.Join(ent.Names, ".")) + ")"
-		component = c(w, color.FgMagenta).Sprint(component)
-		ents += fmt.Sprintf("%v\t", component)
+	if len(ent.LoggerNames) > 0 {
+		loggerName := "(" + quoteKey(strings.Join(ent.LoggerNames, ".")) + ")"
+		loggerName = c(w, color.FgMagenta).Sprint(loggerName)
+		ents += fmt.Sprintf("%v\t", loggerName)
 	}
 
 	loc := fmt.Sprintf("<%v:%v>", filepath.Base(ent.File), ent.Line)

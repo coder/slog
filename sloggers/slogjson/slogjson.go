@@ -1,18 +1,18 @@
-// Package slogjson contains the slogger that writes logs in a JSON format.
+// Package slogjson contains the slogger that writes logs in JSON.
 //
 // Format
 //
 //  {
 //    "ts": "2019-09-10T20:19:07.159852-05:00",
 //    "level": "INFO",
-//    "component": "comp.subcomp",
+//    "logger_names": ["comp", "subcomp"],
 //    "msg": "hi",
 //    "caller": "slog/examples_test.go:62",
 //    "func": "cdr.dev/slog/sloggers/slogtest_test.TestExampleTest",
 //    "trace": "<traceid>",
 //    "span": "<spanid>",
 //    "fields": {
-//      "myField": "fieldValue"
+//      "my_field": "field value"
 //    }
 //  }
 package slogjson // import "cdr.dev/slog/sloggers/slogjson"
@@ -53,8 +53,8 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 		slog.F("func", ent.Func),
 	)
 
-	if len(ent.Names) > 0 {
-		m = append(m, slog.F("component", ent.Names))
+	if len(ent.LoggerNames) > 0 {
+		m = append(m, slog.F("logger_names", ent.LoggerNames))
 	}
 
 	if ent.SpanContext != (trace.SpanContext{}) {

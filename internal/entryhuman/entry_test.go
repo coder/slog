@@ -51,8 +51,8 @@ line2`)
 		t.Parallel()
 
 		test(t, slog.SinkEntry{
-			Level: slog.LevelWarn,
-			Names: []string{"named", "meow"},
+			Level:       slog.LevelWarn,
+			LoggerNames: []string{"named", "meow"},
 		}, `0001-01-01 00:00:00.000 [WARN]	(named.meow)	<.:0>	""`)
 	})
 

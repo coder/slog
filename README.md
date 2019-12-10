@@ -23,12 +23,12 @@ go get cdr.dev/slog
     - Prints multiline fields and errors nicely
 - Machine readable JSON output
 - [GCP Stackdriver](https://godoc.org/cdr.dev/slog/sloggers/slogstackdriver) support
-- [Tee](https://godoc.org/cdr.dev/slog#Tee) multiple loggers
 - [Stdlib](https://godoc.org/cdr.dev/slog#Stdlib) log adapter
 - Skip caller frames with [slog.Helper](https://godoc.org/cdr.dev/slog#Helper)
 - Encodes values as if with `json.Marshal`
 - Transparently log [opencensus](https://godoc.org/go.opencensus.io/trace) trace and span IDs
 - [Single dependency](https://godoc.org/cdr.dev/slog?imports) on go.opencensus.io
+- Log to multiple sinks
 
 ## Example
 
@@ -92,10 +92,8 @@ Here is a list of reasons how we improved on zap with slog.
 
 1. Simple and easy to extend
     - A new backend only has to implement the simple Sink interface.
-    - The logger type provides a nice API around Sink and itself implements
-      Sink allowing for composition and wrapping. E.g. one could implement
-      a Sink that wraps around another sink to ensure no logs with a given
-      component are logged.
+    - The Logger type provides a nice API around Sink but also implements
+      Sink to allow for composition.
     - zap is hard and confusing to extend. There are too many structures and configuration options.
 
 1. Structured logging of Go structures with `json.Marshal`

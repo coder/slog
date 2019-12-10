@@ -29,7 +29,7 @@ func TestMake(t *testing.T) {
 	l.Error(ctx, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 
 	j := entryjson.Filter(b.String(), "ts")
-	exp := fmt.Sprintf(`{"level":"ERROR","msg":"line1\n\nline2","caller":"%v:29","func":"cdr.dev/slog/sloggers/slogjson_test.TestMake","component":["named"],"trace":"%v","span":"%v","fields":{"wowow":"me\nyou"}}
+	exp := fmt.Sprintf(`{"level":"ERROR","msg":"line1\n\nline2","caller":"%v:29","func":"cdr.dev/slog/sloggers/slogjson_test.TestMake","logger_names":["named"],"trace":"%v","span":"%v","fields":{"wowow":"me\nyou"}}
 `, slogjsonTestFile, s.SpanContext().TraceID, s.SpanContext().SpanID)
 	assert.Equal(t, exp, j, "entry")
 }
