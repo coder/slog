@@ -31,11 +31,13 @@ var _ json.Marshaler = Map(nil)
 //
 // 2. xerrors.Formatter is handled.
 //
-// 3. error and fmt.Stringer are handled.
+// 3. Protobufs are handled with json.Marshal.
 //
-// 4. slices and arrays are handled to go through the encode function for every value.
+// 4. error and fmt.Stringer are handled.
 //
-// 5. json.Marshal is invoked as the default case.
+// 5. slices and arrays are handled to go through the encode function for every value.
+//
+// 6. json.Marshal is invoked as the default case.
 func (m Map) MarshalJSON() ([]byte, error) {
 	b := &bytes.Buffer{}
 	b.WriteByte('{')
