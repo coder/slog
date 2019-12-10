@@ -93,6 +93,10 @@ func encode(v interface{}) []byte {
 		return encode(v.SlogValue())
 	case xerrors.Formatter:
 		return encode(errorChain(v))
+	case interface {
+		ProtoMessage()
+	}:
+		return encode(ForceJSON(v))
 	case error, fmt.Stringer:
 		return encode(fmt.Sprint(v))
 	default:
