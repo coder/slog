@@ -23,8 +23,19 @@ var _ json.Marshaler = Map(nil)
 // MarshalJSON implements json.Marshaler.
 //
 // It is guaranteed to return a nil error.
-// Any error marshalling a field will
-// become the field's value.
+// Any error marshalling a field will become the field's value.
+//
+// Every field value is encoded with the following process:
+//
+// 1. slog.Value is handled to allow any type to replace its representation for logging.
+//
+// 2. xerrors.Formatter is handled.
+//
+// 3. error and fmt.Stringer are handled.
+//
+// 4. slices and arrays are handled to go through the encode function for every value.
+//
+// 5. json.Marshal is invoked as the default case.
 func (m Map) MarshalJSON() ([]byte, error) {
 	b := &bytes.Buffer{}
 	b.WriteByte('{')
@@ -90,8 +101,7 @@ func encode(v interface{}) []byte {
 			switch rv.Type().Kind() {
 			case reflect.Slice:
 				if rv.IsNil() {
-					b, _ := json.Marshal(nil)
-					return b
+					break
 				}
 				fallthrough
 			case reflect.Array:
