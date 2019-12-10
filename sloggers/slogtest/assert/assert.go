@@ -16,7 +16,7 @@ import (
 func Equal(t testing.TB, exp, act interface{}, name string) {
 	slog.Helper()
 	if diff := assert.CmpDiff(exp, act); diff != "" {
-		slogtest.Fatal(t, "equal assertion failed",
+		slogtest.Fatal(t, "unexpected value",
 			slog.F("name", name),
 			slog.F("diff", diff),
 		)
