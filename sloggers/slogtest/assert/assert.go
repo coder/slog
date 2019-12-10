@@ -9,7 +9,9 @@ import (
 	"cdr.dev/slog/sloggers/slogtest"
 )
 
-// Equal asserts exp == act. If they are not equal, it will fatal the test
+// Equal asserts exp == act.
+//
+// If they are not equal, it will fatal the test
 // with a diff of the differences.
 func Equal(t testing.TB, exp, act interface{}, name string) {
 	slog.Helper()
