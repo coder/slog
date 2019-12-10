@@ -59,7 +59,7 @@ log.Info(context.Background(), "my message here",
 At [Coder](https://github.com/cdr) we’ve used Uber’s [zap](https://github.com/uber-go/zap) for several years.
 It is a fantastic library for performance. Thanks Uber!
 
-However, we felt the API and developer experience could be improved. 
+However we felt the API and developer experience could be improved. 
 
 Here is a list of reasons how we improved on zap with slog.
 
