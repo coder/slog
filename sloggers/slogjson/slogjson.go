@@ -73,12 +73,9 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	buf, _ := json.Marshal(m)
 
 	buf = append(buf, '\n')
-	_, err := s.w.Write(buf)
-	if err != nil {
-		println(fmt.Sprintf("slogjson: failed to write entry: %+v", err))
-	}
+	s.w.Write("slogjson", buf)
 }
 
 func (s jsonSink) Sync() {
-	s.w.Sync("jsonSink")
+	s.w.Sync("slogjson")
 }

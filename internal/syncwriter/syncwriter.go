@@ -14,20 +14,28 @@ import (
 type Writer struct {
 	mu sync.Mutex
 	w  io.Writer
+
+	errorf func(f string, v ...interface{})
 }
 
 // New returns a new Writer that writes to w.
 func New(w io.Writer) *Writer {
 	return &Writer{
 		w: w,
+
+		errorf: func(f string, v ...interface{}) {
+			println(fmt.Sprintf(f, v...))
+		},
 	}
 }
 
-// Write implements io.Writer.
-func (w *Writer) Write(p []byte) (int, error) {
+func (w *Writer) Write(name string, p []byte) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return w.w.Write(p)
+	_, err := w.w.Write(p)
+	if err != nil {
+		w.errorf("%v: failed to write entry: %+v", name, err)
+	}
 }
 
 type syncer interface {
@@ -58,7 +66,7 @@ func (w *Writer) Sync(sinkName string) {
 		}
 	}
 
-	println(fmt.Sprintf("failed to sync %v: %+v", sinkName, err))
+	w.errorf("failed to sync %v: %+v", sinkName, err)
 }
 
 func errorsIsAny(err error, errs ...error) bool {

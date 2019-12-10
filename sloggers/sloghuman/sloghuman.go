@@ -4,7 +4,6 @@ package sloghuman // import "cdr.dev/slog/sloggers/sloghuman"
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
@@ -47,12 +46,9 @@ func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 
 	str = strings.Join(lines, "\n")
 
-	_, err := io.WriteString(s.w, str+"\n")
-	if err != nil {
-		println(fmt.Sprintf("sloghuman: failed to write entry: %+v", err))
-	}
+	s.w.Write("sloghuman", []byte(str+"\n"))
 }
 
 func (s humanSink) Sync() {
-	s.w.Sync("humanSink")
+	s.w.Sync("sloghuman")
 }

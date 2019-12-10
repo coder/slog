@@ -61,8 +61,7 @@ type Logger struct {
 	fields Map
 	level  Level
 
-	exit   func(int)
-	errorf func(f string, v ...interface{})
+	exit func(int)
 }
 
 // Make creates a logger that writes logs to the passed sinks at LevelInfo.
@@ -72,9 +71,6 @@ func Make(sinks ...Sink) Logger {
 		level: LevelInfo,
 
 		exit: os.Exit,
-		errorf: func(f string, v ...interface{}) {
-			println(fmt.Sprintf(f, v...))
-		},
 	}
 }
 
