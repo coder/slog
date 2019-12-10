@@ -93,7 +93,7 @@ func TestMap(t *testing.T) {
 					{
 						"msg": "failed to marshal to JSON",
 						"fun": "cdr.dev/slog.encode",
-						"loc": "`+mapTestFile+`:88"
+						"loc": "`+mapTestFile+`:105"
 					},
 					"json: unsupported type: func(*testing.T, string) string"
 				],

@@ -13,6 +13,11 @@ import (
 // Map represents an ordered map of fields.
 type Map []Field
 
+// SlogValue implements Value.
+func (m Map) SlogValue() interface{} {
+	return ForceJSON(m)
+}
+
 var _ json.Marshaler = Map(nil)
 
 // MarshalJSON implements json.Marshaler.
@@ -55,14 +60,14 @@ func (v jsonVal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.v)
 }
 
-func marshalArray(a []interface{}) []byte {
+func marshalList(rv reflect.Value) []byte {
 	b := &bytes.Buffer{}
 	b.WriteByte('[')
-	for i, v := range a {
+	for i := 0; i < rv.Len(); i++ {
 		b.WriteByte('\n')
-		b.Write(encode(v))
+		b.Write(encode(rv.Index(i).Interface()))
 
-		if i < len(a)-1 {
+		if i < rv.Len()-1 {
 			b.WriteByte(',')
 		}
 	}
@@ -75,13 +80,25 @@ func encode(v interface{}) []byte {
 	switch v := v.(type) {
 	case Value:
 		return encode(v.SlogValue())
-	case []interface{}:
-		return marshalArray(v)
 	case xerrors.Formatter:
 		return encode(errorChain(v))
 	case error, fmt.Stringer:
 		return encode(fmt.Sprint(v))
 	default:
+		rv := reflect.Indirect(reflect.ValueOf(v))
+		if rv.IsValid() {
+			switch rv.Type().Kind() {
+			case reflect.Slice:
+				if rv.IsNil() {
+					b, _ := json.Marshal(nil)
+					return b
+				}
+				fallthrough
+			case reflect.Array:
+				return marshalList(rv)
+			}
+		}
+
 		b, err := json.Marshal(v)
 		if err != nil {
 			return encode(M(
