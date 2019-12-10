@@ -14,11 +14,200 @@ import (
 	"os"
 	"runtime"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"go.opencensus.io/trace"
 )
+
+// Sink is the destination of a Logger.
+//
+// All sinks must be safe for concurrent use.
+type Sink interface {
+	LogEntry(ctx context.Context, e SinkEntry)
+	Sync()
+}
+
+// LogEntry logs the given entry with the context to the
+// underlying sinks.
+//
+// It extends the entry with the set fields and names.
+func (l Logger) LogEntry(ctx context.Context, e SinkEntry) {
+	if e.Level < l.level {
+		return
+	}
+
+	e.Fields = l.fields.append(e.Fields)
+	e.Names = appendName(e.Names, l.names...)
+
+	for _, s := range l.sinks {
+		s.LogEntry(ctx, e)
+	}
+}
+
+// Sync calls Sync on all the underlying sinks.
+func (l Logger) Sync() {
+	for _, s := range l.sinks {
+		s.Sync()
+	}
+}
+
+// Logger wraps Sink with a easy to use API.
+//
+// Logger is safe for concurrent use.
+type Logger struct {
+	names  []string
+	sinks  []Sink
+	skip   int
+	fields Map
+	level  Level
+
+	exit   func(int)
+	errorf func(f string, v ...interface{})
+}
+
+// Make creates a logger that writes logs to the passed sinks at LevelInfo.
+func Make(sinks ...Sink) Logger {
+	return Logger{
+		sinks: sinks,
+		level: LevelInfo,
+
+		exit: os.Exit,
+		errorf: func(f string, v ...interface{}) {
+			println(fmt.Sprintf(f, v...))
+		},
+	}
+}
+
+// Debug logs the msg and fields at LevelDebug.
+func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
+	l.log(ctx, LevelDebug, msg, fields)
+}
+
+// Info logs the msg and fields at LevelInfo.
+func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
+	l.log(ctx, LevelInfo, msg, fields)
+}
+
+// Warn logs the msg and fields at LevelWarn.
+func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
+	l.log(ctx, LevelWarn, msg, fields)
+}
+
+// Error logs the msg and fields at LevelError.
+//
+// It will also Sync() before returning.
+func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
+	l.log(ctx, LevelError, msg, fields)
+	l.Sync()
+}
+
+// Critical logs the msg and fields at LevelCritical.
+//
+// It will also Sync() before returning.
+func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
+	l.log(ctx, LevelCritical, msg, fields)
+	l.Sync()
+}
+
+// Fatal logs the msg and fields at LevelFatal.
+//
+// It will also Sync() before returning.
+func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
+	l.log(ctx, LevelFatal, msg, fields)
+	l.Sync()
+	l.exit(1)
+}
+
+var helpers sync.Map
+
+// Helper marks the calling function as a helper
+// and skips it for source location information.
+// It's the slog equivalent of testing.TB.Helper().
+func Helper() {
+	_, _, fn := location(1)
+	helpers.LoadOrStore(fn, struct{}{})
+}
+
+// With returns a Logger that prepends the given fields on every
+// logged entry.
+// It will append to any fields already in the Logger.
+func (l Logger) With(fields ...Field) Logger {
+	l.fields = l.fields.append(fields)
+	return l
+}
+
+// Named names the logger.
+// If there is already a name set, it will be joined by ".".
+// E.g. if the name is currently "my_component" and then later
+// the name "my_pkg" is set, then the final component will be
+// "my_component.my_pkg".
+func (l Logger) Named(name string) Logger {
+	l.names = appendName(l.names, name)
+	return l
+}
+
+// Leveled returns a Logger that only logs entries
+// equal to or above the given level.
+func (l Logger) Leveled(level Level) Logger {
+	l.level = level
+	return l
+}
+
+func (ent SinkEntry) fillFromFrame(f runtime.Frame) SinkEntry {
+	ent.Func = f.Function
+	ent.File = f.File
+	ent.Line = f.Line
+	return ent
+}
+
+func (ent SinkEntry) fillLoc(skip int) SinkEntry {
+	// Copied from testing.T
+	const maxStackLen = 50
+	var pc [maxStackLen]uintptr
+
+	// Skip two extra frames to account for this function
+	// and runtime.Callers itself.
+	n := runtime.Callers(skip+2, pc[:])
+	frames := runtime.CallersFrames(pc[:n])
+	for {
+		frame, more := frames.Next()
+		_, helper := helpers.Load(frame.Function)
+		if !helper || !more {
+			// Found a frame that wasn't a helper function.
+			// Or we ran out of frames to check.
+			return ent.fillFromFrame(frame)
+		}
+	}
+}
+
+func location(skip int) (file string, line int, fn string) {
+	pc, file, line, _ := runtime.Caller(skip + 1)
+	f := runtime.FuncForPC(pc)
+	return file, line, f.Name()
+}
+
+func appendName(names []string, names2 ...string) []string {
+	names = append([]string(nil), names...)
+	names = append(names, names2...)
+	return names
+}
+
+func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
+	ent := l.entry(ctx, level, msg, fields)
+	l.LogEntry(ctx, ent)
+}
+
+func (l Logger) entry(ctx context.Context, level Level, msg string, fields Map) SinkEntry {
+	ent := SinkEntry{
+		Time:        time.Now().UTC(),
+		Level:       level,
+		Message:     msg,
+		Fields:      fieldsFromContext(ctx).append(fields),
+		SpanContext: trace.FromContext(ctx).SpanContext(),
+	}
+	ent = ent.fillLoc(l.skip + 3)
+	return ent
+}
 
 // Field represents a log field.
 type Field struct {
@@ -65,7 +254,7 @@ func fieldsFromContext(ctx context.Context) Map {
 // It will append to any fields already in ctx.
 func With(ctx context.Context, fields ...Field) context.Context {
 	f1 := fieldsFromContext(ctx)
-	f2 := combineFields(f1, fields)
+	f2 := f1.append(fields)
 	return fieldsWithContext(ctx, f2)
 }
 
@@ -91,8 +280,6 @@ type SinkEntry struct {
 }
 
 // Level represents a log level.
-//
-// The default logging level is LevelInfo.
 type Level int
 
 // The supported log levels.
@@ -122,245 +309,9 @@ func (l Level) String() string {
 	return s
 }
 
-// Sink is the destination of a Logger.
-//
-// All sinks must be safe for concurrent use.
-type Sink interface {
-	LogEntry(ctx context.Context, e SinkEntry) error
-	Sync() error
-}
-
-// Make creates a logger that writes logs to sink
-// at LevelInfo.
-func Make(s Sink) Logger {
-	var l Logger
-	l.sinks = []sink{
-		{
-			sink:  s,
-			level: new(int64),
-		},
-	}
-	l.SetLevel(LevelInfo)
-	return l
-}
-
-type sink struct {
-	name   []string
-	sink   Sink
-	level  *int64
-	fields Map
-}
-
-func combineFields(f1, f2 Map) Map {
+func (f1 Map) append(f2 Map) Map {
 	f3 := make(Map, 0, len(f1)+len(f2))
 	f3 = append(f3, f1...)
 	f3 = append(f3, f2...)
 	return f3
-}
-func (s sink) withFields(fields Map) sink {
-	s.fields = combineFields(s.fields, fields)
-	return s
-}
-
-func (s sink) named(names ...string) sink {
-	s.name = append([]string(nil), s.name...)
-	s.name = append(s.name, names...)
-	return s
-}
-
-func (s sink) withContext(ctx context.Context) sink {
-	f := fieldsFromContext(ctx)
-	return s.withFields(f)
-}
-
-// Logger allows logging a ordered slice of fields
-// to an underlying set of sinks.
-//
-// Logger is safe for concurrent use.
-type Logger struct {
-	sinks []sink
-	skip  int
-}
-
-func (l Logger) clone() Logger {
-	l.sinks = append([]sink(nil), l.sinks...)
-	return l
-}
-
-// Debug logs the msg and fields at LevelDebug.
-func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, LevelDebug, msg, fields)
-}
-
-// Info logs the msg and fields at LevelInfo.
-func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, LevelInfo, msg, fields)
-}
-
-// Warn logs the msg and fields at LevelWarn.
-func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, LevelWarn, msg, fields)
-}
-
-// Error logs the msg and fields at LevelError.
-//
-// It will also Sync() before returning.
-func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, LevelError, msg, fields)
-}
-
-// Critical logs the msg and fields at LevelCritical.
-//
-// It will also Sync() before returning.
-func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, LevelCritical, msg, fields)
-}
-
-// Fatal logs the msg and fields at LevelFatal.
-//
-// It will also Sync() before returning.
-func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
-	l.log(ctx, LevelFatal, msg, fields)
-}
-
-var helpers sync.Map
-
-// Helper marks the calling function as a helper
-// and skips it for source location information.
-// It's the slog equivalent of testing.TB.Helper().
-func Helper() {
-	_, _, fn := location(1)
-	helpers.LoadOrStore(fn, struct{}{})
-}
-
-// With returns a Logger that prepends the given fields on every
-// logged entry.
-// It will append to any fields already in the Logger.
-func (l Logger) With(fields ...Field) Logger {
-	l = l.clone()
-	for i, s := range l.sinks {
-		l.sinks[i] = s.withFields(fields)
-	}
-	return l
-}
-
-// Named names the logger.
-// If there is already a name set, it will be joined by ".".
-// E.g. if the name is currently "my_component" and then later
-// the name "my_pkg" is set, then the final component will be
-// "my_component.my_pkg".
-func (l Logger) Named(name string) Logger {
-	l = l.clone()
-	for i, s := range l.sinks {
-		l.sinks[i] = s.named(name)
-	}
-	return l
-}
-
-// SetLevel changes the Logger's level.
-func (l Logger) SetLevel(level Level) {
-	for _, s := range l.sinks {
-		atomic.StoreInt64(s.level, int64(level))
-	}
-}
-
-func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
-	ent := SinkEntry{
-		Time:        time.Now().UTC(),
-		Level:       level,
-		Message:     msg,
-		Fields:      fields,
-		SpanContext: trace.FromContext(ctx).SpanContext(),
-	}
-	ent = ent.fillLoc(l.skip + 2)
-
-	for _, s := range l.sinks {
-		slevel := Level(atomic.LoadInt64(s.level))
-		if level < slevel {
-			// We will not log levels below the current log level.
-			continue
-		}
-		err := s.sink.LogEntry(ctx, s.entry(ctx, ent))
-		if err != nil {
-			errorf("slog: sink with name %v and type %T failed to log entry: %+v", s.name, s.sink, err)
-			continue
-		}
-	}
-
-	if level >= LevelError {
-		l.Sync()
-		if level == LevelFatal {
-			exit(1)
-		}
-	}
-}
-
-var exit = os.Exit
-var errorf = func(f string, v ...interface{}) {
-	println(fmt.Sprintf(f, v...))
-}
-
-// Sync calls Sync on the sinks underlying the logger.
-// Use it to ensure all logs are flushed during exit.
-func (l Logger) Sync() {
-	for _, s := range l.sinks {
-		err := s.sink.Sync()
-		if err != nil {
-			errorf("slog: sink with name %v and type %T failed to sync: %+v\n", s.name, s.sink, err)
-			continue
-		}
-	}
-}
-
-func (ent SinkEntry) fillFromFrame(f runtime.Frame) SinkEntry {
-	ent.Func = f.Function
-	ent.File = f.File
-	ent.Line = f.Line
-	return ent
-}
-
-func (ent SinkEntry) fillLoc(skip int) SinkEntry {
-	// Copied from testing.T
-	const maxStackLen = 50
-	var pc [maxStackLen]uintptr
-
-	// Skip two extra frames to account for this function
-	// and runtime.Callers itself.
-	n := runtime.Callers(skip+2, pc[:])
-	frames := runtime.CallersFrames(pc[:n])
-	for {
-		frame, more := frames.Next()
-		_, helper := helpers.Load(frame.Function)
-		if !helper || !more {
-			// Found a frame that wasn't a helper function.
-			// Or we ran out of frames to check.
-			return ent.fillFromFrame(frame)
-		}
-	}
-}
-
-func (s sink) entry(ctx context.Context, ent SinkEntry) SinkEntry {
-	s = s.withContext(ctx)
-	s = s.withFields(ent.Fields)
-	s = s.named(ent.Names...)
-
-	ent.Names = s.name
-	ent.Fields = s.fields
-
-	return ent
-}
-
-func location(skip int) (file string, line int, fn string) {
-	pc, file, line, _ := runtime.Caller(skip + 1)
-	f := runtime.FuncForPC(pc)
-	return file, line, f.Name()
-}
-
-// Tee enables logging to multiple loggers.
-func Tee(ls ...Logger) Logger {
-	var l Logger
-	for _, l2 := range ls {
-		l.sinks = append(l.sinks, l2.sinks...)
-	}
-	return l
 }

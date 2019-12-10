@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"cdr.dev/slog"
 	"cdr.dev/slog/internal/assert"
 	"cdr.dev/slog/sloggers/slogtest"
 )
@@ -30,9 +31,9 @@ func TestIgnoreErrors(t *testing.T) {
 	t.Parallel()
 
 	tb := &fakeTB{}
-	l := slogtest.Make(tb, &slogtest.Options{
+	l := slog.Make(slogtest.Make(tb, &slogtest.Options{
 		IgnoreErrors: true,
-	})
+	}))
 
 	l.Error(bg, "hello")
 	assert.Equal(t, 0, tb.errors, "errors")

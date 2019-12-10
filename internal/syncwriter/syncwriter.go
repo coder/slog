@@ -3,6 +3,7 @@ package syncwriter
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -37,13 +38,13 @@ var _ syncer = &os.File{}
 
 // Sync calls Sync on the underlying writer
 // if possible.
-func (w *Writer) Sync() error {
+func (w *Writer) Sync(sinkName string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	s, ok := w.w.(syncer)
 	if !ok {
-		return nil
+		return
 	}
 	err := s.Sync()
 	if _, ok := w.w.(*os.File); ok {
@@ -53,10 +54,11 @@ func (w *Writer) Sync() error {
 		// See https://github.com/uber-go/zap/issues/370
 		// See https://github.com/cdr/slog/pull/43
 		if errorsIsAny(err, syscall.EINVAL, syscall.ENOTTY, syscall.EBADF) {
-			return nil
+			return
 		}
 	}
-	return err
+
+	println(fmt.Sprintf("failed to sync %v: %+v", sinkName, err))
 }
 
 func errorsIsAny(err error, errs ...error) bool {

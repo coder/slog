@@ -15,21 +15,17 @@ import (
 var _, slogTestFile, _, _ = runtime.Caller(0)
 
 type fakeSink struct {
-	entries     []slog.SinkEntry
-	logEntryErr error
+	entries []slog.SinkEntry
 
-	syncs   int
-	syncErr error
+	syncs int
 }
 
-func (s *fakeSink) LogEntry(_ context.Context, e slog.SinkEntry) error {
+func (s *fakeSink) LogEntry(_ context.Context, e slog.SinkEntry) {
 	s.entries = append(s.entries, e)
-	return s.logEntryErr
 }
 
-func (s *fakeSink) Sync() error {
+func (s *fakeSink) Sync() {
 	s.syncs++
-	return s.syncErr
 }
 
 var bg = context.Background()
@@ -42,9 +38,8 @@ func TestLogger(t *testing.T) {
 
 		s1 := &fakeSink{}
 		s2 := &fakeSink{}
-		l := slog.Tee(slog.Make(s1), slog.Make(s2))
-
-		l.SetLevel(slog.LevelError)
+		l := slog.Make(s1, s2)
+		l = l.Leveled(slog.LevelError)
 
 		l.Info(bg, "wow", slog.Error(io.EOF))
 		l.Error(bg, "meow", slog.Error(io.ErrUnexpectedEOF))
@@ -79,7 +74,7 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func2",
-			Line: 71,
+			Line: 66,
 
 			Fields: slog.M(
 				slog.F("ctx", 1024),
@@ -112,7 +107,7 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func3",
-			Line: 102,
+			Line: 97,
 
 			SpanContext: span.SpanContext(),
 
@@ -129,8 +124,13 @@ func TestLogger(t *testing.T) {
 
 		s := &fakeSink{}
 		l := slog.Make(s)
-		l.SetLevel(slog.LevelDebug)
 
+		exits := 0
+		l.SetExit(func(int) {
+			exits++
+		})
+
+		l = l.Leveled(slog.LevelDebug)
 		l.Debug(bg, "")
 		l.Info(bg, "")
 		l.Warn(bg, "")
@@ -146,23 +146,7 @@ func TestLogger(t *testing.T) {
 		assert.Equal(t, slog.LevelError, s.entries[3].Level, "level")
 		assert.Equal(t, slog.LevelCritical, s.entries[4].Level, "level")
 		assert.Equal(t, slog.LevelFatal, s.entries[5].Level, "level")
-		assert.Equal(t, 1, slog.Exits, "exits")
-	})
-
-	t.Run("errors", func(t *testing.T) {
-		t.Parallel()
-
-		s := &fakeSink{
-			logEntryErr: io.EOF,
-			syncErr:     io.ErrClosedPipe,
-		}
-		l := slog.Make(s)
-
-		l.Info(bg, "")
-		l.Error(bg, "")
-		l.Sync()
-
-		assert.Equal(t, 4, slog.Errors, "errors")
+		assert.Equal(t, 1, exits, "exits")
 	})
 }
 

@@ -1,5 +1,8 @@
 // Package slogtest contains the slogger for use
 // with Go's testing package.
+//
+// If imported, then all logs that go through the stdlib's
+// default logger will go through slog.
 package slogtest // import "cdr.dev/slog/sloggers/slogtest"
 
 import (
@@ -44,7 +47,7 @@ type testSink struct {
 	stdlib bool
 }
 
-func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
+func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	// The testing package logs to stdout and not stderr.
 	s := entryhuman.Fmt(os.Stdout, ent)
 
@@ -63,12 +66,9 @@ func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
 		}
 		ts.tb.Fatal(s)
 	}
-	return nil
 }
 
-func (ts testSink) Sync() error {
-	return nil
-}
+func (ts testSink) Sync() {}
 
 var ctx = context.Background()
 

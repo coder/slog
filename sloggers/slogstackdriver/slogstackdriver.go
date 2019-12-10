@@ -10,7 +10,6 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 	"go.opencensus.io/trace"
-	"golang.org/x/xerrors"
 	logpbtype "google.golang.org/genproto/googleapis/logging/type"
 	logpb "google.golang.org/genproto/googleapis/logging/v2"
 
@@ -46,7 +45,7 @@ type stackdriverSink struct {
 	w         *syncwriter.Writer
 }
 
-func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error {
+func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	// https://cloud.google.com/logging/docs/agent/configuration#special-fields
 	e := slog.M(
 		slog.F("severity", sev(ent.Level)),
@@ -84,13 +83,12 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) error
 	buf = append(buf, '\n')
 	_, err := s.w.Write(buf)
 	if err != nil {
-		return xerrors.Errorf("slogstackdriver: failed to write JSON entry: %w", err)
+		println(fmt.Sprintf("slogstackdriver: failed to write entry: %+v", err))
 	}
-	return nil
 }
 
-func (s stackdriverSink) Sync() error {
-	return s.w.Sync()
+func (s stackdriverSink) Sync() {
+	s.w.Sync("stackdriverSink")
 }
 
 func sev(level slog.Level) logpbtype.LogSeverity {
