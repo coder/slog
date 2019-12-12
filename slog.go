@@ -287,11 +287,23 @@ type Level int
 //
 // The default level is Info.
 const (
+	// LevelDebug is used for development and debugging messages.
 	LevelDebug Level = iota
+
+	// LevelInfo is used for normal informational messages.
 	LevelInfo
+
+	// LevelWarn is used when something has possibly gone wrong.
 	LevelWarn
+
+	// LevelError is used when something has certainly gone wrong.
 	LevelError
+
+	// LevelCritical is used when when something has gone wrong and should
+	// be immediately investigated.
 	LevelCritical
+
+	// LevelFatal is used when the process is about to exit due to an error.
 	LevelFatal
 )
 
