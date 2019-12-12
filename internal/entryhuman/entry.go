@@ -49,7 +49,7 @@ func c(w io.Writer, attrs ...color.Attribute) *color.Color {
 // We also do not indent the fields as go's test does that automatically
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
-func Fmt(w io.Writer, ent slog.SinkEntry, sc trace.SpanContext) string {
+func Fmt(w io.Writer, ent slog.SinkEntry) string {
 	var ents string
 	ts := ent.Time.Format(TimeFormat)
 	ents += ts + " "
@@ -79,10 +79,10 @@ func Fmt(w io.Writer, ent slog.SinkEntry, sc trace.SpanContext) string {
 	msg = quote(msg)
 	ents += msg
 
-	if sc != (trace.SpanContext{}) {
+	if ent.SpanContext != (trace.SpanContext{}) {
 		ent.Fields = append(slog.M(
-			slog.F("trace", sc.TraceID),
-			slog.F("span", sc.SpanID),
+			slog.F("trace", ent.SpanContext.TraceID),
+			slog.F("span", ent.SpanContext.SpanID),
 		), ent.Fields...)
 	}
 

@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"testing"
 
+	"go.opencensus.io/trace"
+
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/assert"
 )
@@ -72,7 +74,7 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func2",
-			Line: 64,
+			Line: 66,
 
 			Fields: slog.M(
 				slog.F("ctx", 1024),
@@ -88,7 +90,8 @@ func TestLogger(t *testing.T) {
 		l = l.Named("hello")
 		l = l.Named("hello2")
 
-		ctx := slog.With(bg, slog.F("ctx", io.EOF))
+		ctx, span := trace.StartSpan(bg, "trace")
+		ctx = slog.With(ctx, slog.F("ctx", io.EOF))
 		l = l.With(slog.F("with", 2))
 
 		l.Info(ctx, "meow", slog.F("hi", "xd"))
@@ -104,7 +107,9 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func3",
-			Line: 94,
+			Line: 97,
+
+			SpanContext: span.SpanContext(),
 
 			Fields: slog.M(
 				slog.F("with", 2),
