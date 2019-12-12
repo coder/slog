@@ -26,8 +26,8 @@ go get cdr.dev/slog
 - [Stdlib](https://godoc.org/cdr.dev/slog#Stdlib) log adapter
 - Skip caller frames with [slog.Helper](https://godoc.org/cdr.dev/slog#Helper)
 - Encodes values as if with `json.Marshal`
-- Transparently log [opencensus](https://godoc.org/go.opencensus.io/trace) trace and span IDs
-- [Single dependency](https://godoc.org/cdr.dev/slog?imports) on go.opencensus.io
+- Transparently log [opencensus](https://godoc.org/go.opencensus.io/trace) span's from the passed context
+- [Zero dependencies](https://godoc.org/cdr.dev/slog?imports)
 - Log to multiple sinks
 
 ## Example

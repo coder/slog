@@ -57,10 +57,11 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 		m = append(m, slog.F("logger_names", ent.LoggerNames))
 	}
 
-	if ent.SpanContext != (trace.SpanContext{}) {
+	sc := trace.FromContext(ctx).SpanContext()
+	if sc != (trace.SpanContext{}) {
 		m = append(m,
-			slog.F("trace", ent.SpanContext.TraceID),
-			slog.F("span", ent.SpanContext.SpanID),
+			slog.F("trace", sc.TraceID),
+			slog.F("span", sc.SpanID),
 		)
 	}
 

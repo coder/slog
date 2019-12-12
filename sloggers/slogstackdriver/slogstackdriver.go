@@ -54,11 +54,12 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 		}))
 	}
 
-	if ent.SpanContext != (trace.SpanContext{}) {
+	sc := trace.FromContext(ctx).SpanContext()
+	if sc != (trace.SpanContext{}) {
 		e = append(e,
-			slog.F("logging.googleapis.com/trace", s.traceField(ent.SpanContext.TraceID)),
-			slog.F("logging.googleapis.com/spanId", ent.SpanContext.SpanID.String()),
-			slog.F("logging.googleapis.com/trace_sampled", ent.SpanContext.IsSampled()),
+			slog.F("logging.googleapis.com/trace", s.traceField(sc.TraceID)),
+			slog.F("logging.googleapis.com/spanId", sc.SpanID.String()),
+			slog.F("logging.googleapis.com/trace_sampled", sc.IsSampled()),
 		)
 	}
 

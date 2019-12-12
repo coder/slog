@@ -7,6 +7,8 @@ import (
 	"io"
 	"strings"
 
+	"go.opencensus.io/trace"
+
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/entryhuman"
 	"cdr.dev/slog/internal/syncwriter"
@@ -30,7 +32,7 @@ type humanSink struct {
 }
 
 func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
-	str := entryhuman.Fmt(s.w2, ent)
+	str := entryhuman.Fmt(s.w2, ent, trace.FromContext(ctx).SpanContext())
 	lines := strings.Split(str, "\n")
 
 	// We need to add 4 spaces before every field line for readability.

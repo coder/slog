@@ -11,6 +11,8 @@ import (
 	"os"
 	"testing"
 
+	"go.opencensus.io/trace"
+
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/entryhuman"
 	"cdr.dev/slog/sloggers/sloghuman"
@@ -49,7 +51,7 @@ type testSink struct {
 
 func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	// The testing package logs to stdout and not stderr.
-	s := entryhuman.Fmt(os.Stdout, ent)
+	s := entryhuman.Fmt(os.Stdout, ent, trace.FromContext(ctx).SpanContext())
 
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:

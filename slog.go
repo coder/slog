@@ -17,8 +17,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-
-	"go.opencensus.io/trace"
 )
 
 // Sink is the destination of a Logger.
@@ -147,11 +145,10 @@ func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 
 func (l Logger) entry(ctx context.Context, level Level, msg string, fields Map) SinkEntry {
 	ent := SinkEntry{
-		Time:        time.Now().UTC(),
-		Level:       level,
-		Message:     msg,
-		Fields:      fieldsFromContext(ctx).append(fields),
-		SpanContext: trace.FromContext(ctx).SpanContext(),
+		Time:    time.Now().UTC(),
+		Level:   level,
+		Message: msg,
+		Fields:  fieldsFromContext(ctx).append(fields),
 	}
 	ent = ent.fillLoc(l.skip + 3)
 	return ent
@@ -274,8 +271,6 @@ type SinkEntry struct {
 	Func string
 	File string
 	Line int
-
-	SpanContext trace.SpanContext
 
 	Fields Map
 }
