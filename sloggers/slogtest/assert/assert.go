@@ -7,10 +7,10 @@ package assert // import "cdr.dev/slog/sloggers/slogtest/assert"
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
 	"cdr.dev/slog/sloggers/slogtest"
 )
 
@@ -19,18 +19,18 @@ import (
 // If they are not equal, it will fatal the test with a diff of the
 // two objects.
 //
-// If act is an error it will be unwrapped.
+// If act or exp is an error it will be unwrapped.
 func Equal(t testing.TB, exp, act interface{}, name string) {
 	slog.Helper()
 
-	if err, ok := act.(error); ok {
-		act = unwrapErr(err)
-	}
+	exp = unwrapErr(exp)
+	act = unwrapErr(act)
 
-	if diff := assert.CmpDiff(exp, act); diff != "" {
+	if !reflect.DeepEqual(exp, act) {
 		slogtest.Fatal(t, "unexpected value",
 			slog.F("name", name),
-			slog.F("diff", diff),
+			slog.F("exp", exp),
+			slog.F("act", act),
 		)
 	}
 }
@@ -62,7 +62,11 @@ func Error(t testing.TB, err error, name string) {
 	}
 }
 
-func unwrapErr(err error) error {
+func unwrapErr(v interface{}) interface{} {
+	err, ok := v.(error)
+	if !ok {
+		return v
+	}
 	uerr := errors.Unwrap(err)
 	for uerr != nil {
 		err = uerr

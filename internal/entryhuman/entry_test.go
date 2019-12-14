@@ -47,6 +47,18 @@ func TestEntry(t *testing.T) {
 line2`)
 	})
 
+	t.Run("multilineField", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.SinkEntry{
+			Message: "msg",
+			Level:   slog.LevelInfo,
+			Fields:  slog.M(slog.F("field", "line1\nline2")),
+		}, `0001-01-01 00:00:00.000 [INFO]	<.:0>	msg ...
+"field": line1
+line2`)
+	})
+
 	t.Run("named", func(t *testing.T) {
 		t.Parallel()
 

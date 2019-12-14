@@ -91,5 +91,5 @@ func (tb *fakeTB) Error(v ...interface{}) {
 
 func (tb *fakeTB) Fatal(v ...interface{}) {
 	tb.fatals++
-	panic("")
+	panic(fmt.Sprint(v...))
 }
