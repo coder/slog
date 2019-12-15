@@ -44,7 +44,7 @@ func TestEntry(t *testing.T) {
 			Level:   slog.LevelInfo,
 		}, `0001-01-01 00:00:00.000 [INFO]	<.:0>	...
 "msg": line1
-line2`)
+       line2`)
 	})
 
 	t.Run("multilineField", func(t *testing.T) {
@@ -56,7 +56,7 @@ line2`)
 			Fields:  slog.M(slog.F("field", "line1\nline2")),
 		}, `0001-01-01 00:00:00.000 [INFO]	<.:0>	msg ...
 "field": line1
-line2`)
+         line2`)
 	})
 
 	t.Run("named", func(t *testing.T) {

@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kylelemons/godebug/pretty"
+
 	"cdr.dev/slog"
 	"cdr.dev/slog/sloggers/slogtest"
 )
@@ -30,8 +32,7 @@ func Equal(t testing.TB, name string, exp, act interface{}) {
 	if !reflect.DeepEqual(exp, act) {
 		slogtest.Fatal(t, "unexpected value",
 			slog.F("name", name),
-			slog.F("exp", exp),
-			slog.F("act", act),
+			slog.F("diff", pretty.Compare(exp, act)),
 		)
 	}
 }

@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go v0.43.0
 	github.com/alecthomas/chroma v0.6.6
 	github.com/fatih/color v1.7.0
+	github.com/kylelemons/godebug v1.1.0
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	go.opencensus.io v0.22.1
