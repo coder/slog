@@ -119,11 +119,20 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 	}
 
 	if multilineVal != "" {
-		multilineVal = strings.TrimSpace(multilineVal)
-		multilineKey = c(w, color.FgBlue).Sprintf(`"%v"`, multilineKey)
 		if msg != "..." {
 			ents += " ..."
 		}
+
+		// Proper indentation.
+		lines := strings.Split(multilineVal, "\n")
+		for i, line := range lines[1:] {
+			if line != "" {
+				lines[i+1] = strings.Repeat(" ", len(multilineKey)+4) + line
+			}
+		}
+		multilineVal = strings.Join(lines, "\n")
+
+		multilineKey = c(w, color.FgBlue).Sprintf(`"%v"`, multilineKey)
 		ents += fmt.Sprintf("\n%v: %v", multilineKey, multilineVal)
 	}
 

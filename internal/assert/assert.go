@@ -4,13 +4,16 @@ package assert
 import (
 	"reflect"
 	"testing"
+
+	"github.com/kylelemons/godebug/pretty"
 )
 
 // Equal asserts exp == act.
 func Equal(t testing.TB, name string, exp, act interface{}) {
 	t.Helper()
 	if !reflect.DeepEqual(exp, act) {
-		t.Fatalf("unexpected %v: exp: %q but got %q", name, exp, act)
+		t.Fatalf(`unexpected %v: diff:
+%v`, name, pretty.Compare(exp, act))
 	}
 }
 
