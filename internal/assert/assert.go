@@ -10,17 +10,16 @@ import (
 // Equal asserts exp == act.
 func Equal(t testing.TB, exp, act interface{}, name string) {
 	t.Helper()
-	diff := CmpDiff(exp, act)
-	if diff != "" {
-		t.Fatalf("unexpected %v: %v", name, diff)
+	if !reflect.DeepEqual(exp, act) {
+		t.Fatalf("unexpected %v: exp: %q but got %q", name, exp, act)
 	}
 }
 
 // NotEqual asserts exp != act.
 func NotEqual(t testing.TB, exp, act interface{}, name string) {
 	t.Helper()
-	if CmpDiff(exp, act) == "" {
-		t.Fatalf("expected different %v: %+v", name, act)
+	if reflect.DeepEqual(exp, act) {
+		t.Fatalf("expected different %v: %q", name, act)
 	}
 }
 

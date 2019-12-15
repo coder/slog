@@ -3,11 +3,11 @@ package slog_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/xerrors"
 
@@ -86,19 +86,19 @@ func TestMap(t *testing.T) {
 		mapTestFile := strings.Replace(mapTestFile, "_test", "", 1)
 
 		test(t, slog.M(
-			slog.F("meow", indentJSON),
+			slog.F("meow", slog.ForceJSON(complex(10, 10))),
 		), `{
 			"meow": {
 				"error": [
 					{
 						"msg": "failed to marshal to JSON",
-						"fun": "cdr.dev/slog.encode",
-						"loc": "`+mapTestFile+`:121"
+						"fun": "cdr.dev/slog.encodeJSON",
+						"loc": "`+mapTestFile+`:147"
 					},
-					"json: unsupported type: func(*testing.T, string) string"
+					"json: unsupported type: complex128"
 				],
-				"type": "func(*testing.T, string) string",
-				"value": "`+fmt.Sprint(interface{}(indentJSON))+`"
+				"type": "complex128",
+				"value": "(10+10i)"
 			}
 		}`)
 	})
@@ -145,6 +145,24 @@ func TestMap(t *testing.T) {
 		}`)
 	})
 
+	t.Run("array", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("meow", [3]string{
+				"1",
+				"2",
+				"3",
+			}),
+		), `{
+			"meow": [
+				"1",
+				"2",
+				"3"
+			]
+		}`)
+	})
+
 	t.Run("forceJSON", func(t *testing.T) {
 		t.Parallel()
 
@@ -172,6 +190,54 @@ func TestMap(t *testing.T) {
 			slog.F("slice", []string(nil)),
 		), `{
 			"slice": null
+		}`)
+	})
+
+	t.Run("nil", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("val", nil),
+		), `{
+			"val": null
+		}`)
+	})
+
+	t.Run("json.Marshaler", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("val", time.Date(2000, 02, 05, 4, 4, 4, 0, time.UTC)),
+		), `{
+			"val": "2000-02-05T04:04:04Z"
+		}`)
+	})
+
+	t.Run("complex", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("val", complex(10, 10)),
+		), `{
+			"val": "(10+10i)"
+		}`)
+	})
+
+	t.Run("privateStruct", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.F("val", struct {
+				meow string
+				bar  int
+				far  uint
+			}{
+				meow: "hi",
+				bar:  23,
+				far:  600,
+			}),
+		), `{
+			"val": "{meow:hi bar:23 far:600}"
 		}`)
 	})
 }
