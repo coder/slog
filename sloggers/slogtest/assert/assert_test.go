@@ -13,65 +13,79 @@ func TestEqual(t *testing.T) {
 	t.Parallel()
 
 	tb := &fakeTB{}
-	assert.Equal(tb, 3, 3, "meow")
+	assert.Equal(tb, "meow", 3, 3)
 
 	defer func() {
 		recover()
-		simpleassert.Equal(t, 1, tb.fatals, "fatals")
+		simpleassert.Equal(t, "fatals", 1, tb.fatals)
 	}()
-	assert.Equal(tb, 3, 4, "meow")
+	assert.Equal(tb, "meow", 3, 4)
 }
 
 func TestEqual_error(t *testing.T) {
 	t.Parallel()
 
 	tb := &fakeTB{}
-	assert.Equal(tb, io.EOF, fmt.Errorf("failed: %w", io.EOF), "meow")
+	assert.Equal(tb, "meow", io.EOF, fmt.Errorf("failed: %w", io.EOF))
 
 	defer func() {
 		recover()
-		simpleassert.Equal(t, 1, tb.fatals, "fatals")
+		simpleassert.Equal(t, "fatals", 1, tb.fatals)
 	}()
-	assert.Equal(tb, io.ErrClosedPipe, fmt.Errorf("failed: %w", io.EOF), "meow")
+	assert.Equal(tb, "meow", io.ErrClosedPipe, fmt.Errorf("failed: %w", io.EOF))
 }
 
+func TestErrorContains(t *testing.T) {
+	t.Parallel()
+
+	tb := &fakeTB{}
+	assert.ErrorContains(tb, "meow", io.EOF, "eof")
+
+	defer func() {
+		recover()
+		simpleassert.Equal(t, "fatals", 1, tb.fatals)
+
+	}()
+	assert.ErrorContains(tb, "meow", io.ErrClosedPipe, "eof")
+
+}
 func TestSuccess(t *testing.T) {
 	t.Parallel()
 
 	tb := &fakeTB{}
-	assert.Success(tb, nil, "meow")
+	assert.Success(tb, "meow", nil)
 
 	defer func() {
 		recover()
-		simpleassert.Equal(t, 1, tb.fatals, "fatals")
+		simpleassert.Equal(t, "fatals", 1, tb.fatals)
 	}()
-	assert.Success(tb, io.EOF, "meow")
+	assert.Success(tb, "meow", io.EOF)
 }
 
 func TestTrue(t *testing.T) {
 	t.Parallel()
 
 	tb := &fakeTB{}
-	assert.True(tb, true, "meow")
+	assert.True(tb, "meow", true)
 
 	defer func() {
 		recover()
-		simpleassert.Equal(t, 1, tb.fatals, "fatals")
+		simpleassert.Equal(t, "fatals", 1, tb.fatals)
 	}()
-	assert.True(tb, false, "meow")
+	assert.True(tb, "meow", false)
 }
 
 func TestError(t *testing.T) {
 	t.Parallel()
 
 	tb := &fakeTB{}
-	assert.Error(tb, io.EOF, "meow")
+	assert.Error(tb, "meow", io.EOF)
 
 	defer func() {
 		recover()
-		simpleassert.Equal(t, 1, tb.fatals, "fatals")
+		simpleassert.Equal(t, "fatals", 1, tb.fatals)
 	}()
-	assert.Error(tb, nil, "meow")
+	assert.Error(tb, "meow", nil)
 }
 
 type fakeTB struct {

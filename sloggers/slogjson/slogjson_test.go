@@ -31,5 +31,5 @@ func TestMake(t *testing.T) {
 	j := entryjson.Filter(b.String(), "ts")
 	exp := fmt.Sprintf(`{"level":"ERROR","msg":"line1\n\nline2","caller":"%v:29","func":"cdr.dev/slog/sloggers/slogjson_test.TestMake","logger_names":["named"],"trace":"%v","span":"%v","fields":{"wowow":"me\nyou"}}
 `, slogjsonTestFile, s.SpanContext().TraceID, s.SpanContext().SpanID)
-	assert.Equal(t, exp, j, "entry")
+	assert.Equal(t, "entry", exp, j)
 }

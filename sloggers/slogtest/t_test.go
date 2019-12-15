@@ -17,11 +17,11 @@ func TestStateless(t *testing.T) {
 	slogtest.Info(tb, "hello")
 
 	slogtest.Error(tb, "hello")
-	assert.Equal(t, 1, tb.errors, "errors")
+	assert.Equal(t, "errors", 1, tb.errors)
 
 	defer func() {
 		recover()
-		assert.Equal(t, 1, tb.fatals, "fatals")
+		assert.Equal(t, "fatals", 1, tb.fatals)
 	}()
 
 	slogtest.Fatal(tb, "hello")
@@ -36,11 +36,11 @@ func TestIgnoreErrors(t *testing.T) {
 	}))
 
 	l.Error(bg, "hello")
-	assert.Equal(t, 0, tb.errors, "errors")
+	assert.Equal(t, "errors", 0, tb.errors)
 
 	defer func() {
 		recover()
-		assert.Equal(t, 0, tb.fatals, "fatals")
+		assert.Equal(t, "fatals", 0, tb.fatals)
 	}()
 
 	l.Fatal(bg, "hello")

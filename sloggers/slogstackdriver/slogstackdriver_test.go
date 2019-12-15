@@ -31,15 +31,15 @@ func TestStackdriver(t *testing.T) {
 	j := entryjson.Filter(b.String(), "timestamp")
 	exp := fmt.Sprintf(`{"severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":29,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects//traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":false,"wowow":"me\nyou"}
 `, slogstackdriverTestFile, s.SpanContext().TraceID, s.SpanContext().SpanID)
-	assert.Equal(t, exp, j, "entry")
+	assert.Equal(t, "entry", exp, j)
 }
 
 func TestSevMapping(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, logpbtype.LogSeverity_DEBUG, slogstackdriver.Sev(slog.LevelDebug), "level")
-	assert.Equal(t, logpbtype.LogSeverity_INFO, slogstackdriver.Sev(slog.LevelInfo), "level")
-	assert.Equal(t, logpbtype.LogSeverity_WARNING, slogstackdriver.Sev(slog.LevelWarn), "level")
-	assert.Equal(t, logpbtype.LogSeverity_ERROR, slogstackdriver.Sev(slog.LevelError), "level")
-	assert.Equal(t, logpbtype.LogSeverity_CRITICAL, slogstackdriver.Sev(slog.LevelCritical), "level")
+	assert.Equal(t, "level", logpbtype.LogSeverity_DEBUG, slogstackdriver.Sev(slog.LevelDebug))
+	assert.Equal(t, "level", logpbtype.LogSeverity_INFO, slogstackdriver.Sev(slog.LevelInfo))
+	assert.Equal(t, "level", logpbtype.LogSeverity_WARNING, slogstackdriver.Sev(slog.LevelWarn))
+	assert.Equal(t, "level", logpbtype.LogSeverity_ERROR, slogstackdriver.Sev(slog.LevelError))
+	assert.Equal(t, "level", logpbtype.LogSeverity_CRITICAL, slogstackdriver.Sev(slog.LevelCritical))
 }

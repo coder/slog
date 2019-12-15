@@ -22,7 +22,7 @@ func TestMake(t *testing.T) {
 	l.Sync()
 
 	et, rest, err := entryhuman.StripTimestamp(b.String())
-	assert.Success(t, err, "strip timestamp")
-	assert.False(t, et.IsZero(), "timestamp")
-	assert.Equal(t, " [INFO]\t<sloghuman_test.go:21>\t...\t{\"wowow\": \"me\\nyou\"}\n  \"msg\": line1\n\n  line2\n", rest, "entry")
+	assert.Success(t, "strip timestamp", err)
+	assert.False(t, "timestamp", et.IsZero())
+	assert.Equal(t, "entry", " [INFO]\t<sloghuman_test.go:21>\t...\t{\"wowow\": \"me\\nyou\"}\n  \"msg\": line1\n\n  line2\n", rest)
 }

@@ -21,7 +21,7 @@ func TestStdlib(t *testing.T) {
 	stdlibLog.Println("stdlib")
 
 	et, rest, err := entryhuman.StripTimestamp(b.String())
-	assert.Success(t, err, "strip timestamp")
-	assert.False(t, et.IsZero(), "timestamp")
-	assert.Equal(t, " [INFO]\t(stdlib)\t<s_test.go:21>\tstdlib\t{\"hi\": \"we\"}\n", rest, "entry")
+	assert.Success(t, "strip timestamp", err)
+	assert.False(t, "timestamp", et.IsZero())
+	assert.Equal(t, "entry", " [INFO]\t(stdlib)\t<s_test.go:21>\tstdlib\t{\"hi\": \"we\"}\n", rest)
 }
