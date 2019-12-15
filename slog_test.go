@@ -44,10 +44,10 @@ func TestLogger(t *testing.T) {
 		l.Info(bg, "wow", slog.Error(io.EOF))
 		l.Error(bg, "meow", slog.Error(io.ErrUnexpectedEOF))
 
-		assert.Equal(t, 1, s1.syncs, "syncs")
-		assert.Len(t, 1, s1.entries, "entries")
+		assert.Equal(t, "syncs", 1, s1.syncs)
+		assert.Len(t, "entries", 1, s1.entries)
 
-		assert.Equal(t, s1, s2, "sinks")
+		assert.Equal(t, "sinks", s1, s2)
 	})
 
 	t.Run("helper", func(t *testing.T) {
@@ -65,8 +65,8 @@ func TestLogger(t *testing.T) {
 		)
 		h(ctx)
 
-		assert.Len(t, 1, s.entries, "entries")
-		assert.Equal(t, slog.SinkEntry{
+		assert.Len(t, "entries", 1, s.entries)
+		assert.Equal(t, "entry", slog.SinkEntry{
 			Time: s.entries[0].Time,
 
 			Level:   slog.LevelInfo,
@@ -79,7 +79,7 @@ func TestLogger(t *testing.T) {
 			Fields: slog.M(
 				slog.F("ctx", 1024),
 			),
-		}, s.entries[0], "entry")
+		}, s.entries[0])
 	})
 
 	t.Run("entry", func(t *testing.T) {
@@ -96,8 +96,8 @@ func TestLogger(t *testing.T) {
 
 		l.Info(ctx, "meow", slog.F("hi", "xd"))
 
-		assert.Len(t, 1, s.entries, "entries")
-		assert.Equal(t, slog.SinkEntry{
+		assert.Len(t, "entries", 1, s.entries)
+		assert.Equal(t, "entry", slog.SinkEntry{
 			Time: s.entries[0].Time,
 
 			Level:   slog.LevelInfo,
@@ -116,7 +116,7 @@ func TestLogger(t *testing.T) {
 				slog.F("ctx", io.EOF),
 				slog.F("hi", "xd"),
 			),
-		}, s.entries[0], "entry")
+		}, s.entries[0])
 	})
 
 	t.Run("levels", func(t *testing.T) {
@@ -138,20 +138,20 @@ func TestLogger(t *testing.T) {
 		l.Critical(bg, "")
 		l.Fatal(bg, "")
 
-		assert.Len(t, 6, s.entries, "entries")
-		assert.Equal(t, 3, s.syncs, "syncs")
-		assert.Equal(t, slog.LevelDebug, s.entries[0].Level, "level")
-		assert.Equal(t, slog.LevelInfo, s.entries[1].Level, "level")
-		assert.Equal(t, slog.LevelWarn, s.entries[2].Level, "level")
-		assert.Equal(t, slog.LevelError, s.entries[3].Level, "level")
-		assert.Equal(t, slog.LevelCritical, s.entries[4].Level, "level")
-		assert.Equal(t, slog.LevelFatal, s.entries[5].Level, "level")
-		assert.Equal(t, 1, exits, "exits")
+		assert.Len(t, "entries", 6, s.entries)
+		assert.Equal(t, "syncs", 3, s.syncs)
+		assert.Equal(t, "level", slog.LevelDebug, s.entries[0].Level)
+		assert.Equal(t, "level", slog.LevelInfo, s.entries[1].Level)
+		assert.Equal(t, "level", slog.LevelWarn, s.entries[2].Level)
+		assert.Equal(t, "level", slog.LevelError, s.entries[3].Level)
+		assert.Equal(t, "level", slog.LevelCritical, s.entries[4].Level)
+		assert.Equal(t, "level", slog.LevelFatal, s.entries[5].Level)
+		assert.Equal(t, "exits", 1, exits)
 	})
 }
 
 func TestLevel_String(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, "slog.Level(12)", slog.Level(12).String(), "level string")
+	assert.Equal(t, "level string", "slog.Level(12)", slog.Level(12).String())
 }

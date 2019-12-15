@@ -8,6 +8,7 @@ package assert // import "cdr.dev/slog/sloggers/slogtest/assert"
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"cdr.dev/slog"
@@ -20,7 +21,7 @@ import (
 // two objects.
 //
 // If act or exp is an error it will be unwrapped.
-func Equal(t testing.TB, exp, act interface{}, name string) {
+func Equal(t testing.TB, name string, exp, act interface{}) {
 	slog.Helper()
 
 	exp = unwrapErr(exp)
@@ -36,7 +37,7 @@ func Equal(t testing.TB, exp, act interface{}, name string) {
 }
 
 // Success asserts err == nil.
-func Success(t testing.TB, err error, name string) {
+func Success(t testing.TB, name string, err error) {
 	slog.Helper()
 	if err != nil {
 		slogtest.Fatal(t, "unexpected error",
@@ -47,13 +48,13 @@ func Success(t testing.TB, err error, name string) {
 }
 
 // True asserts act == true.
-func True(t testing.TB, act bool, name string) {
+func True(t testing.TB, name string, act bool) {
 	slog.Helper()
-	Equal(t, true, act, name)
+	Equal(t, name, true, act)
 }
 
 // Error asserts err != nil.
-func Error(t testing.TB, err error, name string) {
+func Error(t testing.TB, name string, err error) {
 	slog.Helper()
 	if err == nil {
 		slogtest.Fatal(t, "expected error",
@@ -73,4 +74,30 @@ func unwrapErr(v interface{}) interface{} {
 		uerr = errors.Unwrap(uerr)
 	}
 	return err
+}
+
+// ErrorContains asserts err != nil and err.Error() contains sub.
+//
+// The match will be case insensitive.
+func ErrorContains(t testing.TB, name string, err error, sub string) {
+	slog.Helper()
+
+	Error(t, name, err)
+
+	errs := err.Error()
+	if !stringContainsFold(errs, sub) {
+		slogtest.Fatal(t, "unexpected error string",
+			slog.F("name", name),
+			slog.F("error_string", errs),
+			slog.F("expected_contains", sub),
+		)
+	}
+}
+
+func stringContainsFold(errs, sub string) bool {
+	errs = strings.ToLower(errs)
+	sub = strings.ToLower(sub)
+
+	return strings.Contains(errs, sub)
+
 }

@@ -19,7 +19,7 @@ func TestEntry(t *testing.T) {
 
 	test := func(t *testing.T, in slog.SinkEntry, exp string) {
 		act := entryhuman.Fmt(ioutil.Discard, in)
-		assert.Equal(t, exp, act, "entry")
+		assert.Equal(t, "entry", exp, act)
 	}
 
 	t.Run("basic", func(t *testing.T) {
@@ -89,6 +89,6 @@ line2`)
 				slog.F("hey", "hi"),
 			),
 		})
-		assert.Equal(t, "0001-01-01 00:00:00.000 \x1b[91m[CRITICAL]\x1b[0m\t\x1b[36m<.:0>\x1b[0m\t\"\"\t{\x1b[34m\"hey\"\x1b[0m: \x1b[32m\"hi\"\x1b[0m}", act, "entry")
+		assert.Equal(t, "entry", "0001-01-01 00:00:00.000 \x1b[91m[CRITICAL]\x1b[0m\t\x1b[36m<.:0>\x1b[0m\t\"\"\t{\x1b[34m\"hey\"\x1b[0m: \x1b[32m\"hi\"\x1b[0m}", act)
 	})
 }

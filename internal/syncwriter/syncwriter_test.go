@@ -31,7 +31,7 @@ func TestWriter_Sync(t *testing.T) {
 
 		tw := newWriter(nil)
 		tw.w.Sync("test")
-		assert.Equal(t, 0, tw.errors, "errors")
+		assert.Equal(t, "errors", 0, tw.errors)
 	})
 
 	t.Run("syncWriter", func(t *testing.T) {
@@ -46,9 +46,9 @@ func TestWriter_Sync(t *testing.T) {
 			},
 		})
 		tw.w.Write("hello", nil)
-		assert.Equal(t, 1, tw.errors, "errors")
+		assert.Equal(t, "errors", 1, tw.errors)
 		tw.w.Sync("test")
-		assert.Equal(t, 2, tw.errors, "errors")
+		assert.Equal(t, "errors", 2, tw.errors)
 	})
 
 	t.Run("stdout", func(t *testing.T) {
@@ -56,7 +56,7 @@ func TestWriter_Sync(t *testing.T) {
 
 		tw := newWriter(os.Stdout)
 		tw.w.Sync("test")
-		assert.Equal(t, 0, tw.errors, "errors")
+		assert.Equal(t, "errors", 0, tw.errors)
 	})
 
 	t.Run("errorf", func(t *testing.T) {
@@ -77,8 +77,8 @@ func TestWriter_Sync(t *testing.T) {
 func Test_errorsIsAny(t *testing.T) {
 	t.Parallel()
 
-	assert.True(t, errorsIsAny(io.EOF, io.ErrUnexpectedEOF, io.EOF), "err")
-	assert.False(t, errorsIsAny(io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe), "err")
+	assert.True(t, "err", errorsIsAny(io.EOF, io.ErrUnexpectedEOF, io.EOF))
+	assert.False(t, "err", errorsIsAny(io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe))
 }
 
 type syncWriter struct {

@@ -24,7 +24,7 @@ func TestMap(t *testing.T) {
 		t.Helper()
 		exp = indentJSON(t, exp)
 		act := marshalJSON(t, m)
-		assert.Equal(t, exp, act, "JSON")
+		assert.Equal(t, "JSON", exp, act)
 	}
 
 	t.Run("JSON", func(t *testing.T) {
@@ -253,13 +253,13 @@ func (m meow) SlogValue() interface{} {
 func indentJSON(t *testing.T, j string) string {
 	b := &bytes.Buffer{}
 	err := json.Indent(b, []byte(j), "", strings.Repeat(" ", 4))
-	assert.Success(t, err, "indent JSON")
+	assert.Success(t, "indent JSON", err)
 
 	return b.String()
 }
 
 func marshalJSON(t *testing.T, m slog.Map) string {
 	actb, err := json.Marshal(m)
-	assert.Success(t, err, "marshal map to JSON")
+	assert.Success(t, "marshal map to JSON", err)
 	return indentJSON(t, string(actb))
 }
