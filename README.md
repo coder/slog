@@ -40,7 +40,7 @@ log := sloghuman.Make(os.Stdout)
 log.Info(context.Background(), "my message here",
     slog.F("field_name", "something or the other"),
     slog.F("some_map", slog.M(
-        slog.F("nested_fields", "wowow"),
+        slog.F("nested_fields", time.Date(2000, time.February, 5, 4, 4, 4, 0, time.UTC)),
     )),
     slog.Error(
         xerrors.Errorf("wrap1: %w",
@@ -52,7 +52,7 @@ log.Info(context.Background(), "my message here",
 )
 ```
 
-![Example output screenshot](https://i.imgur.com/7MJM0VE.png)
+![Example output screenshot](https://i.imgur.com/KGRmQFo.png)
 
 ## Why?
 
@@ -97,9 +97,7 @@ Here is a list of reasons how we improved on zap with slog.
     - zap is hard and confusing to extend. There are too many structures and configuration options.
 
 1. Structured logging of Go structures with `json.Marshal`
-    - All values will be logged with `json.Marshal` unless they implement `fmt.Stringer` or `error`.
-        - You can force JSON by using [`slog.ForceJSON`](https://godoc.org/cdr.dev/slog#ForceJSON). 
-    - One may implement [`slog.Value`](https://godoc.org/cdr.dev/slog#Value) to override the representation completely.
+    - Entire encoding process is documented on [godoc](https://godoc.org/cdr.dev/slog#Map.MarshalJSON).
     - With zap, We found ourselves often implementing zap's
       [ObjectMarshaler](https://godoc.org/go.uber.org/zap/zapcore#ObjectMarshaler) to log Go structures. This was
       verbose and most of the time we ended up only implementing `fmt.Stringer` and using `zap.Stringer` instead.

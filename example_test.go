@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
@@ -22,7 +23,7 @@ func Example() {
 	log.Info(context.Background(), "my message here",
 		slog.F("field_name", "something or the other"),
 		slog.F("some_map", slog.M(
-			slog.F("nested_fields", "wowow"),
+			slog.F("nested_fields", time.Date(2000, time.February, 5, 4, 4, 4, 0, time.UTC)),
 		)),
 		slog.Error(
 			xerrors.Errorf("wrap1: %w",
@@ -33,7 +34,7 @@ func Example() {
 		),
 	)
 
-	// 2019-12-09 05:04:53.398 [INFO]	<example.go:16>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "wowow"}} ...
+	// 2019-12-09 05:04:53.398 [INFO]	<example.go:16>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "2000-02-05T04:04:04Z"}} ...
 	//  "error": wrap1:
 	//      main.main
 	//          /Users/nhooyr/src/cdr/scratch/example.go:22

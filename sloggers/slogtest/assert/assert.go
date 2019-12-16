@@ -6,14 +6,13 @@
 package assert // import "cdr.dev/slog/sloggers/slogtest/assert"
 
 import (
-	"errors"
-	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/kylelemons/godebug/pretty"
+	"github.com/google/go-cmp/cmp"
 
 	"cdr.dev/slog"
+	"cdr.dev/slog/internal/assert"
 	"cdr.dev/slog/sloggers/slogtest"
 )
 
@@ -22,17 +21,14 @@ import (
 // If they are not equal, it will fatal the test with a diff of the
 // two objects.
 //
-// If act or exp is an error it will be unwrapped.
-func Equal(t testing.TB, name string, exp, act interface{}) {
+// Errors will be compared with errors.Is.
+func Equal(t testing.TB, name string, exp, act interface{}, opts ...cmp.Option) {
 	slog.Helper()
 
-	exp = unwrapErr(exp)
-	act = unwrapErr(act)
-
-	if !reflect.DeepEqual(exp, act) {
+	if diff := assert.Diff(exp, act, opts...); diff != "" {
 		slogtest.Fatal(t, "unexpected value",
 			slog.F("name", name),
-			slog.F("diff", pretty.Compare(exp, act)),
+			slog.F("diff", diff),
 		)
 	}
 }
@@ -62,19 +58,6 @@ func Error(t testing.TB, name string, err error) {
 			slog.F("name", name),
 		)
 	}
-}
-
-func unwrapErr(v interface{}) interface{} {
-	err, ok := v.(error)
-	if !ok {
-		return v
-	}
-	uerr := errors.Unwrap(err)
-	for uerr != nil {
-		err = uerr
-		uerr = errors.Unwrap(uerr)
-	}
-	return err
 }
 
 // ErrorContains asserts err != nil and err.Error() contains sub.
