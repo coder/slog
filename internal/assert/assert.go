@@ -5,15 +5,24 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kylelemons/godebug/pretty"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
+
+// Diff returns a diff between exp and act.
+func Diff(exp, act interface{}, opts ...cmp.Option) string {
+	opts = append(opts, cmpopts.EquateErrors(), cmp.Exporter(func(r reflect.Type) bool {
+		return true
+	}))
+	return cmp.Diff(exp, act, opts...)
+}
 
 // Equal asserts exp == act.
 func Equal(t testing.TB, name string, exp, act interface{}) {
 	t.Helper()
-	if !reflect.DeepEqual(exp, act) {
+	if diff := Diff(exp, act); diff != "" {
 		t.Fatalf(`unexpected %v: diff:
-%v`, name, pretty.Compare(exp, act))
+%v`, name, diff)
 	}
 }
 

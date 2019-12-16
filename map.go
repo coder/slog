@@ -13,11 +13,6 @@ import (
 // Map represents an ordered map of fields.
 type Map []Field
 
-// SlogValue implements Value.
-func (m Map) SlogValue() interface{} {
-	return ForceJSON(m)
-}
-
 var _ json.Marshaler = Map(nil)
 
 // MarshalJSON implements json.Marshaler.
@@ -27,23 +22,20 @@ var _ json.Marshaler = Map(nil)
 //
 // Every field value is encoded with the following process:
 //
-// 1. slog.Value is checked to allow any type to replace its representation for logging.
-//
-// 2. json.Marshaller is handled.
+// 1. json.Marshaller is handled.
 //
 // 2. xerrors.Formatter is handled.
 //
-// 3. Protobufs are encoded with json.Marshal.
+// 3. structs that have a field with a json tag are encoded with json.Marshal.
 //
-// 4. error and fmt.Stringer are used if possible.
+// 4. error and fmt.Stringer is handled.
 //
 // 5. slices and arrays go through the encode function for every element.
 //
-// 6. If the value is a struct without exported fields or a type that
-//    cannot be encoded with json.Marshal (like channels) then
-//    fmt.Sprintf("%+v") is used.
+// 6. If the value cannot be encoded directly with json.Marshal (like channels)
+//    then fmt.Sprintf("%+v") is used.
 //
-// 8. json.Marshal(v) is used for all other values.
+// 7. json.Marshal(v) is used for all other values.
 func (m Map) MarshalJSON() ([]byte, error) {
 	b := &bytes.Buffer{}
 	b.WriteByte('{')
@@ -60,19 +52,6 @@ func (m Map) MarshalJSON() ([]byte, error) {
 	b.WriteByte('}')
 
 	return b.Bytes(), nil
-}
-
-// ForceJSON ensures the value is logged via json.Marshal.
-//
-// Use it when implementing SlogValue to ensure a structured
-// representation of a struct if you know it's capable even
-// when it implements fmt.Stringer or error.
-func ForceJSON(v interface{}) interface{} {
-	return jsonVal{v: v}
-}
-
-type jsonVal struct {
-	v interface{}
 }
 
 func marshalList(rv reflect.Value) []byte {
@@ -93,51 +72,57 @@ func marshalList(rv reflect.Value) []byte {
 
 func encode(v interface{}) []byte {
 	switch v := v.(type) {
-	case Value:
-		return encode(v.SlogValue())
 	case json.Marshaler:
 		return encodeJSON(v)
-	case jsonVal:
-		return encodeJSON(v.v)
 	case xerrors.Formatter:
 		return encode(errorChain(v))
-	case interface {
-		ProtoMessage()
-	}:
-		return encode(ForceJSON(v))
-	case error, fmt.Stringer:
-		return encode(fmt.Sprint(v))
-	default:
-		rv := reflect.Indirect(reflect.ValueOf(v))
-		if !rv.IsValid() {
-			return encodeJSON(v)
-		}
+	}
 
-		switch rv.Type().Kind() {
-		case reflect.Slice:
-			if !rv.IsNil() {
-				return marshalList(rv)
-			}
-		case reflect.Array:
-			return marshalList(rv)
-		case reflect.Struct:
-			typ := rv.Type()
-			for i := 0; i < rv.NumField(); i++ {
-				// Found an exported field.
-				if typ.Field(i).PkgPath == "" {
-					return encodeJSON(v)
-				}
-			}
-
-			return encodeJSON(fmt.Sprintf("%+v", v))
-		case reflect.Chan, reflect.Complex64, reflect.Complex128, reflect.Func:
-			// These types cannot be directly encoded with json.Marshal.
-			// See https://golang.org/pkg/encoding/json/#Marshal
-			return encodeJSON(fmt.Sprintf("%+v", v))
-		}
-
+	rv := reflect.Indirect(reflect.ValueOf(v))
+	if !rv.IsValid() {
 		return encodeJSON(v)
 	}
+
+	if rv.Kind() == reflect.Struct {
+		b, ok := encodeStruct(rv)
+		if ok {
+			return b
+		}
+	}
+
+	switch v.(type) {
+	case error, fmt.Stringer:
+		return encode(fmt.Sprint(v))
+	}
+
+	switch rv.Type().Kind() {
+	case reflect.Slice:
+		if !rv.IsNil() {
+			return marshalList(rv)
+		}
+	case reflect.Array:
+		return marshalList(rv)
+	case reflect.Struct, reflect.Chan, reflect.Complex64, reflect.Complex128, reflect.Func:
+		// These types cannot be directly encoded with json.Marshal.
+		// See https://golang.org/pkg/encoding/json/#Marshal
+		return encodeJSON(fmt.Sprintf("%+v", v))
+	}
+
+	return encodeJSON(v)
+}
+
+func encodeStruct(rv reflect.Value) ([]byte, bool) {
+	if rv.Kind() == reflect.Struct {
+		for i := 0; i < rv.NumField(); i++ {
+			ft := rv.Type().Field(i)
+			// Found a field with a json tag.
+			if ft.Tag.Get("json") != "" {
+				return encodeJSON(rv.Interface()), true
+			}
+		}
+	}
+
+	return nil, false
 }
 
 func encodeJSON(v interface{}) []byte {

@@ -86,18 +86,18 @@ func TestMap(t *testing.T) {
 		mapTestFile := strings.Replace(mapTestFile, "_test", "", 1)
 
 		test(t, slog.M(
-			slog.F("meow", slog.ForceJSON(complex(10, 10))),
+			slog.F("meow", complexJSON(complex(10, 10))),
 		), `{
 			"meow": {
 				"error": [
 					{
 						"msg": "failed to marshal to JSON",
 						"fun": "cdr.dev/slog.encodeJSON",
-						"loc": "`+mapTestFile+`:147"
+						"loc": "`+mapTestFile+`:132"
 					},
-					"json: unsupported type: complex128"
+					"json: error calling MarshalJSON for type slog_test.complexJSON: json: unsupported type: complex128"
 				],
-				"type": "complex128",
+				"type": "slog_test.complexJSON",
 				"value": "(10+10i)"
 			}
 		}`)
@@ -160,26 +160,6 @@ func TestMap(t *testing.T) {
 				"2",
 				"3"
 			]
-		}`)
-	})
-
-	t.Run("forceJSON", func(t *testing.T) {
-		t.Parallel()
-
-		test(t, slog.M(
-			slog.F("error", slog.ForceJSON(io.EOF)),
-		), `{
-			"error": {}
-		}`)
-	})
-
-	t.Run("value", func(t *testing.T) {
-		t.Parallel()
-
-		test(t, slog.M(
-			slog.F("error", meow{1}),
-		), `{
-			"error": "xdxd"
 		}`)
 	})
 
@@ -246,10 +226,6 @@ type meow struct {
 	a int
 }
 
-func (m meow) SlogValue() interface{} {
-	return "xdxd"
-}
-
 func indentJSON(t *testing.T, j string) string {
 	b := &bytes.Buffer{}
 	err := json.Indent(b, []byte(j), "", strings.Repeat(" ", 4))
@@ -262,4 +238,10 @@ func marshalJSON(t *testing.T, m slog.Map) string {
 	actb, err := json.Marshal(m)
 	assert.Success(t, "marshal map to JSON", err)
 	return indentJSON(t, string(actb))
+}
+
+type complexJSON complex128
+
+func (c complexJSON) MarshalJSON() ([]byte, error) {
+	return json.Marshal(complex128(c))
 }
