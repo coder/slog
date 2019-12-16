@@ -44,6 +44,26 @@ func Example() {
 	//    - EOF
 }
 
+func Example_struct() {
+	l := sloghuman.Make(os.Stdout)
+
+	type hello struct {
+		Meow int       `json:"meow"`
+		Bar  string    `json:"bar"`
+		M    time.Time `json:"m"`
+	}
+
+	l.Info(context.Background(), "check out my structure",
+		slog.F("hello", hello{
+			Meow: 1,
+			Bar:  "barbar",
+			M:    time.Date(2000, time.February, 5, 4, 4, 4, 0, time.UTC),
+		}),
+	)
+
+	// 2019-12-16 17:31:51.769 [INFO]	<example_test.go:56>	check out my structure	{"hello": {"meow": 1, "bar": "barbar", "m": "2000-02-05T04:04:04Z"}}
+}
+
 func Example_testing() {
 	// Provided by the testing package in tests.
 	var t testing.TB
@@ -66,17 +86,16 @@ func Example_tracing() {
 }
 
 func Example_multiple() {
-	ctx := context.Background()
 	l := sloghuman.Make(os.Stdout)
 
 	f, err := os.OpenFile("stackdriver", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
-		l.Fatal(ctx, "failed to open stackdriver log file", slog.Error(err))
+		l.Fatal(context.Background(), "failed to open stackdriver log file", slog.Error(err))
 	}
 
 	l = slog.Make(l, slogstackdriver.Make(f))
 
-	l.Info(ctx, "log to stdout and stackdriver")
+	l.Info(context.Background(), "log to stdout and stackdriver")
 
 	// 2019-12-07 20:59:55.790 [INFO]	<example_test.go:46>	log to stdout and stackdriver
 }

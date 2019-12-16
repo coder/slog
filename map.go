@@ -32,8 +32,7 @@ var _ json.Marshaler = Map(nil)
 //
 // 5. slices and arrays go through the encode function for every element.
 //
-// 6. If the value cannot be encoded directly with json.Marshal (like channels)
-//    then fmt.Sprintf("%+v") is used.
+// 6. For values that cannot be encoded with json.Marshal, fmt.Sprintf("%+v") is used.
 //
 // 7. json.Marshal(v) is used for all other values.
 func (m Map) MarshalJSON() ([]byte, error) {
