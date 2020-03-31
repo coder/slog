@@ -28,8 +28,6 @@ func (s *fakeSink) Sync() {
 	s.syncs++
 }
 
-var bg = context.Background()
-
 func TestLogger(t *testing.T) {
 	t.Parallel()
 
@@ -38,11 +36,12 @@ func TestLogger(t *testing.T) {
 
 		s1 := &fakeSink{}
 		s2 := &fakeSink{}
-		l := slog.Make(s1, s2)
-		l = l.Leveled(slog.LevelError)
+		var ctx context.Context
+		ctx = slog.Make(context.Background(), s1, s2)
+		ctx = slog.Leveled(ctx, slog.LevelError)
 
-		l.Info(bg, "wow", slog.Error(io.EOF))
-		l.Error(bg, "meow", slog.Error(io.ErrUnexpectedEOF))
+		slog.Info(ctx, "wow", slog.Err(io.EOF))
+		slog.Error(ctx, "meow", slog.Err(io.ErrUnexpectedEOF))
 
 		assert.Equal(t, "syncs", 1, s1.syncs)
 		assert.Len(t, "entries", 1, s1.entries)
@@ -54,13 +53,14 @@ func TestLogger(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		l := slog.Make(s)
+		var ctx context.Context
+		ctx = slog.Make(context.Background(), s)
 		h := func(ctx context.Context) {
 			slog.Helper()
-			l.Info(ctx, "logging in helper")
+			slog.Info(ctx, "logging in helper")
 		}
 
-		ctx := slog.With(bg, slog.F(
+		ctx = slog.With(ctx, slog.F(
 			"ctx", 1024),
 		)
 		h(ctx)
@@ -86,15 +86,16 @@ func TestLogger(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		l := slog.Make(s)
-		l = l.Named("hello")
-		l = l.Named("hello2")
+		var ctx context.Context
+		ctx = slog.Make(context.Background(), s)
+		ctx = slog.Named(ctx, "hello")
+		ctx = slog.Named(ctx, "hello2")
 
-		ctx, span := trace.StartSpan(bg, "trace")
+		ctx, span := trace.StartSpan(ctx, "trace")
 		ctx = slog.With(ctx, slog.F("ctx", io.EOF))
-		l = l.With(slog.F("with", 2))
+		ctx = slog.With(ctx, slog.F("with", 2))
 
-		l.Info(ctx, "meow", slog.F("hi", "xd"))
+		slog.Info(ctx, "meow", slog.F("hi", "xd"))
 
 		assert.Len(t, "entries", 1, s.entries)
 		assert.Equal(t, "entry", slog.SinkEntry{
@@ -107,13 +108,13 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func3",
-			Line: 97,
+			Line: 98,
 
 			SpanContext: span.SpanContext(),
 
 			Fields: slog.M(
-				slog.F("with", 2),
 				slog.F("ctx", io.EOF),
+				slog.F("with", 2),
 				slog.F("hi", "xd"),
 			),
 		}, s.entries[0])
@@ -123,20 +124,21 @@ func TestLogger(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		l := slog.Make(s)
+		var ctx context.Context
+		ctx = slog.Make(context.Background(), s)
 
 		exits := 0
-		l.SetExit(func(int) {
+		ctx = slog.SetExit(ctx, func(int) {
 			exits++
 		})
 
-		l = l.Leveled(slog.LevelDebug)
-		l.Debug(bg, "")
-		l.Info(bg, "")
-		l.Warn(bg, "")
-		l.Error(bg, "")
-		l.Critical(bg, "")
-		l.Fatal(bg, "")
+		ctx = slog.Leveled(ctx, slog.LevelDebug)
+		slog.Debug(ctx, "")
+		slog.Info(ctx, "")
+		slog.Warn(ctx, "")
+		slog.Error(ctx, "")
+		slog.Critical(ctx, "")
+		slog.Fatal(ctx, "")
 
 		assert.Len(t, "entries", 6, s.entries)
 		assert.Equal(t, "syncs", 3, s.syncs)

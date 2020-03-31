@@ -37,7 +37,7 @@ func TestMap(t *testing.T) {
 		}
 
 		test(t, slog.M(
-			slog.Error(
+			slog.Err(
 				xerrors.Errorf("wrap1: %w",
 					xerrors.Errorf("wrap2: %w",
 						io.EOF,
@@ -220,10 +220,6 @@ func TestMap(t *testing.T) {
 			"val": "{meow:hi bar:23 far:600}"
 		}`)
 	})
-}
-
-type meow struct {
-	a int
 }
 
 func indentJSON(t *testing.T, j string) string {
