@@ -39,7 +39,7 @@ func Success(t testing.TB, name string, err error) {
 	if err != nil {
 		slogtest.Fatal(t, "unexpected error",
 			slog.F("name", name),
-			slog.Error(err),
+			slog.Err(err),
 		)
 	}
 }
