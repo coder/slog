@@ -108,13 +108,13 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func3",
-			Line: 97,
+			Line: 98,
 
 			SpanContext: span.SpanContext(),
 
 			Fields: slog.M(
-				slog.F("with", 2),
 				slog.F("ctx", io.EOF),
+				slog.F("with", 2),
 				slog.F("hi", "xd"),
 			),
 		}, s.entries[0])

@@ -24,7 +24,7 @@ func TestStackdriver(t *testing.T) {
 
 	ctx, s := trace.StartSpan(bg, "meow")
 	b := &bytes.Buffer{}
-	ctx = slogstackdriver.Make(context.Background(), b)
+	ctx = slogstackdriver.Make(ctx, b)
 	ctx = slog.Named(ctx, "meow")
 	slog.Error(ctx, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 
