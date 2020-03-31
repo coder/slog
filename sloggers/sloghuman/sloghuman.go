@@ -1,15 +1,15 @@
 // Package sloghuman contains the slogger
 // that writes logs in a human readable format.
-package sloghuman // import "cdr.dev/slog/sloggers/sloghuman"
+package sloghuman // import "cdr.dev/slog/v2/sloggers/sloghuman"
 
 import (
 	"context"
 	"io"
 	"strings"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/entryhuman"
-	"cdr.dev/slog/internal/syncwriter"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/internal/entryhuman"
+	"cdr.dev/slog/v2/internal/syncwriter"
 )
 
 // Make creates a logger that writes logs in a human

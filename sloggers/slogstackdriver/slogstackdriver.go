@@ -1,5 +1,5 @@
 // Package slogstackdriver contains the slogger for google cloud's stackdriver.
-package slogstackdriver // import "cdr.dev/slog/sloggers/slogstackdriver"
+package slogstackdriver // import "cdr.dev/slog/v2/sloggers/slogstackdriver"
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	logpbtype "google.golang.org/genproto/googleapis/logging/type"
 	logpb "google.golang.org/genproto/googleapis/logging/v2"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/syncwriter"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/internal/syncwriter"
 )
 
 // Make creates a slog.logger configured to write JSON logs

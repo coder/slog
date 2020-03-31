@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/sloggers/slogtest"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/internal/assert"
+	"cdr.dev/slog/v2/sloggers/slogtest"
 )
 
 func TestStateless(t *testing.T) {

@@ -18,7 +18,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/xerrors"
 
-	"cdr.dev/slog"
+	"cdr.dev/slog/v2"
 )
 
 // StripTimestamp strips the timestamp from entry and returns

@@ -11,10 +11,10 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/sloggers/sloghuman"
-	"cdr.dev/slog/sloggers/slogstackdriver"
-	"cdr.dev/slog/sloggers/slogtest"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/sloggers/sloghuman"
+	"cdr.dev/slog/v2/sloggers/slogstackdriver"
+	"cdr.dev/slog/v2/sloggers/slogtest"
 )
 
 func Example() {

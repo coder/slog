@@ -1,6 +1,6 @@
 // Package slog implements minimal structured logging.
 //
-// See https://cdr.dev/slog for overview docs and a comparison with existing libraries.
+// See https://cdr.dev/slog/v2 for overview docs and a comparison with existing libraries.
 //
 // The examples are the best way to understand how to use this library effectively.
 //
@@ -8,7 +8,7 @@
 // logger implements Sink as well to allow composition.
 //
 // Implementations of the Sink interface are available in the sloggers subdirectory.
-package slog // import "cdr.dev/slog"
+package slog // import "cdr.dev/slog/v2"
 
 import (
 	"context"

@@ -5,10 +5,10 @@ import (
 	"context"
 	"testing"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/internal/entryhuman"
-	"cdr.dev/slog/sloggers/sloghuman"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/internal/assert"
+	"cdr.dev/slog/v2/internal/entryhuman"
+	"cdr.dev/slog/v2/sloggers/sloghuman"
 )
 
 func TestStdlib(t *testing.T) {

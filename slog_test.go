@@ -8,8 +8,8 @@ import (
 
 	"go.opencensus.io/trace"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/internal/assert"
 )
 
 var _, slogTestFile, _, _ = runtime.Caller(0)
@@ -73,7 +73,7 @@ func TestLogger(t *testing.T) {
 			Message: "logging in helper",
 
 			File: slogTestFile,
-			Func: "cdr.dev/slog_test.TestLogger.func2",
+			Func: "cdr.dev/slog/v2_test.TestLogger.func2",
 			Line: 66,
 
 			Fields: slog.M(
@@ -107,7 +107,7 @@ func TestLogger(t *testing.T) {
 			LoggerNames: []string{"hello", "hello2"},
 
 			File: slogTestFile,
-			Func: "cdr.dev/slog_test.TestLogger.func3",
+			Func: "cdr.dev/slog/v2_test.TestLogger.func3",
 			Line: 98,
 
 			SpanContext: span.SpanContext(),

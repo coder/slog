@@ -3,7 +3,7 @@
 //
 // If imported, then all logs that go through the stdlib's
 // default logger will go through slog.
-package slogtest // import "cdr.dev/slog/sloggers/slogtest"
+package slogtest // import "cdr.dev/slog/v2/sloggers/slogtest"
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 	"os"
 	"testing"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/entryhuman"
-	"cdr.dev/slog/sloggers/sloghuman"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/internal/entryhuman"
+	"cdr.dev/slog/v2/sloggers/sloghuman"
 )
 
 // Ensure all stdlib logs go through slog.

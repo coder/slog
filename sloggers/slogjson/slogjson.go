@@ -8,14 +8,14 @@
 //    "logger_names": ["comp", "subcomp"],
 //    "msg": "hi",
 //    "caller": "slog/examples_test.go:62",
-//    "func": "cdr.dev/slog/sloggers/slogtest_test.TestExampleTest",
+//    "func": "cdr.dev/slog/v2/sloggers/slogtest_test.TestExampleTest",
 //    "trace": "<traceid>",
 //    "span": "<spanid>",
 //    "fields": {
 //      "my_field": "field value"
 //    }
 //  }
-package slogjson // import "cdr.dev/slog/sloggers/slogjson"
+package slogjson // import "cdr.dev/slog/v2/sloggers/slogjson"
 
 import (
 	"context"
@@ -25,8 +25,8 @@ import (
 
 	"go.opencensus.io/trace"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/syncwriter"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/internal/syncwriter"
 )
 
 // Make creates a logger that writes JSON logs

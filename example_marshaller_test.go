@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/sloggers/sloghuman"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/sloggers/sloghuman"
 )
 
 type myStruct struct {

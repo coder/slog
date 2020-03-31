@@ -10,10 +10,10 @@ import (
 	"go.opencensus.io/trace"
 	logpbtype "google.golang.org/genproto/googleapis/logging/type"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/internal/entryjson"
-	"cdr.dev/slog/sloggers/slogstackdriver"
+	"cdr.dev/slog/v2"
+	"cdr.dev/slog/v2/internal/assert"
+	"cdr.dev/slog/v2/internal/entryjson"
+	"cdr.dev/slog/v2/sloggers/slogstackdriver"
 )
 
 var bg = context.Background()
@@ -29,7 +29,7 @@ func TestStackdriver(t *testing.T) {
 	slog.Error(ctx, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 
 	j := entryjson.Filter(b.String(), "timestamp")
-	exp := fmt.Sprintf(`{"severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":29,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects//traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":false,"wowow":"me\nyou"}
+	exp := fmt.Sprintf(`{"severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":29,"function":"cdr.dev/slog/v2/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects//traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":false,"wowow":"me\nyou"}
 `, slogstackdriverTestFile, s.SpanContext().TraceID, s.SpanContext().SpanID)
 	assert.Equal(t, "entry", exp, j)
 }
