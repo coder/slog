@@ -3,6 +3,7 @@ package slog
 import (
 	"context"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -15,14 +16,19 @@ import (
 // You can redirect the stdlib default logger with log.SetOutput
 // to the Writer on the logger returned by this function.
 // See the example.
-func Stdlib(ctx context.Context, l Logger) *log.Logger {
-	l.skip += 3
+func Stdlib(ctx context.Context) *log.Logger {
+	ctx = Named(ctx, "stdlib")
 
-	l = l.Named("stdlib")
+	l, ok := extractContext(ctx)
+	if !ok {
+		// Give stderr logger if no slog.
+		return log.New(os.Stderr, "", 0)
+	}
+	l.skip += 3
+	ctx = makeContext(ctx, l)
 
 	w := &stdlogWriter{
 		ctx: ctx,
-		l:   l,
 	}
 
 	return log.New(w, "", 0)
@@ -30,7 +36,6 @@ func Stdlib(ctx context.Context, l Logger) *log.Logger {
 
 type stdlogWriter struct {
 	ctx context.Context
-	l   Logger
 }
 
 func (w stdlogWriter) Write(p []byte) (n int, err error) {
@@ -39,7 +44,7 @@ func (w stdlogWriter) Write(p []byte) (n int, err error) {
 	// we do not want.
 	msg = strings.TrimSuffix(msg, "\n")
 
-	w.l.Info(w.ctx, msg)
+	Info(w.ctx, msg)
 
 	return len(p), nil
 }

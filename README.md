@@ -35,9 +35,9 @@ go get cdr.dev/slog
 Many more examples available at [godoc](https://godoc.org/cdr.dev/slog#pkg-examples).
 
 ```go
-log := sloghuman.Make(os.Stdout)
+ctx := sloghuman.Make(ctx, os.Stdout)
 
-log.Info(context.Background(), "my message here",
+slog.Info(ctx, "my message here",
     slog.F("field_name", "something or the other"),
     slog.F("some_map", slog.M(
         slog.F("nested_fields", time.Date(2000, time.February, 5, 4, 4, 4, 0, time.UTC)),
@@ -87,6 +87,8 @@ Here is a list of reasons how we improved on zap with slog.
 
 1. Full [context.Context](https://blog.golang.org/context) support
     - `slog` lets you set fields in a `context.Context` such that any log with the context prints those fields.
+    - `slog` stores the actual logger in the `context.Context`, following the example of the Go trace library. **Our
+    logger doesn't bloat type and function signatures.** 
     - We wanted to be able to pull up all relevant logs for a given trace, user or request. With zap, we were plugging
       these fields in for every relevant log or passing around a logger with the fields set. This became very verbose.
 

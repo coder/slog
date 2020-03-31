@@ -17,8 +17,8 @@ import (
 //
 // If the writer implements Sync() error then
 // it will be called when syncing.
-func Make(w io.Writer) slog.Logger {
-	return slog.Make(&humanSink{
+func Make(ctx context.Context, w io.Writer) slog.SinkContext {
+	return slog.Make(ctx, &humanSink{
 		w:  syncwriter.New(w),
 		w2: w,
 	})
@@ -29,7 +29,7 @@ type humanSink struct {
 	w2 io.Writer
 }
 
-func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
+func (s humanSink) LogEntry(_ context.Context, ent slog.SinkEntry) {
 	str := entryhuman.Fmt(s.w2, ent)
 	lines := strings.Split(str, "\n")
 

@@ -128,7 +128,7 @@ func encodeJSON(v interface{}) []byte {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return encode(M(
-			Error(xerrors.Errorf("failed to marshal to JSON: %w", err)),
+			Err(xerrors.Errorf("failed to marshal to JSON: %w", err)),
 			F("type", reflect.TypeOf(v)),
 			F("value", fmt.Sprintf("%+v", v)),
 		))

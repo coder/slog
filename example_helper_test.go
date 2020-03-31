@@ -12,12 +12,12 @@ import (
 func httpLogHelper(ctx context.Context, status int) {
 	slog.Helper()
 
-	l.Info(ctx, "sending HTTP response",
+	slog.Info(ctx, "sending HTTP response",
 		slog.F("status", status),
 	)
 }
 
-var l = sloghuman.Make(os.Stdout)
+var l = sloghuman.Make(context.Background(), os.Stdout)
 
 func ExampleHelper() {
 	ctx := context.Background()

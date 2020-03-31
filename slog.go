@@ -4,8 +4,8 @@
 //
 // The examples are the best way to understand how to use this library effectively.
 //
-// The Logger type implements a high level API around the Sink interface.
-// Logger implements Sink as well to allow composition.
+// The logger type implements a high level API around the Sink interface.
+// logger implements Sink as well to allow composition.
 //
 // Implementations of the Sink interface are available in the sloggers subdirectory.
 package slog // import "cdr.dev/slog"
@@ -21,7 +21,7 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// Sink is the destination of a Logger.
+// Sink is the destination of a logger.
 //
 // All sinks must be safe for concurrent use.
 type Sink interface {
@@ -29,11 +29,18 @@ type Sink interface {
 	Sync()
 }
 
+// SinkContext is a context that implements Sink.
+// It may be returned by log creators to allow for composition.
+type SinkContext interface {
+	Sink
+	context.Context
+}
+
 // LogEntry logs the given entry with the context to the
 // underlying sinks.
 //
 // It extends the entry with the set fields and names.
-func (l Logger) LogEntry(ctx context.Context, e SinkEntry) {
+func (l logger) LogEntry(ctx context.Context, e SinkEntry) {
 	if e.Level < l.level {
 		return
 	}
@@ -46,17 +53,27 @@ func (l Logger) LogEntry(ctx context.Context, e SinkEntry) {
 	}
 }
 
-// Sync calls Sync on all the underlying sinks.
-func (l Logger) Sync() {
+func (l logger) Sync() {
 	for _, s := range l.sinks {
 		s.Sync()
 	}
 }
 
-// Logger wraps Sink with a nice API to log entries.
+// Sync calls Sync on all the underlying sinks.
+func Sync(ctx context.Context) {
+	l, ok := extractContext(ctx)
+	if !ok {
+		return
+	}
+	l.Sync()
+	return
+}
+
+// logger wraps Sink with a nice API to log entries.
 //
-// Logger is safe for concurrent use.
-type Logger struct {
+// logger is safe for concurrent use.
+// It is unexported because callers should only log via a context.
+type logger struct {
 	sinks []Sink
 	level Level
 
@@ -68,34 +85,53 @@ type Logger struct {
 }
 
 // Make creates a logger that writes logs to the passed sinks at LevelInfo.
-func Make(sinks ...Sink) Logger {
-	return Logger{
-		sinks: sinks,
-		level: LevelInfo,
-
-		exit: os.Exit,
+func Make(ctx context.Context, sinks ...Sink) SinkContext {
+	// Just in case the ctx has a logger, start with it.
+	l, _ := extractContext(ctx)
+	l.sinks = append(l.sinks, sinks...)
+	if l.level == 0 {
+		l.level = LevelInfo
 	}
+	l.exit = os.Exit
+
+	return makeContext(ctx, l)
 }
 
 // Debug logs the msg and fields at LevelDebug.
-func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
+func Debug(ctx context.Context, msg string, fields ...Field) {
+	l, ok := extractContext(ctx)
+	if !ok {
+		return
+	}
 	l.log(ctx, LevelDebug, msg, fields)
 }
 
 // Info logs the msg and fields at LevelInfo.
-func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
+func Info(ctx context.Context, msg string, fields ...Field) {
+	l, ok := extractContext(ctx)
+	if !ok {
+		return
+	}
 	l.log(ctx, LevelInfo, msg, fields)
 }
 
 // Warn logs the msg and fields at LevelWarn.
-func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
+func Warn(ctx context.Context, msg string, fields ...Field) {
+	l, ok := extractContext(ctx)
+	if !ok {
+		return
+	}
 	l.log(ctx, LevelWarn, msg, fields)
 }
 
 // Error logs the msg and fields at LevelError.
 //
 // It will then Sync().
-func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
+func Error(ctx context.Context, msg string, fields ...Field) {
+	l, ok := extractContext(ctx)
+	if !ok {
+		return
+	}
 	l.log(ctx, LevelError, msg, fields)
 	l.Sync()
 }
@@ -103,7 +139,11 @@ func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
 // Critical logs the msg and fields at LevelCritical.
 //
 // It will then Sync().
-func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
+func Critical(ctx context.Context, msg string, fields ...Field) {
+	l, ok := extractContext(ctx)
+	if !ok {
+		return
+	}
 	l.log(ctx, LevelCritical, msg, fields)
 	l.Sync()
 }
@@ -111,41 +151,47 @@ func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
 // Fatal logs the msg and fields at LevelFatal.
 //
 // It will then Sync() and os.Exit(1).
-func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
+func Fatal(ctx context.Context, msg string, fields ...Field) {
+	l, ok := extractContext(ctx)
+	if !ok {
+		os.Stderr.WriteString("Fatal called but no Logger in context")
+		// The caller expects the program to terminate after Fatal no matter what.
+		l.exit(1)
+		return
+	}
 	l.log(ctx, LevelFatal, msg, fields)
 	l.Sync()
 	l.exit(1)
 }
 
-// With returns a Logger that prepends the given fields on every
-// logged entry.
-//
-// It will append to any fields already in the Logger.
-func (l Logger) With(fields ...Field) Logger {
-	l.fields = l.fields.append(fields)
-	return l
-}
-
 // Named appends the name to the set names
 // on the logger.
-func (l Logger) Named(name string) Logger {
+func Named(ctx context.Context, name string) context.Context {
+	l, ok := extractContext(ctx)
+	if !ok {
+		return ctx
+	}
 	l.names = appendNames(l.names, name)
-	return l
+	return makeContext(ctx, l)
 }
 
-// Leveled returns a Logger that only logs entries
+// Leveled returns a logger that only logs entries
 // equal to or above the given level.
-func (l Logger) Leveled(level Level) Logger {
+func Leveled(ctx context.Context, level Level) context.Context {
+	l, ok := extractContext(ctx)
+	if !ok {
+		return ctx
+	}
 	l.level = level
-	return l
+	return makeContext(ctx, l)
 }
 
-func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
+func (l logger) log(ctx context.Context, level Level, msg string, fields Map) {
 	ent := l.entry(ctx, level, msg, fields)
 	l.LogEntry(ctx, ent)
 }
 
-func (l Logger) entry(ctx context.Context, level Level, msg string, fields Map) SinkEntry {
+func (l logger) entry(ctx context.Context, level Level, msg string, fields Map) SinkEntry {
 	ent := SinkEntry{
 		Time:        time.Now().UTC(),
 		Level:       level,
@@ -226,8 +272,8 @@ func M(fs ...Field) Map {
 	return fs
 }
 
-// Error is the standard key used for logging a Go error value.
-func Error(err error) Field {
+// Err is the standard key used for logging a Go error value.
+func Err(err error) Field {
 	return F("error", err)
 }
 
