@@ -21,7 +21,7 @@ import (
 // to stdout for stackdriver.
 //
 // See https://cloud.google.com/logging/docs/agent
-func Make(ctx context.Context, w io.Writer) slog.SinkContext {
+func Make(ctx context.Context, w io.Writer) context.Context {
 	projectID, _ := metadata.ProjectID()
 
 	return slog.Make(ctx, stackdriverSink{

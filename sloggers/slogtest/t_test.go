@@ -32,7 +32,7 @@ func TestIgnoreErrors(t *testing.T) {
 
 	tb := &fakeTB{}
 	ctx := context.Background()
-	ctx = slog.Make(ctx, slogtest.Make(tb, &slogtest.Options{
+	ctx = slog.Tee(ctx, slogtest.Make(tb, &slogtest.Options{
 		IgnoreErrors: true,
 	}))
 

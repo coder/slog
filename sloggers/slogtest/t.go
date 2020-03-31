@@ -23,7 +23,7 @@ func init() {
 }
 
 // Options represents the options for the logger returned
-// by Make.
+// by Tee.
 type Options struct {
 	// IgnoreErrors causes the test logger to not fatal the test
 	// on Fatal and not error the test on Error or Critical.
@@ -31,7 +31,7 @@ type Options struct {
 }
 
 // Make creates a logger that writes logs to tb in a human readable format.
-func Make(tb testing.TB, opts *Options) slog.SinkContext {
+func Make(tb testing.TB, opts *Options) context.Context {
 	if opts == nil {
 		opts = &Options{}
 	}

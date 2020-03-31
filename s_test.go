@@ -16,7 +16,7 @@ func TestStdlib(t *testing.T) {
 
 	b := &bytes.Buffer{}
 	ctx := context.Background()
-	ctx = slog.Make(sloghuman.Make(ctx, b))
+	ctx = slog.Tee(sloghuman.Make(ctx, b))
 	ctx = slog.With(ctx,
 		slog.F("hi", "we"),
 	)

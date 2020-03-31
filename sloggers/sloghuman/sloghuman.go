@@ -17,7 +17,7 @@ import (
 //
 // If the writer implements Sync() error then
 // it will be called when syncing.
-func Make(ctx context.Context, w io.Writer) slog.SinkContext {
+func Make(ctx context.Context, w io.Writer) context.Context {
 	return slog.Make(ctx, &humanSink{
 		w:  syncwriter.New(w),
 		w2: w,

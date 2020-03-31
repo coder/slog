@@ -77,17 +77,32 @@ type logger struct {
 	exit func(int)
 }
 
-// Make creates a logger that writes logs to the passed sinks at LevelInfo.
-func Make(ctx context.Context, sinks ...Sink) SinkContext {
-	// Just in case the ctx has a logger, start with it.
-	l, _ := loggerFromContext(ctx)
-	l.sinks = append(l.sinks, sinks...)
-	if l.level == 0 {
-		l.level = LevelInfo
-	}
-	l.exit = os.Exit
+// Make returns a context with the logger for sink.
+func Make(ctx context.Context, sink Sink)  context.Context {
+	return contextWithLogger(ctx, logger{
+		sinks: []Sink{sink},
+		level: LevelInfo,
+		exit:  os.Exit,
+	})
+}
 
-	return contextWithLogger(ctx, l)
+// Tee creates a logger that writes logs to the passed sinks at LevelInfo.
+// The first context is preserved in the return.
+func Tee(ctx context.Context, ctxs ...context.Context) context.Context {
+	var sinks []Sink
+	for _, c := range append([]context.Context{ctx}, ctxs...) {
+		l, ok := loggerFromContext(c)
+		if !ok {
+			continue
+		}
+		sinks = append(sinks, l)
+	}
+
+	return contextWithLogger(ctx, logger{
+		sinks: sinks,
+		level: LevelInfo,
+		exit:  os.Exit,
+	})
 }
 
 // Debug logs the msg and fields at LevelDebug.

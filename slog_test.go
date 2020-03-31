@@ -36,8 +36,8 @@ func TestLogger(t *testing.T) {
 
 		s1 := &fakeSink{}
 		s2 := &fakeSink{}
-		var ctx context.Context
-		ctx = slog.Make(context.Background(), s1, s2)
+		ctx := context.Background()
+		ctx = slog.Tee(ctx, slog.Make(ctx, s1), slog.Make(ctx, s2))
 		ctx = slog.Leveled(ctx, slog.LevelError)
 
 		slog.Info(ctx, "wow", slog.Err(io.EOF))

@@ -94,7 +94,7 @@ func Example_multiple() {
 		slog.Fatal(ctx, "failed to open stackdriver log file", slog.Err(err))
 	}
 
-	ctx = slog.Make(l, slogstackdriver.Make(ctx, f))
+	ctx = slog.Tee(l, slogstackdriver.Make(ctx, f))
 
 	slog.Info(ctx, "log to stdout and stackdriver")
 
