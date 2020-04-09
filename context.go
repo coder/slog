@@ -4,21 +4,15 @@ import "context"
 
 type loggerCtxKey = struct{}
 
-type sinkContext struct {
-	context.Context
-	Sink
-}
-
-// SinkContext is a context that implements Sink.
-// It may be returned by log creators to allow for composition.
-type SinkContext interface {
+// SinkContext is used by slog.Make to compose many loggers together.
+type SinkContext struct {
 	Sink
 	context.Context
 }
 
 func contextWithLogger(ctx context.Context, l logger) SinkContext {
 	ctx = context.WithValue(ctx, loggerCtxKey{}, l)
-	return &sinkContext{
+	return SinkContext{
 		Context: ctx,
 		Sink:    l,
 	}
