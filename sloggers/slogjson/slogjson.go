@@ -34,8 +34,8 @@ import (
 // for the format.
 // If the writer implements Sync() error then
 // it will be called when syncing.
-func Make(ctx context.Context, w io.Writer) context.Context {
-	return slog.Make(ctx, jsonSink{
+func Make(w io.Writer) slog.Logger {
+	return slog.Make(jsonSink{
 		w: syncwriter.New(w),
 	})
 }
@@ -44,7 +44,7 @@ type jsonSink struct {
 	w *syncwriter.Writer
 }
 
-func (s jsonSink) LogEntry(_ context.Context, ent slog.SinkEntry) {
+func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	m := slog.M(
 		slog.F("ts", ent.Time),
 		slog.F("level", ent.Level),

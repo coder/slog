@@ -21,9 +21,9 @@ func (s myStruct) MarshalJSON() ([]byte, error) {
 }
 
 func Example_marshaller() {
-	ctx := sloghuman.Make(context.Background(), os.Stdout)
+	l := sloghuman.Make(os.Stdout)
 
-	slog.Info(ctx, "wow",
+	l.Info(context.Background(), "wow",
 		slog.F("myStruct", myStruct{
 			foo: 1,
 			bar: 2,

@@ -17,14 +17,14 @@ import (
 	"cdr.dev/slog/internal/syncwriter"
 )
 
-// Make creates a slog.logger configured to write JSON logs
+// Make creates a slog.Logger configured to write JSON logs
 // to stdout for stackdriver.
 //
 // See https://cloud.google.com/logging/docs/agent
-func Make(ctx context.Context, w io.Writer) slog.SinkContext {
+func Make(w io.Writer) slog.Logger {
 	projectID, _ := metadata.ProjectID()
 
-	return slog.Make(ctx, stackdriverSink{
+	return slog.Make(stackdriverSink{
 		projectID: projectID,
 		w:         syncwriter.New(w),
 	})
@@ -35,7 +35,7 @@ type stackdriverSink struct {
 	w         *syncwriter.Writer
 }
 
-func (s stackdriverSink) LogEntry(_ context.Context, ent slog.SinkEntry) {
+func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	// https://cloud.google.com/logging/docs/agent/configuration#special-fields
 	e := slog.M(
 		slog.F("severity", sev(ent.Level)),
