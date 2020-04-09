@@ -18,14 +18,14 @@ import (
 )
 
 func Example() {
-	ctx := sloghuman.Make(context.Background(), os.Stdout)
+	log := sloghuman.Make(os.Stdout)
 
-	slog.Info(ctx, "my message here",
+	log.Info(context.Background(), "my message here",
 		slog.F("field_name", "something or the other"),
 		slog.F("some_map", slog.M(
 			slog.F("nested_fields", time.Date(2000, time.February, 5, 4, 4, 4, 0, time.UTC)),
 		)),
-		slog.Err(
+		slog.Error(
 			xerrors.Errorf("wrap1: %w",
 				xerrors.Errorf("wrap2: %w",
 					io.EOF,
@@ -45,7 +45,7 @@ func Example() {
 }
 
 func Example_struct() {
-	ctx := sloghuman.Make(context.Background(), os.Stdout)
+	l := sloghuman.Make(os.Stdout)
 
 	type hello struct {
 		Meow int       `json:"meow"`
@@ -53,7 +53,7 @@ func Example_struct() {
 		M    time.Time `json:"m"`
 	}
 
-	slog.Info(ctx, "check out my structure",
+	l.Info(context.Background(), "check out my structure",
 		slog.F("hello", hello{
 			Meow: 1,
 			Bar:  "barbar",
@@ -76,27 +76,26 @@ func Example_testing() {
 }
 
 func Example_tracing() {
-	var ctx context.Context
-	ctx = sloghuman.Make(context.Background(), os.Stdout)
+	log := sloghuman.Make(os.Stdout)
 
-	ctx, _ = trace.StartSpan(ctx, "spanName")
+	ctx, _ := trace.StartSpan(context.Background(), "spanName")
 
-	slog.Info(ctx, "my msg", slog.F("hello", "hi"))
+	log.Info(ctx, "my msg", slog.F("hello", "hi"))
 
 	// 2019-12-09 21:59:48.110 [INFO]	<example_test.go:62>	my msg	{"trace": "f143d018d00de835688453d8dc55c9fd", "span": "f214167bf550afc3", "hello": "hi"}
 }
 
 func Example_multiple() {
-	ctx := sloghuman.Make(context.Background(), os.Stdout)
+	l := sloghuman.Make(os.Stdout)
 
 	f, err := os.OpenFile("stackdriver", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
-		slog.Fatal(ctx, "failed to open stackdriver log file", slog.Err(err))
+		l.Fatal(context.Background(), "failed to open stackdriver log file", slog.Error(err))
 	}
 
-	ctx = slog.Make(l, slogstackdriver.Make(ctx, f))
+	l = slog.Make(l, slogstackdriver.Make(f))
 
-	slog.Info(ctx, "log to stdout and stackdriver")
+	l.Info(context.Background(), "log to stdout and stackdriver")
 
 	// 2019-12-07 20:59:55.790 [INFO]	<example_test.go:46>	log to stdout and stackdriver
 }
@@ -104,41 +103,41 @@ func Example_multiple() {
 func ExampleWith() {
 	ctx := slog.With(context.Background(), slog.F("field", 1))
 
-	ctx = sloghuman.Make(ctx, os.Stdout)
-	slog.Info(ctx, "msg")
+	l := sloghuman.Make(os.Stdout)
+	l.Info(ctx, "msg")
 
 	// 2019-12-07 20:54:23.986 [INFO]	<example_test.go:20>	msg	{"field": 1}
 }
 
 func ExampleStdlib() {
 	ctx := slog.With(context.Background(), slog.F("field", 1))
-	l := slog.Stdlib(sloghuman.Make(ctx, os.Stdout))
+	l := slog.Stdlib(ctx, sloghuman.Make(os.Stdout))
 
 	l.Print("msg")
 
 	// 2019-12-07 20:54:23.986 [INFO]	(stdlib)	<example_test.go:29>	msg	{"field": 1}
 }
 
-func ExampleNamed() {
+func ExampleLogger_Named() {
 	ctx := context.Background()
 
-	ctx = sloghuman.Make(ctx, os.Stdout)
-	ctx = slog.Named(ctx, "http")
-	slog.Info(ctx, "received request", slog.F("remote address", net.IPv4(127, 0, 0, 1)))
+	l := sloghuman.Make(os.Stdout)
+	l = l.Named("http")
+	l.Info(ctx, "received request", slog.F("remote address", net.IPv4(127, 0, 0, 1)))
 
 	// 2019-12-07 21:20:56.974 [INFO]	(http)	<example_test.go:85>	received request	{"remote address": "127.0.0.1"}
 }
 
-func ExampleLeveled() {
+func ExampleLogger_Leveled() {
 	ctx := context.Background()
 
-	ctx = sloghuman.Make(ctx, os.Stdout)
-	slog.Debug(ctx, "testing1")
-	slog.Info(ctx, "received request")
+	l := sloghuman.Make(os.Stdout)
+	l.Debug(ctx, "testing1")
+	l.Info(ctx, "received request")
 
-	ctx = slog.Leveled(ctx, slog.LevelDebug)
+	l = l.Leveled(slog.LevelDebug)
 
-	slog.Debug(ctx, "testing2")
+	l.Debug(ctx, "testing2")
 
 	// 2019-12-07 21:26:20.945 [INFO]	<example_test.go:95>	received request
 	// 2019-12-07 21:26:20.945 [DEBUG]	<example_test.go:99>	testing2

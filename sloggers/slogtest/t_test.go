@@ -31,12 +31,11 @@ func TestIgnoreErrors(t *testing.T) {
 	t.Parallel()
 
 	tb := &fakeTB{}
-	ctx := context.Background()
-	ctx = slog.Make(ctx, slogtest.Make(tb, &slogtest.Options{
+	l := slog.Make(slogtest.Make(tb, &slogtest.Options{
 		IgnoreErrors: true,
 	}))
 
-	slog.Error(ctx, "hello")
+	l.Error(bg, "hello")
 	assert.Equal(t, "errors", 0, tb.errors)
 
 	defer func() {
@@ -44,8 +43,10 @@ func TestIgnoreErrors(t *testing.T) {
 		assert.Equal(t, "fatals", 0, tb.fatals)
 	}()
 
-	slog.Fatal(ctx, "hello")
+	l.Fatal(bg, "hello")
 }
+
+var bg = context.Background()
 
 type fakeTB struct {
 	testing.TB

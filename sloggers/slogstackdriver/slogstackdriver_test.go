@@ -24,9 +24,9 @@ func TestStackdriver(t *testing.T) {
 
 	ctx, s := trace.StartSpan(bg, "meow")
 	b := &bytes.Buffer{}
-	ctx = slogstackdriver.Make(ctx, b)
-	ctx = slog.Named(ctx, "meow")
-	slog.Error(ctx, "line1\n\nline2", slog.F("wowow", "me\nyou"))
+	l := slogstackdriver.Make(b)
+	l = l.Named("meow")
+	l.Error(ctx, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 
 	j := entryjson.Filter(b.String(), "timestamp")
 	exp := fmt.Sprintf(`{"severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":29,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects//traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":false,"wowow":"me\nyou"}
