@@ -138,7 +138,7 @@ func (l Logger) Named(name string) Logger {
 func (l Logger) Leveled(level Level) Logger {
 	l.level = level
 	l.sinks = append([]Sink(nil), l.sinks...)
-	for _i s := range l.sinks {
+	for i, s := range l.sinks {
 		if l2, ok := s.(Logger); ok {
 			l.sink[i] = l2.Leveled(level)
 		}
