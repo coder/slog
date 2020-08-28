@@ -137,6 +137,12 @@ func (l Logger) Named(name string) Logger {
 // equal to or above the given level.
 func (l Logger) Leveled(level Level) Logger {
 	l.level = level
+	l.sinks = append([]Sink(nil), l.sinks...)
+	for i, s := range l.sinks {
+		if l2, ok := s.(Logger); ok {
+			l.sinks[i] = l2.Leveled(level)
+		}
+	}
 	return l
 }
 
