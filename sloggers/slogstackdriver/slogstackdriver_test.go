@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"testing"
 
+	"cloud.google.com/go/compute/metadata"
 	"go.opencensus.io/trace"
 	logpbtype "google.golang.org/genproto/googleapis/logging/type"
 
