@@ -70,7 +70,11 @@ type Logger struct {
 func (l Logger) flatSinks() []Sink {
 	sinks := make([]Sink, 0, len(l.sinks))
 	for _, s := range l.sinks {
-		if l2, ok := s.(Logger); ok {
+		switch l2 := s.(type) {
+		case Logger:
+			sinks = append(sinks, l2.flatSinks()...)
+			continue
+		case *Logger:
 			sinks = append(sinks, l2.flatSinks()...)
 			continue
 		}
@@ -83,7 +87,7 @@ func (l Logger) flatSinks() []Sink {
 
 // Make creates a logger that writes logs to the passed sinks.
 //
-// The name and level is taken from the first Logger passed.
+// The name, level and fields are taken from the first Logger passed.
 func Make(sinks ...Sink) Logger {
 	l := Logger{
 		sinks: sinks,
@@ -91,14 +95,21 @@ func Make(sinks ...Sink) Logger {
 
 		exit: os.Exit,
 	}
+	l.sinks = l.flatSinks()
 	for _, s := range sinks {
-		if l2, ok := s.(Logger); ok {
+		switch l2 := s.(type) {
+		case Logger:
 			l.level = l2.level
 			l.names = l2.names
-			break
+			l.fields = l2.fields
+			return l
+		case *Logger:
+			l.level = l2.level
+			l.names = l2.names
+			l.fields = l2.fields
+			return l
 		}
 	}
-	l.sinks = l.flatSinks()
 	return l
 }
 
