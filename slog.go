@@ -67,14 +67,39 @@ type Logger struct {
 	exit func(int)
 }
 
-// Make creates a logger that writes logs to the passed sinks at LevelInfo.
+func (l Logger) flatSinks() []Sink {
+	sinks := make([]Sink, 0, len(l.sinks))
+	for _, s := range l.sinks {
+		if l2, ok := s.(Logger); ok {
+			sinks = append(sinks, l2.flatSinks()...)
+			continue
+		}
+
+		sinks = append(sinks, s)
+	}
+
+	return sinks
+}
+
+// Make creates a logger that writes logs to the passed sinks.
+//
+// The name and level is taken from the first Logger passed.
 func Make(sinks ...Sink) Logger {
-	return Logger{
+	l := Logger{
 		sinks: sinks,
 		level: LevelInfo,
 
 		exit: os.Exit,
 	}
+	for _, s := range sinks {
+		if l2, ok := s.(Logger); ok {
+			l.level = l2.level
+			l.names = l2.names
+			break
+		}
+	}
+	l.sinks = l.flatSinks()
+	return l
 }
 
 // Debug logs the msg and fields at LevelDebug.
@@ -137,12 +162,6 @@ func (l Logger) Named(name string) Logger {
 // equal to or above the given level.
 func (l Logger) Leveled(level Level) Logger {
 	l.level = level
-	l.sinks = append([]Sink(nil), l.sinks...)
-	for i, s := range l.sinks {
-		if l2, ok := s.(Logger); ok {
-			l.sinks[i] = l2.Leveled(level)
-		}
-	}
 	return l
 }
 
