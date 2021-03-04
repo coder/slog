@@ -35,7 +35,7 @@ go get cdr.dev/slog
 Many more examples available at [godoc](https://godoc.org/cdr.dev/slog#pkg-examples).
 
 ```go
-log := sloghuman.Make(os.Stdout)
+log := slog.Make(sloghuman.Sink(os.Stdout))
 
 log.Info(context.Background(), "my message here",
     slog.F("field_name", "something or the other"),
