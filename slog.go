@@ -141,6 +141,13 @@ func (l Logger) Leveled(level Level) Logger {
 	return l
 }
 
+// AppendSinks appends the sinks to the set sink
+// targets on the logger.
+func (l Logger) AppendSinks(s ...Sink) Logger {
+	l.sinks = append(l.sinks, s...)
+	return l
+}
+
 func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 	ent := l.entry(ctx, level, msg, fields)
 	l.Log(ctx, ent)
