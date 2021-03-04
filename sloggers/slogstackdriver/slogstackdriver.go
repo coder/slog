@@ -17,11 +17,11 @@ import (
 	"cdr.dev/slog/internal/syncwriter"
 )
 
-// Make creates a slog.Logger configured to write JSON logs
+// Sink creates a slog.Sink configured to write JSON logs
 // to stdout for stackdriver.
 //
 // See https://cloud.google.com/logging/docs/agent
-func Make(w io.Writer) slog.Sink {
+func Sink(w io.Writer) slog.Sink {
 	projectID, _ := metadata.ProjectID()
 
 	return stackdriverSink{

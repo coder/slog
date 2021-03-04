@@ -29,12 +29,12 @@ import (
 	"cdr.dev/slog/internal/syncwriter"
 )
 
-// Make creates a logger that writes JSON logs
+// Sink creates a slog.Sink that writes JSON logs
 // to the given writer. See package level docs
 // for the format.
 // If the writer implements Sync() error then
 // it will be called when syncing.
-func Make(w io.Writer) slog.Logger {
+func Sink(w io.Writer) slog.Logger {
 	return slog.Make(jsonSink{
 		w: syncwriter.New(w),
 	})

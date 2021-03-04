@@ -12,12 +12,12 @@ import (
 	"cdr.dev/slog/internal/syncwriter"
 )
 
-// Make creates a logger that writes logs in a human
+// Sink creates a slog.Sink that writes logs in a human
 // readable YAML like format to the given writer.
 //
 // If the writer implements Sync() error then
 // it will be called when syncing.
-func Make(w io.Writer) slog.Sink {
+func Sink(w io.Writer) slog.Sink {
 	return &humanSink{
 		w:  syncwriter.New(w),
 		w2: w,
