@@ -38,8 +38,9 @@ func TestLogger(t *testing.T) {
 
 		s1 := &fakeSink{}
 		s2 := &fakeSink{}
-		l := slog.Make(s1, s2)
+		l := slog.Make(s1)
 		l = l.Leveled(slog.LevelError)
+		l = l.AppendSinks(s2)
 
 		l.Info(bg, "wow", slog.Error(io.EOF))
 		l.Error(bg, "meow", slog.Error(io.ErrUnexpectedEOF))
@@ -74,7 +75,7 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func2",
-			Line: 66,
+			Line: 67,
 
 			Fields: slog.M(
 				slog.F("ctx", 1024),
@@ -107,7 +108,7 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func3",
-			Line: 97,
+			Line: 98,
 
 			SpanContext: span.SpanContext(),
 
