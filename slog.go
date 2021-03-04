@@ -29,11 +29,11 @@ type Sink interface {
 	Sync()
 }
 
-// LogEntry logs the given entry with the context to the
+// Log logs the given entry with the context to the
 // underlying sinks.
 //
 // It extends the entry with the set fields and names.
-func (l Logger) LogEntry(ctx context.Context, e SinkEntry) {
+func (l Logger) Log(ctx context.Context, e SinkEntry) {
 	if e.Level < l.level {
 		return
 	}
@@ -138,17 +138,12 @@ func (l Logger) Named(name string) Logger {
 func (l Logger) Leveled(level Level) Logger {
 	l.level = level
 	l.sinks = append([]Sink(nil), l.sinks...)
-	for i, s := range l.sinks {
-		if l2, ok := s.(Logger); ok {
-			l.sinks[i] = l2.Leveled(level)
-		}
-	}
 	return l
 }
 
 func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
 	ent := l.entry(ctx, level, msg, fields)
-	l.LogEntry(ctx, ent)
+	l.Log(ctx, ent)
 }
 
 func (l Logger) entry(ctx context.Context, level Level, msg string, fields Map) SinkEntry {

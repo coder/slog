@@ -17,11 +17,11 @@ import (
 //
 // If the writer implements Sync() error then
 // it will be called when syncing.
-func Make(w io.Writer) slog.Logger {
-	return slog.Make(&humanSink{
+func Make(w io.Writer) slog.Sink {
+	return &humanSink{
 		w:  syncwriter.New(w),
 		w2: w,
-	})
+	}
 }
 
 type humanSink struct {

@@ -18,7 +18,7 @@ import (
 )
 
 func Example() {
-	log := sloghuman.Make(os.Stdout)
+	log := slog.Make(sloghuman.Make(os.Stdout))
 
 	log.Info(context.Background(), "my message here",
 		slog.F("field_name", "something or the other"),
@@ -45,7 +45,7 @@ func Example() {
 }
 
 func Example_struct() {
-	l := sloghuman.Make(os.Stdout)
+	l := slog.Make(sloghuman.Make(os.Stdout))
 
 	type hello struct {
 		Meow int       `json:"meow"`
@@ -76,7 +76,7 @@ func Example_testing() {
 }
 
 func Example_tracing() {
-	log := sloghuman.Make(os.Stdout)
+	log := slog.Make(sloghuman.Make(os.Stdout))
 
 	ctx, _ := trace.StartSpan(context.Background(), "spanName")
 
@@ -86,14 +86,14 @@ func Example_tracing() {
 }
 
 func Example_multiple() {
-	l := sloghuman.Make(os.Stdout)
+	l := slog.Make(sloghuman.Make(os.Stdout))
 
 	f, err := os.OpenFile("stackdriver", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		l.Fatal(context.Background(), "failed to open stackdriver log file", slog.Error(err))
 	}
 
-	l = slog.Make(l, slogstackdriver.Make(f))
+	l = slog.Make(sloghuman.Make(os.Stdout), slogstackdriver.Make(f))
 
 	l.Info(context.Background(), "log to stdout and stackdriver")
 
@@ -103,7 +103,7 @@ func Example_multiple() {
 func ExampleWith() {
 	ctx := slog.With(context.Background(), slog.F("field", 1))
 
-	l := sloghuman.Make(os.Stdout)
+	l := slog.Make(sloghuman.Make(os.Stdout))
 	l.Info(ctx, "msg")
 
 	// 2019-12-07 20:54:23.986 [INFO]	<example_test.go:20>	msg	{"field": 1}
@@ -111,7 +111,7 @@ func ExampleWith() {
 
 func ExampleStdlib() {
 	ctx := slog.With(context.Background(), slog.F("field", 1))
-	l := slog.Stdlib(ctx, sloghuman.Make(os.Stdout))
+	l := slog.Stdlib(ctx, slog.Make(sloghuman.Make(os.Stdout)))
 
 	l.Print("msg")
 
@@ -121,7 +121,7 @@ func ExampleStdlib() {
 func ExampleLogger_Named() {
 	ctx := context.Background()
 
-	l := sloghuman.Make(os.Stdout)
+	l := slog.Make(sloghuman.Make(os.Stdout))
 	l = l.Named("http")
 	l.Info(ctx, "received request", slog.F("remote address", net.IPv4(127, 0, 0, 1)))
 
@@ -131,7 +131,7 @@ func ExampleLogger_Named() {
 func ExampleLogger_Leveled() {
 	ctx := context.Background()
 
-	l := sloghuman.Make(os.Stdout)
+	l := slog.Make(sloghuman.Make(os.Stdout))
 	l.Debug(ctx, "testing1")
 	l.Info(ctx, "received request")
 

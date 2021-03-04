@@ -21,13 +21,13 @@ import (
 // to stdout for stackdriver.
 //
 // See https://cloud.google.com/logging/docs/agent
-func Make(w io.Writer) slog.Logger {
+func Make(w io.Writer) slog.Sink {
 	projectID, _ := metadata.ProjectID()
 
-	return slog.Make(stackdriverSink{
+	return stackdriverSink{
 		projectID: projectID,
 		w:         syncwriter.New(w),
-	})
+	}
 }
 
 type stackdriverSink struct {
