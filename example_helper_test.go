@@ -17,7 +17,7 @@ func httpLogHelper(ctx context.Context, status int) {
 	)
 }
 
-var l = sloghuman.Make(os.Stdout)
+var l = slog.Make(sloghuman.Sink(os.Stdout))
 
 func ExampleHelper() {
 	ctx := context.Background()

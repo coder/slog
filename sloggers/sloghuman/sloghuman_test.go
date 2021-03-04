@@ -17,7 +17,7 @@ func TestMake(t *testing.T) {
 	t.Parallel()
 
 	b := &bytes.Buffer{}
-	l := sloghuman.Make(b)
+	l := slog.Make(sloghuman.Sink(b))
 	l.Info(bg, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 	l.Sync()
 

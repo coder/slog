@@ -14,7 +14,7 @@ func TestStdlib(t *testing.T) {
 	t.Parallel()
 
 	b := &bytes.Buffer{}
-	l := slog.Make(sloghuman.Make(b)).With(
+	l := slog.Make(sloghuman.Sink(b)).With(
 		slog.F("hi", "we"),
 	)
 	stdlibLog := slog.Stdlib(bg, l)

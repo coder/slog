@@ -24,7 +24,7 @@ func TestMake(t *testing.T) {
 
 	ctx, s := trace.StartSpan(bg, "meow")
 	b := &bytes.Buffer{}
-	l := slogjson.Make(b)
+	l := slogjson.Sink(b)
 	l = l.Named("named")
 	l.Error(ctx, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 
