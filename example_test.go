@@ -93,7 +93,7 @@ func Example_multiple() {
 		l.Fatal(context.Background(), "failed to open stackdriver log file", slog.Error(err))
 	}
 
-	l = slog.Make(sloghuman.Sink(os.Stdout), slogstackdriver.Sink(f))
+	l = l.AppendSinks(slogstackdriver.Sink(f))
 
 	l.Info(context.Background(), "log to stdout and stackdriver")
 
