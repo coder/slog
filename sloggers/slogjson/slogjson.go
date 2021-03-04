@@ -34,10 +34,10 @@ import (
 // for the format.
 // If the writer implements Sync() error then
 // it will be called when syncing.
-func Sink(w io.Writer) slog.Logger {
-	return slog.Make(jsonSink{
+func Sink(w io.Writer) slog.Sink {
+	return jsonSink{
 		w: syncwriter.New(w),
-	})
+	}
 }
 
 type jsonSink struct {
