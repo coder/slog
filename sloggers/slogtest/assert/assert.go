@@ -50,7 +50,7 @@ func True(t testing.TB, name string, act bool) {
 	Equal(t, name, true, act)
 }
 
-// False asserts act == true.
+// False asserts act == false.
 func False(t testing.TB, name string, act bool) {
 	slog.Helper()
 	Equal(t, name, false, act)
