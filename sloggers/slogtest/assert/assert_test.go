@@ -75,6 +75,19 @@ func TestTrue(t *testing.T) {
 	assert.True(tb, "meow", false)
 }
 
+func TestFalse(t *testing.T) {
+	t.Parallel()
+
+	tb := &fakeTB{}
+	assert.False(tb, "woof", false)
+
+	defer func() {
+		recover()
+		simpleassert.Equal(t, "fatals", 1, tb.fatals)
+	}()
+	assert.False(tb, "woof", true)
+}
+
 func TestError(t *testing.T) {
 	t.Parallel()
 
