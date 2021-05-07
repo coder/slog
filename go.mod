@@ -3,15 +3,12 @@ module cdr.dev/slog
 go 1.13
 
 require (
-	cloud.google.com/go v0.49.0
+	cloud.google.com/go v0.81.0
 	github.com/alecthomas/chroma v0.9.1
 	github.com/fatih/color v1.10.0
-	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
-	github.com/google/go-cmp v0.3.2-0.20191216170541-340f1ebe299e
-	go.opencensus.io v0.22.2
-	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
-	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553 // indirect
-	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
-	google.golang.org/genproto v0.0.0-20191216164720-4f79533eabd1
-	google.golang.org/grpc v1.25.1 // indirect
+	github.com/google/go-cmp v0.5.5
+	go.opencensus.io v0.23.0
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
+	google.golang.org/genproto v0.0.0-20210402141018-6c239bbf2bb1
 )
