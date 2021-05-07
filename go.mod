@@ -4,8 +4,7 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.49.0
-	github.com/alecthomas/chroma v0.7.0
-	github.com/dlclark/regexp2 v1.2.0 // indirect
+	github.com/alecthomas/chroma v0.9.1
 	github.com/fatih/color v1.10.0
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/google/go-cmp v0.3.2-0.20191216170541-340f1ebe299e
