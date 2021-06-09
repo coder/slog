@@ -39,7 +39,7 @@ func TestIgnoreErrors(t *testing.T) {
 
 	defer func() {
 		recover()
-		assert.Equal(t, "fatals", 0, tb.fatals)
+		assert.Equal(t, "fatals", 1, tb.fatals)
 	}()
 
 	l.Fatal(bg, "hello")

@@ -61,9 +61,6 @@ func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 			ts.tb.Error(s)
 		}
 	case slog.LevelFatal:
-		if ts.opts.IgnoreErrors {
-			panic("slogtest: cannot fatal in tests when IgnoreErrors option is set")
-		}
 		ts.tb.Fatal(s)
 	}
 }
