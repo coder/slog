@@ -3,7 +3,7 @@ module cdr.dev/slog
 go 1.13
 
 require (
-	cloud.google.com/go v0.94.0
+	cloud.google.com/go v0.94.1
 	github.com/alecthomas/chroma v0.9.2
 	github.com/fatih/color v1.12.0
 	github.com/google/go-cmp v0.5.6
