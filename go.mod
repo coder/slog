@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.95.0
-	github.com/alecthomas/chroma v0.9.2
+	github.com/alecthomas/chroma v0.9.4
 	github.com/fatih/color v1.13.0
 	github.com/google/go-cmp v0.5.6
 	go.opencensus.io v0.23.0
