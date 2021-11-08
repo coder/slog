@@ -39,7 +39,7 @@ func (w stdlogWriter) Write(p []byte) (n int, err error) {
 	// we do not want.
 	msg = strings.TrimSuffix(msg, "\n")
 
-	w.l.Info(w.ctx, msg)
+	w.l.log(w.ctx, w.l.level, msg, Map{})
 
 	return len(p), nil
 }
