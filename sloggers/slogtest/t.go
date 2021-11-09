@@ -19,7 +19,7 @@ import (
 // Ensure all stdlib logs go through slog.
 func init() {
 	l := slog.Make(sloghuman.Sink(os.Stderr))
-	log.SetOutput(slog.Stdlib(context.Background(), l).Writer())
+	log.SetOutput(slog.Stdlib(context.Background(), l, slog.LevelInfo).Writer())
 }
 
 // Options represents the options for the logger returned
