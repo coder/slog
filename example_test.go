@@ -111,7 +111,7 @@ func ExampleWith() {
 
 func ExampleStdlib() {
 	ctx := slog.With(context.Background(), slog.F("field", 1))
-	l := slog.Stdlib(ctx, slog.Make(sloghuman.Sink(os.Stdout)))
+	l := slog.Stdlib(ctx, slog.Make(sloghuman.Sink(os.Stdout)), slog.LevelInfo)
 
 	l.Print("msg")
 

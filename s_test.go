@@ -17,7 +17,7 @@ func TestStdlib(t *testing.T) {
 	l := slog.Make(sloghuman.Sink(b)).With(
 		slog.F("hi", "we"),
 	)
-	stdlibLog := slog.Stdlib(bg, l)
+	stdlibLog := slog.Stdlib(bg, l, slog.LevelInfo)
 	stdlibLog.Println("stdlib")
 
 	et, rest, err := entryhuman.StripTimestamp(b.String())
