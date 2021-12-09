@@ -21,6 +21,8 @@ import (
 	"go.opencensus.io/trace"
 )
 
+var defaultExitFn = os.Exit
+
 // Sink is the destination of a Logger.
 //
 // All sinks must be safe for concurrent use.
