@@ -118,7 +118,7 @@ func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.Sync()
 
 	if l.exit == nil {
-		l.exit = os.Exit
+		l.exit = defaultExitFn
 	}
 
 	l.exit(1)
