@@ -7,7 +7,7 @@ import (
 	"cdr.dev/slog/internal/assert"
 )
 
-func TestLogger(t *testing.T) {
+func TestExit(t *testing.T) {
 	// This can't be parallel since it modifies a global variable.
 	t.Run("defaultExitFn", func(t *testing.T) {
 		var (
