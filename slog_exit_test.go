@@ -16,6 +16,9 @@ func TestExit(t *testing.T) {
 			defaultExitFnCalled bool
 		)
 
+		prevExitFn := defaultExitFn
+		t.Cleanup(func() { defaultExitFn = prevExitFn })
+
 		defaultExitFn = func(_ int) {
 			defaultExitFnCalled = true
 		}
