@@ -21,6 +21,8 @@ import (
 	"go.opencensus.io/trace"
 )
 
+var defaultExitFn = os.Exit
+
 // Sink is the destination of a Logger.
 //
 // All sinks must be safe for concurrent use.
@@ -114,6 +116,11 @@ func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
 func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelFatal, msg, fields)
 	l.Sync()
+
+	if l.exit == nil {
+		l.exit = defaultExitFn
+	}
+
 	l.exit(1)
 }
 
