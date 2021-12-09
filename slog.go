@@ -114,6 +114,11 @@ func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
 func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelFatal, msg, fields)
 	l.Sync()
+
+	if l.exit == nil {
+		l.exit = os.Exit
+	}
+
 	l.exit(1)
 }
 
