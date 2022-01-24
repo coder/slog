@@ -50,7 +50,7 @@ func c(w io.Writer, attrs ...color.Attribute) *color.Color {
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
 func Fmt(w io.Writer, ent slog.SinkEntry) string {
-	var ents string
+	ents := c(w, color.Reset).Sprint("")
 	ts := ent.Time.Format(TimeFormat)
 	ents += ts + " "
 
@@ -127,7 +127,7 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 		lines := strings.Split(multilineVal, "\n")
 		for i, line := range lines[1:] {
 			if line != "" {
-				lines[i+1] = strings.Repeat(" ", len(multilineKey)+4) + line
+				lines[i+1] = c(w, color.Reset).Sprint("") + strings.Repeat(" ", len(multilineKey)+4) + line
 			}
 		}
 		multilineVal = strings.Join(lines, "\n")
