@@ -24,5 +24,5 @@ func TestMake(t *testing.T) {
 	et, rest, err := entryhuman.StripTimestamp(b.String())
 	assert.Success(t, "strip timestamp", err)
 	assert.False(t, "timestamp", et.IsZero())
-	assert.Equal(t, "entry", " [INFO]\t<sloghuman_test.go:21>\t...\t{\"wowow\": \"me\\nyou\"}\n  \"msg\": line1\n\n         line2\n", rest)
+	assert.Equal(t, "entry", " [INFO]\t<cdr.dev/slog/sloggers/sloghuman_test/sloghuman_test.go:21>\tTestMake\t...\t{\"wowow\": \"me\\nyou\"}\n  \"msg\": line1\n\n         line2\n", rest)
 }

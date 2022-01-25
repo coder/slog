@@ -66,7 +66,7 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 	}
 
 	hpath, hfn := humanPathAndFunc(ent.File, ent.Func)
-	loc := fmt.Sprintf("<%v:%v> %v", hpath, ent.Line, hfn)
+	loc := fmt.Sprintf("<%v:%v>\t%v", hpath, ent.Line, hfn)
 	loc = c(w, color.FgCyan).Sprint(loc)
 	ents += fmt.Sprintf("%v\t", loc)
 
