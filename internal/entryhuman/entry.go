@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -50,7 +51,7 @@ func c(w io.Writer, attrs ...color.Attribute) *color.Color {
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
 func Fmt(w io.Writer, ent slog.SinkEntry) string {
-	var ents string
+	ents := c(w, color.Reset).Sprint("")
 	ts := ent.Time.Format(TimeFormat)
 	ents += ts + " "
 
@@ -64,7 +65,8 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 		ents += fmt.Sprintf("%v\t", loggerName)
 	}
 
-	loc := fmt.Sprintf("<%v:%v>", filepath.Base(ent.File), ent.Line)
+	hpath, hfn := humanPathAndFunc(ent.File, ent.Func)
+	loc := fmt.Sprintf("<%v:%v>\t%v", hpath, ent.Line, hfn)
 	loc = c(w, color.FgCyan).Sprint(loc)
 	ents += fmt.Sprintf("%v\t", loc)
 
@@ -127,7 +129,7 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 		lines := strings.Split(multilineVal, "\n")
 		for i, line := range lines[1:] {
 			if line != "" {
-				lines[i+1] = strings.Repeat(" ", len(multilineKey)+4) + line
+				lines[i+1] = c(w, color.Reset).Sprint("") + strings.Repeat(" ", len(multilineKey)+4) + line
 			}
 		}
 		multilineVal = strings.Join(lines, "\n")
@@ -193,4 +195,65 @@ func quote(key string) string {
 func quoteKey(key string) string {
 	// Replace spaces in the map keys with underscores.
 	return strings.ReplaceAll(key, " ", "_")
+}
+
+var mainPackagePath string
+var mainModulePath string
+
+func init() {
+	// Unfortunately does not work for tests yet :(
+	// See https://github.com/golang/go/issues/33976
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return
+	}
+	mainPackagePath = bi.Path
+	mainModulePath = bi.Main.Path
+}
+
+// humanPathAndFunc takes the absolute path to a file and an absolute module path to a
+// function in that file and returns the module path to the file. It also returns
+// the path to the function stripped of its module prefix.
+//
+// If the file is in the main Go module then its path is returned
+// relative to the main Go module's root.
+//
+// fn is from https://pkg.go.dev/runtime#Func.Name
+func humanPathAndFunc(filename, fn string) (hpath, hfn string) {
+	// pkgDir is the dir of the pkg.
+	//   e.g. cdr.dev/slog/internal
+	// base is the package name and the function name separated by a period.
+	//   e.g. entryhuman.humanPathAndFunc
+	// There can be multiple periods when methods of types are involved.
+	pkgDir, base := filepath.Split(fn)
+	s := strings.Split(base, ".")
+	pkg := s[0]
+	hfn = strings.Join(s[1:], ".")
+
+	if pkg == "main" {
+		// This happens with go build main.go
+		if mainPackagePath == "command-line-arguments" {
+			// Without a real mainPath, we can't find the path to the file
+			// relative to the module. So we just return the base.
+			return filepath.Base(filename), hfn
+		}
+		// Go doesn't return the full main path in runtime.Func.Name()
+		// It just returns the path "main"
+		// Only runtime.ReadBuildInfo returns it so we have to check and replace.
+		pkgDir = mainPackagePath
+		// pkg main isn't reflected on the disk so we should not add it
+		// into the pkgpath.
+		pkg = ""
+	}
+
+	hpath = filepath.Join(pkgDir, pkg, filepath.Base(filename))
+
+	if mainModulePath != "" {
+		relhpath, err := filepath.Rel(mainModulePath, hpath)
+		if err == nil {
+			hpath = "./" + relhpath
+		}
+	}
+
+	return hpath, hfn
 }
