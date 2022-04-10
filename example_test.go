@@ -34,7 +34,7 @@ func Example() {
 		),
 	)
 
-	// 2019-12-09 05:04:53.398 [INFO]	<example.go:16>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "2000-02-05T04:04:04Z"}} ...
+	// Dec  9 05:04:53.398 [INFO]	<example.go:16>	my message here	{"field_name": "something or the other", "some_map": {"nested_fields": "2000-02-05T04:04:04Z"}} ...
 	//  "error": wrap1:
 	//      main.main
 	//          /Users/nhooyr/src/cdr/scratch/example.go:22
@@ -61,7 +61,7 @@ func Example_struct() {
 		}),
 	)
 
-	// 2019-12-16 17:31:51.769 [INFO]	<example_test.go:56>	check out my structure	{"hello": {"meow": 1, "bar": "barbar", "m": "2000-02-05T04:04:04Z"}}
+	// Dec 16 17:31:51.769 [INFO]	<example_test.go:56>	check out my structure	{"hello": {"meow": 1, "bar": "barbar", "m": "2000-02-05T04:04:04Z"}}
 }
 
 func Example_testing() {
@@ -72,7 +72,7 @@ func Example_testing() {
 		slog.F("field_name", "something or the other"),
 	)
 
-	// t.go:55: 2019-12-05 21:20:31.218 [INFO]	<examples_test.go:42>	my message here	{"field_name": "something or the other"}
+	// t.go:55: Dec  5 21:20:31.218 [INFO]	<examples_test.go:42>	my message here	{"field_name": "something or the other"}
 }
 
 func Example_tracing() {
@@ -82,7 +82,7 @@ func Example_tracing() {
 
 	log.Info(ctx, "my msg", slog.F("hello", "hi"))
 
-	// 2019-12-09 21:59:48.110 [INFO]	<example_test.go:62>	my msg	{"trace": "f143d018d00de835688453d8dc55c9fd", "span": "f214167bf550afc3", "hello": "hi"}
+	// Dec  9 21:59:48.110 [INFO]	<example_test.go:62>	my msg	{"trace": "f143d018d00de835688453d8dc55c9fd", "span": "f214167bf550afc3", "hello": "hi"}
 }
 
 func Example_multiple() {
@@ -97,7 +97,7 @@ func Example_multiple() {
 
 	l.Info(context.Background(), "log to stdout and stackdriver")
 
-	// 2019-12-07 20:59:55.790 [INFO]	<example_test.go:46>	log to stdout and stackdriver
+	// Dec  7 20:59:55.790 [INFO]	<example_test.go:46>	log to stdout and stackdriver
 }
 
 func ExampleWith() {
@@ -106,7 +106,7 @@ func ExampleWith() {
 	l := slog.Make(sloghuman.Sink(os.Stdout))
 	l.Info(ctx, "msg")
 
-	// 2019-12-07 20:54:23.986 [INFO]	<example_test.go:20>	msg	{"field": 1}
+	// Dec  7 20:54:23.986 [INFO]	<example_test.go:20>	msg	{"field": 1}
 }
 
 func ExampleStdlib() {
@@ -115,7 +115,7 @@ func ExampleStdlib() {
 
 	l.Print("msg")
 
-	// 2019-12-07 20:54:23.986 [INFO]	(stdlib)	<example_test.go:29>	msg	{"field": 1}
+	// Dec  7 20:54:23.986 [INFO]	(stdlib)	<example_test.go:29>	msg	{"field": 1}
 }
 
 func ExampleLogger_Named() {
@@ -125,7 +125,7 @@ func ExampleLogger_Named() {
 	l = l.Named("http")
 	l.Info(ctx, "received request", slog.F("remote address", net.IPv4(127, 0, 0, 1)))
 
-	// 2019-12-07 21:20:56.974 [INFO]	(http)	<example_test.go:85>	received request	{"remote address": "127.0.0.1"}
+	// Dec  7 21:20:56.974 [INFO]	(http)	<example_test.go:85>	received request	{"remote address": "127.0.0.1"}
 }
 
 func ExampleLogger_Leveled() {
@@ -139,6 +139,6 @@ func ExampleLogger_Leveled() {
 
 	l.Debug(ctx, "testing2")
 
-	// 2019-12-07 21:26:20.945 [INFO]	<example_test.go:95>	received request
-	// 2019-12-07 21:26:20.945 [DEBUG]	<example_test.go:99>	testing2
+	// Dec  7 21:26:20.945 [INFO]	<example_test.go:95>	received request
+	// Dec  7 21:26:20.945 [DEBUG]	<example_test.go:99>	testing2
 }

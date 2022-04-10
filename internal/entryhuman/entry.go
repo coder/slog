@@ -31,8 +31,8 @@ func StripTimestamp(ent string) (time.Time, string, error) {
 	return et, rest, err
 }
 
-// TimeFormat is a simplified RFC3339 format.
-const TimeFormat = "2006-01-02 15:04:05.000"
+// TimeFormat references the StampMilli format.
+const TimeFormat = time.StampMilli
 
 func c(w io.Writer, attrs ...color.Attribute) *color.Color {
 	c := color.New(attrs...)

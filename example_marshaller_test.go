@@ -30,5 +30,5 @@ func Example_marshaller() {
 		}),
 	)
 
-	// 2019-12-16 17:31:37.120 [INFO]	<example_marshaller_test.go:26>	wow	{"myStruct": {"foo": 1, "bar": 1}}
+	// Dec 16 17:31:37.120 [INFO]	<example_marshaller_test.go:26>	wow	{"myStruct": {"foo": 1, "bar": 1}}
 }

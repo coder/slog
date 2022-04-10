@@ -23,5 +23,5 @@ func ExampleHelper() {
 	ctx := context.Background()
 	httpLogHelper(ctx, http.StatusBadGateway)
 
-	// 2019-12-07 21:18:42.567 [INFO]	<example_helper_test.go:24>	sending HTTP response	{"status": 502}
+	// Dec  7 21:18:42.567 [INFO]	<example_helper_test.go:24>	sending HTTP response	{"status": 502}
 }
