@@ -45,13 +45,25 @@ func TestIgnoreErrors(t *testing.T) {
 	l.Fatal(bg, "hello")
 }
 
+func TestSkipCleanup(t *testing.T) {
+	t.Parallel()
+
+	tb := &fakeTB{}
+	slogtest.Make(tb, &slogtest.Options{
+		SkipCleanup: true,
+	})
+
+	assert.Equal(t, "cleanups", 0, tb.cleanups)
+}
+
 var bg = context.Background()
 
 type fakeTB struct {
 	testing.TB
 
-	errors int
-	fatals int
+	errors   int
+	fatals   int
+	cleanups int
 }
 
 func (tb *fakeTB) Helper() {}
@@ -67,4 +79,6 @@ func (tb *fakeTB) Fatal(v ...interface{}) {
 	panic("")
 }
 
-func (tb *fakeTB) Cleanup(fn func()) {}
+func (tb *fakeTB) Cleanup(fn func()) {
+	tb.cleanups++
+}
