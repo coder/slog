@@ -66,3 +66,5 @@ func (tb *fakeTB) Fatal(v ...interface{}) {
 	tb.fatals++
 	panic("")
 }
+
+func (tb *fakeTB) Cleanup(fn func()) {}

@@ -9,6 +9,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"sync"
 	"testing"
 
 	"cdr.dev/slog"
@@ -28,6 +29,11 @@ type Options struct {
 	// IgnoreErrors causes the test logger to not fatal the test
 	// on Fatal and not error the test on Error or Critical.
 	IgnoreErrors bool
+	// SkipCleanup skips adding a t.Cleanup call that prevents the logger from
+	// logging after a test has exited. This is necessary because race
+	// conditions exist when t.Log is called concurrently of a test exiting. Set
+	// to true if you don't need this behavior.
+	SkipCleanup bool
 }
 
 // Make creates a Logger that writes logs to tb in a human readable format.
@@ -35,19 +41,38 @@ func Make(tb testing.TB, opts *Options) slog.Logger {
 	if opts == nil {
 		opts = &Options{}
 	}
-	return slog.Make(testSink{
+
+	sink := &testSink{
 		tb:   tb,
 		opts: opts,
-	})
+	}
+	if !opts.SkipCleanup {
+		tb.Cleanup(func() {
+			sink.mu.Lock()
+			defer sink.mu.Unlock()
+			sink.testDone = true
+		})
+	}
+
+	return slog.Make(sink)
 }
 
 type testSink struct {
-	tb     testing.TB
-	opts   *Options
-	stdlib bool
+	tb       testing.TB
+	opts     *Options
+	mu       sync.RWMutex
+	testDone bool
 }
 
-func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
+func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
+	// Don't log after the test this sink was created in has finished.
+	if ts.testDone == true {
+		return
+	}
+
 	// The testing package logs to stdout and not stderr.
 	s := entryhuman.Fmt(os.Stdout, ent)
 
@@ -65,12 +90,12 @@ func (ts testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	}
 }
 
-func (ts testSink) Sync() {}
+func (ts *testSink) Sync() {}
 
 var ctx = context.Background()
 
 func l(t testing.TB) slog.Logger {
-	return Make(t, nil)
+	return Make(t, &Options{SkipCleanup: true})
 }
 
 // Debug logs the given msg and fields to t via t.Log at the debug level.
