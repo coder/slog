@@ -69,7 +69,7 @@ func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	defer ts.mu.RUnlock()
 
 	// Don't log after the test this sink was created in has finished.
-	if ts.testDone == true {
+	if ts.testDone {
 		return
 	}
 
