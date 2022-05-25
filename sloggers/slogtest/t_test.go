@@ -45,6 +45,21 @@ func TestIgnoreErrors(t *testing.T) {
 	l.Fatal(bg, "hello")
 }
 
+func TestCleanup(t *testing.T) {
+	t.Parallel()
+
+	tb := &fakeTB{}
+	l := slogtest.Make(tb, &slogtest.Options{})
+
+	for _, fn := range tb.cleanups {
+		fn()
+	}
+
+	// This shoud not log since the logger was cleaned up.
+	l.Info(bg, "hello")
+	assert.Equal(t, "no logs", 0, tb.logs)
+}
+
 func TestSkipCleanup(t *testing.T) {
 	t.Parallel()
 
@@ -53,7 +68,7 @@ func TestSkipCleanup(t *testing.T) {
 		SkipCleanup: true,
 	})
 
-	assert.Equal(t, "cleanups", 0, tb.cleanups)
+	assert.Len(t, "no cleanups", 0, tb.cleanups)
 }
 
 var bg = context.Background()
@@ -61,14 +76,17 @@ var bg = context.Background()
 type fakeTB struct {
 	testing.TB
 
+	logs     int
 	errors   int
 	fatals   int
-	cleanups int
+	cleanups []func()
 }
 
 func (tb *fakeTB) Helper() {}
 
-func (tb *fakeTB) Log(v ...interface{}) {}
+func (tb *fakeTB) Log(v ...interface{}) {
+	tb.logs++
+}
 
 func (tb *fakeTB) Error(v ...interface{}) {
 	tb.errors++
@@ -80,5 +98,5 @@ func (tb *fakeTB) Fatal(v ...interface{}) {
 }
 
 func (tb *fakeTB) Cleanup(fn func()) {
-	tb.cleanups++
+	tb.cleanups = append(tb.cleanups, fn)
 }
