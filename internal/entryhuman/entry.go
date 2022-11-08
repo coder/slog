@@ -170,7 +170,7 @@ func isTTY(w io.Writer) bool {
 }
 
 func shouldColor(w io.Writer) bool {
-	return isTTY(w) || os.Getenv("FORCE_COLOR") != ""
+	return isTTY(w) || os.Getenv("TERM") != ""
 }
 
 // quotes quotes a string so that it is suitable
