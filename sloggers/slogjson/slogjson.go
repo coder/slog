@@ -2,19 +2,19 @@
 //
 // Format
 //
-//  {
-//    "ts": "2019-09-10T20:19:07.159852-05:00",
-//    "level": "INFO",
-//    "logger_names": ["comp", "subcomp"],
-//    "msg": "hi",
-//    "caller": "slog/examples_test.go:62",
-//    "func": "cdr.dev/slog/sloggers/slogtest_test.TestExampleTest",
-//    "trace": "<traceid>",
-//    "span": "<spanid>",
-//    "fields": {
-//      "my_field": "field value"
-//    }
-//  }
+//	{
+//	  "ts": "2019-09-10T20:19:07.159852-05:00",
+//	  "level": "INFO",
+//	  "logger_names": ["comp", "subcomp"],
+//	  "msg": "hi",
+//	  "caller": "slog/examples_test.go:62",
+//	  "func": "cdr.dev/slog/sloggers/slogtest_test.TestExampleTest",
+//	  "trace": "<traceid>",
+//	  "span": "<spanid>",
+//	  "fields": {
+//	    "my_field": "field value"
+//	  }
+//	}
 package slogjson // import "cdr.dev/slog/sloggers/slogjson"
 
 import (

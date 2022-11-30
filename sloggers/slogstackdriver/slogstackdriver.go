@@ -36,11 +36,16 @@ type stackdriverSink struct {
 }
 
 func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
+	// Note that these documents are inconsistent, so we only use the special
+	// keys described by both.
 	// https://cloud.google.com/logging/docs/agent/configuration#special-fields
+	// https://cloud.google.com/stackdriver/docs/solutions/agents/ops-agent/configuration#special-fields
 	e := slog.M(
-		slog.F("severity", sev(ent.Level)),
+		slog.F("logging.googleapis.com/severity", sev(ent.Level)),
 		slog.F("message", ent.Message),
-		slog.F("timestamp", ent.Time),
+		// Unfortunately, both of these fields are required.
+		slog.F("timestampSeconds", ent.Time.Unix()),
+		slog.F("timestampNanos", ent.Time.UnixNano()%1e9),
 		slog.F("logging.googleapis.com/sourceLocation", &logpb.LogEntrySourceLocation{
 			File:     ent.File,
 			Line:     int64(ent.Line),
