@@ -91,4 +91,32 @@ func TestEntry(t *testing.T) {
 		})
 		assert.Equal(t, "entry", "\x1b[0m\x1b[0m0001-01-01 00:00:00.000 \x1b[91m[CRITICAL]\x1b[0m\t\x1b[36m<.:0>	\x1b[0m\t\"\"\t{\x1b[34m\"hey\"\x1b[0m: \x1b[32m\"hi\"\x1b[0m}", act)
 	})
+
+	t.Run("isTTY during file close", func(t *testing.T) {
+		t.Parallel()
+
+		tmpdir := t.TempDir()
+		f, err := ioutil.TempFile(tmpdir, "slog")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		done := make(chan struct{}, 2)
+		go func() {
+			_ = entryhuman.Fmt(f, slog.SinkEntry{
+				Level: slog.LevelCritical,
+				Fields: slog.M(
+					slog.F("hey", "hi"),
+				),
+			})
+			done <- struct{}{}
+		}()
+		go func() {
+			_ = f.Close()
+			done <- struct{}{}
+		}()
+		<-done
+		<-done
+	})
 }
