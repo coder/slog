@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/nwidger/jsoncolor"
 	"go.opencensus.io/trace"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/xerrors"
@@ -113,10 +114,14 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 
 	if len(ent.Fields) > 0 {
 		// No error is guaranteed due to slog.Map handling errors itself.
-		fields, _ := json.MarshalIndent(ent.Fields, "", "")
+		var fields []byte
+		if shouldColor(w) {
+			fields, _ = jsoncolor.MarshalIndent(ent.Fields, "", "")
+		} else {
+			fields, _ = json.MarshalIndent(ent.Fields, "", "")
+		}
 		fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
 		fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
-		fields = formatJSON(w, fields)
 		ents += "\t" + string(fields)
 	}
 
@@ -197,8 +202,10 @@ func quoteKey(key string) string {
 	return strings.ReplaceAll(key, " ", "_")
 }
 
-var mainPackagePath string
-var mainModulePath string
+var (
+	mainPackagePath string
+	mainModulePath  string
+)
 
 func init() {
 	// Unfortunately does not work for tests yet :(
