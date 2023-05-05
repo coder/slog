@@ -4,8 +4,10 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.26.0
+	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/fatih/color v1.15.0
 	github.com/google/go-cmp v0.5.3
+	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/nwidger/jsoncolor v0.3.2
 	go.opencensus.io v0.24.0

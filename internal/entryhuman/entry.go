@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/nwidger/jsoncolor"
+	"github.com/hokaccha/go-prettyjson"
 	"go.opencensus.io/trace"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/xerrors"
@@ -116,7 +116,14 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 		// No error is guaranteed due to slog.Map handling errors itself.
 		var fields []byte
 		if shouldColor(w) {
-			fields, _ = jsoncolor.MarshalIndent(ent.Fields, "", "")
+			f := prettyjson.NewFormatter()
+			f.Newline = ""
+			f.Indent = 0
+			fields, _ = f.Marshal(ent.Fields)
+			// Need a space after ":" to match the non-color output.
+			var buf bytes.Buffer
+			_ = json.Indent(&buf, fields, "", "")
+			fields = buf.Bytes()
 		} else {
 			fields, _ = json.MarshalIndent(ent.Fields, "", "")
 		}

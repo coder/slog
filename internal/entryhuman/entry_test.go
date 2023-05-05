@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/acarl005/stripansi"
 	"go.opencensus.io/trace"
 
 	"cdr.dev/slog"
@@ -92,6 +93,25 @@ func TestEntry(t *testing.T) {
 			),
 		})
 		assert.Equal(t, "entry", "\x1b[0m\x1b[0m0001-01-01 00:00:00.000 \x1b[91m[CRITICAL]\x1b[0m\t\x1b[36m<.:0>	\x1b[0m\t\"\"\t{\x1b[34m\"hey\"\x1b[0m: \x1b[32m\"hi\"\x1b[0m}", act)
+	})
+
+	t.Run("colorJustColor", func(t *testing.T) {
+		t.Parallel()
+
+		ent := slog.SinkEntry{
+			Level: slog.LevelCritical,
+			Fields: slog.M(
+				slog.F("hey", "hi"),
+			),
+		}
+
+		actColor := entryhuman.Fmt(entryhuman.ForceColorWriter, ent)
+
+		assert.Equal(t,
+			"entries",
+			entryhuman.Fmt(ioutil.Discard, ent),
+			stripansi.Strip(actColor),
+		)
 	})
 }
 
