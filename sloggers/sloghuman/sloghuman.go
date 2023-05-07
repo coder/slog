@@ -30,7 +30,9 @@ type humanSink struct {
 }
 
 func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
-	str := entryhuman.Fmt(s.w2, ent)
+	var sb strings.Builder
+	entryhuman.Fmt(&sb, s.w2, ent)
+	str := sb.String()
 	lines := strings.Split(str, "\n")
 
 	// We need to add 4 spaces before every field line for readability.

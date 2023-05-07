@@ -3,6 +3,7 @@ package sloghuman_test
 import (
 	"bytes"
 	"context"
+	"os"
 	"testing"
 
 	"cdr.dev/slog"
@@ -24,5 +25,20 @@ func TestMake(t *testing.T) {
 	et, rest, err := entryhuman.StripTimestamp(b.String())
 	assert.Success(t, "strip timestamp", err)
 	assert.False(t, "timestamp", et.IsZero())
-	assert.Equal(t, "entry", " [INFO]\t<cdr.dev/slog/sloggers/sloghuman_test/sloghuman_test.go:21>\tTestMake\t...\t{\"wowow\": \"me\\nyou\"}\n  \"msg\": line1\n\n         line2\n", rest)
+	assert.Equal(t, "entry", " [INFO]\t...\twowow=\"me\\nyou\"\n  \"msg\"= line1\n\n         line2\n", rest)
+}
+
+func TestVisual(t *testing.T) {
+	t.Setenv("FORCE_COLOR", "true")
+	if os.Getenv("TEST_VISUAL") == "" {
+		t.Skip("TEST_VISUAL not set")
+	}
+
+	l := slog.Make(sloghuman.Sink(os.Stdout)).Leveled(slog.LevelDebug)
+	l.Debug(bg, "small potatos", slog.F("aaa", "mmm"), slog.F("bbb", "nnn"), slog.F("age", 24))
+	l.Info(bg, "line1\n\nline2", slog.F("wowow", "me\nyou"))
+	l.Warn(bg, "oops", slog.F("aaa", "mmm"))
+	l = l.Named("sublogger")
+	l.Error(bg, "big oops", slog.F("aaa", "mmm"))
+	l.Sync()
 }

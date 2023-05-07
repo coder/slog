@@ -4,17 +4,15 @@ package entryhuman
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"go.opencensus.io/trace"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/xerrors"
@@ -34,13 +32,20 @@ func StripTimestamp(ent string) (time.Time, string, error) {
 // TimeFormat is a simplified RFC3339 format.
 const TimeFormat = "2006-01-02 15:04:05.000"
 
-func c(w io.Writer, attrs ...color.Attribute) *color.Color {
-	c := color.New(attrs...)
-	c.DisableColor()
+var (
+	renderer = lipgloss.NewRenderer(os.Stdout, termenv.WithUnsafe())
+
+	loggerNameStyle   = renderer.NewStyle().Foreground(lipgloss.Color("#A47DFF"))
+	keyStyle          = renderer.NewStyle().Foreground(lipgloss.Color("#606366"))
+	multiLineKeyStyle = renderer.NewStyle().Foreground(lipgloss.Color("#79b8ff"))
+)
+
+func render(w io.Writer, st lipgloss.Style, s string) string {
 	if shouldColor(w) {
-		c.EnableColor()
+		ss := st.Render(s)
+		return ss
 	}
-	return c
+	return s
 }
 
 // Fmt returns a human readable format for ent.
@@ -50,25 +55,24 @@ func c(w io.Writer, attrs ...color.Attribute) *color.Color {
 // We also do not indent the fields as go's test does that automatically
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
-func Fmt(w io.Writer, ent slog.SinkEntry) string {
-	ents := c(w, color.Reset).Sprint("")
+func Fmt(buf io.StringWriter, termW io.Writer, ent slog.SinkEntry,
+) {
 	ts := ent.Time.Format(TimeFormat)
-	ents += ts + " "
+	buf.WriteString(ts + " ")
 
-	level := "[" + ent.Level.String() + "]"
-	level = c(w, levelColor(ent.Level)).Sprint(level)
-	ents += fmt.Sprintf("%v\t", level)
+	level := ent.Level.String()
+	if len(level) > 4 {
+		level = level[:4]
+	}
+	level = "[" + level + "]"
+	buf.WriteString(render(termW, levelStyle(ent.Level), level))
+	buf.WriteString("\t")
 
 	if len(ent.LoggerNames) > 0 {
 		loggerName := "(" + quoteKey(strings.Join(ent.LoggerNames, ".")) + ")"
-		loggerName = c(w, color.FgMagenta).Sprint(loggerName)
-		ents += fmt.Sprintf("%v\t", loggerName)
+		buf.WriteString(render(termW, loggerNameStyle, loggerName))
+		buf.WriteString("\t")
 	}
-
-	hpath, hfn := humanPathAndFunc(ent.File, ent.Func)
-	loc := fmt.Sprintf("<%v:%v>\t%v", hpath, ent.Line, hfn)
-	loc = c(w, color.FgCyan).Sprint(loc)
-	ents += fmt.Sprintf("%v\t", loc)
 
 	var multilineKey string
 	var multilineVal string
@@ -77,9 +81,10 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 		multilineKey = "msg"
 		multilineVal = msg
 		msg = "..."
+		msg = quote(msg)
+		buf.WriteString(msg)
+
 	}
-	msg = quote(msg)
-	ents += msg
 
 	if ent.SpanContext != (trace.SpanContext{}) {
 		ent.Fields = append(slog.M(
@@ -111,48 +116,56 @@ func Fmt(w io.Writer, ent slog.SinkEntry) string {
 		multilineVal = s
 	}
 
-	if len(ent.Fields) > 0 {
-		// No error is guaranteed due to slog.Map handling errors itself.
-		fields, _ := json.MarshalIndent(ent.Fields, "", "")
-		fields = bytes.ReplaceAll(fields, []byte(",\n"), []byte(", "))
-		fields = bytes.ReplaceAll(fields, []byte("\n"), []byte(""))
-		fields = formatJSON(w, fields)
-		ents += "\t" + string(fields)
+	for i, f := range ent.Fields {
+		if i < len(ent.Fields) {
+			buf.WriteString("\t")
+		}
+		buf.WriteString(render(termW, keyStyle, f.Name+"="))
+		valueStr := fmt.Sprintf("%+v", f.Value)
+		buf.WriteString(quote(valueStr))
 	}
 
 	if multilineVal != "" {
 		if msg != "..." {
-			ents += " ..."
+			buf.WriteString(" ...")
 		}
 
 		// Proper indentation.
 		lines := strings.Split(multilineVal, "\n")
 		for i, line := range lines[1:] {
 			if line != "" {
-				lines[i+1] = c(w, color.Reset).Sprint("") + strings.Repeat(" ", len(multilineKey)+4) + line
+				lines[i+1] = strings.Repeat(" ", len(multilineKey)+4) + line
 			}
 		}
 		multilineVal = strings.Join(lines, "\n")
 
-		multilineKey = c(w, color.FgBlue).Sprintf(`"%v"`, multilineKey)
-		ents += fmt.Sprintf("\n%v: %v", multilineKey, multilineVal)
+		multilineKey = render(termW, multiLineKeyStyle, multilineKey)
+		buf.WriteString("\n")
+		buf.WriteString(multilineKey)
+		buf.WriteString("= ")
+		buf.WriteString(multilineVal)
 	}
-
-	return ents
 }
 
-func levelColor(level slog.Level) color.Attribute {
+var (
+	levelDebugStyle = renderer.NewStyle().Foreground(lipgloss.Color("#ffffff"))
+	levelInfoStyle  = renderer.NewStyle().Foreground(lipgloss.Color("#0091FF"))
+	levelWarnStyle  = renderer.NewStyle().Foreground(lipgloss.Color("#FFCF0D"))
+	levelErrorStyle = renderer.NewStyle().Foreground(lipgloss.Color("#FF5A0D"))
+)
+
+func levelStyle(level slog.Level) lipgloss.Style {
 	switch level {
 	case slog.LevelDebug:
-		return color.Reset
+		return levelDebugStyle
 	case slog.LevelInfo:
-		return color.FgBlue
+		return levelInfoStyle
 	case slog.LevelWarn:
-		return color.FgYellow
-	case slog.LevelError:
-		return color.FgRed
+		return levelWarnStyle
+	case slog.LevelError, slog.LevelFatal, slog.LevelCritical:
+		return levelErrorStyle
 	default:
-		return color.FgHiRed
+		panic("unknown level")
 	}
 }
 
@@ -195,65 +208,4 @@ func quote(key string) string {
 func quoteKey(key string) string {
 	// Replace spaces in the map keys with underscores.
 	return strings.ReplaceAll(key, " ", "_")
-}
-
-var mainPackagePath string
-var mainModulePath string
-
-func init() {
-	// Unfortunately does not work for tests yet :(
-	// See https://github.com/golang/go/issues/33976
-	bi, ok := debug.ReadBuildInfo()
-	if !ok {
-		return
-	}
-	mainPackagePath = bi.Path
-	mainModulePath = bi.Main.Path
-}
-
-// humanPathAndFunc takes the absolute path to a file and an absolute module path to a
-// function in that file and returns the module path to the file. It also returns
-// the path to the function stripped of its module prefix.
-//
-// If the file is in the main Go module then its path is returned
-// relative to the main Go module's root.
-//
-// fn is from https://pkg.go.dev/runtime#Func.Name
-func humanPathAndFunc(filename, fn string) (hpath, hfn string) {
-	// pkgDir is the dir of the pkg.
-	//   e.g. cdr.dev/slog/internal
-	// base is the package name and the function name separated by a period.
-	//   e.g. entryhuman.humanPathAndFunc
-	// There can be multiple periods when methods of types are involved.
-	pkgDir, base := filepath.Split(fn)
-	s := strings.Split(base, ".")
-	pkg := s[0]
-	hfn = strings.Join(s[1:], ".")
-
-	if pkg == "main" {
-		// This happens with go build main.go
-		if mainPackagePath == "command-line-arguments" {
-			// Without a real mainPath, we can't find the path to the file
-			// relative to the module. So we just return the base.
-			return filepath.Base(filename), hfn
-		}
-		// Go doesn't return the full main path in runtime.Func.Name()
-		// It just returns the path "main"
-		// Only runtime.ReadBuildInfo returns it so we have to check and replace.
-		pkgDir = mainPackagePath
-		// pkg main isn't reflected on the disk so we should not add it
-		// into the pkgpath.
-		pkg = ""
-	}
-
-	hpath = filepath.Join(pkgDir, pkg, filepath.Base(filename))
-
-	if mainModulePath != "" {
-		relhpath, err := filepath.Rel(mainModulePath, hpath)
-		if err == nil {
-			hpath = "./" + relhpath
-		}
-	}
-
-	return hpath, hfn
 }

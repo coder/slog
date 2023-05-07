@@ -1,7 +1,10 @@
 package entryhuman_test
 
 import (
+	"fmt"
+	"io"
 	"io/ioutil"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,8 +21,9 @@ func TestEntry(t *testing.T) {
 	t.Parallel()
 
 	test := func(t *testing.T, in slog.SinkEntry, exp string) {
-		act := entryhuman.Fmt(ioutil.Discard, in)
-		assert.Equal(t, "entry", exp, act)
+		var sb strings.Builder
+		entryhuman.Fmt(&sb, ioutil.Discard, in)
+		assert.Equal(t, "entry", exp, sb.String())
 	}
 
 	t.Run("basic", func(t *testing.T) {
@@ -83,12 +87,48 @@ func TestEntry(t *testing.T) {
 	t.Run("color", func(t *testing.T) {
 		t.Parallel()
 
-		act := entryhuman.Fmt(entryhuman.ForceColorWriter, slog.SinkEntry{
+		var sb strings.Builder
+		entryhuman.Fmt(&sb, entryhuman.ForceColorWriter, slog.SinkEntry{
 			Level: slog.LevelCritical,
 			Fields: slog.M(
 				slog.F("hey", "hi"),
 			),
 		})
-		assert.Equal(t, "entry", "\x1b[0m\x1b[0m0001-01-01 00:00:00.000 \x1b[91m[CRITICAL]\x1b[0m\t\x1b[36m<.:0>	\x1b[0m\t\"\"\t{\x1b[34m\"hey\"\x1b[0m: \x1b[32m\"hi\"\x1b[0m}", act)
+		assert.Equal(t, "entry", "\x1b[0m\x1b[0m0001-01-01 00:00:00.000 \x1b[91m[CRITICAL]\x1b[0m\t\x1b[36m<.:0>	\x1b[0m\t\"\"\t{\x1b[34m\"hey\"\x1b[0m: \x1b[32m\"hi\"\x1b[0m}", sb.String())
 	})
+}
+
+func BenchmarkFmt(b *testing.B) {
+	bench := func(b *testing.B, color bool) {
+		nfs := []int{1, 4, 16}
+		for _, nf := range nfs {
+			name := fmt.Sprintf("nf=%v", nf)
+			if color {
+				name = "Colored-" + name
+			}
+			b.Run(name, func(b *testing.B) {
+				fs := make([]slog.Field, nf)
+				for i := 0; i < nf; i++ {
+					fs[i] = slog.F("key", "value")
+				}
+				se := slog.SinkEntry{
+					Level: slog.LevelCritical,
+					Fields: slog.M(
+						fs...,
+					),
+				}
+				w := io.Discard
+				if color {
+					w = entryhuman.ForceColorWriter
+				}
+				b.ResetTimer()
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					entryhuman.Fmt(io.Discard.(io.StringWriter), w, se)
+				}
+			})
+		}
+	}
+	bench(b, true)
+	bench(b, false)
 }
