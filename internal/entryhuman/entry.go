@@ -36,9 +36,8 @@ const TimeFormat = "2006-01-02 15:04:05.000"
 var (
 	renderer = lipgloss.NewRenderer(os.Stdout, termenv.WithUnsafe())
 
-	loggerNameStyle   = renderer.NewStyle().Foreground(lipgloss.Color("#A47DFF"))
-	keyStyle          = renderer.NewStyle().Foreground(lipgloss.Color("#606366"))
-	multiLineKeyStyle = renderer.NewStyle().Foreground(lipgloss.Color("#79b8ff"))
+	loggerNameStyle = renderer.NewStyle().Foreground(lipgloss.Color("#A47DFF"))
+	timeStyle       = renderer.NewStyle().Foreground(lipgloss.Color("#606366"))
 )
 
 func render(w io.Writer, st lipgloss.Style, s string) string {
@@ -70,9 +69,9 @@ func Fmt(
 ) {
 	reset(buf, termW)
 	ts := ent.Time.Format(TimeFormat)
-	buf.WriteString(ts + " ")
+	buf.WriteString(render(termW, timeStyle, ts+" "))
 
-	level := strings.ToLower(ent.Level.String())
+	level := ent.Level.String()
 	if len(level) > 4 {
 		level = level[:4]
 	}
@@ -127,6 +126,11 @@ func Fmt(
 		multilineVal = s
 	}
 
+	// Basic keyStyle off of the level makes it easy to distinguish individual
+	// entries in a fast stream of logs where some are multi-line.
+	// See logrus for an example.
+	keyStyle := levelStyle(ent.Level).Copy().Bold(false)
+
 	for i, f := range ent.Fields {
 		if i < len(ent.Fields) {
 			buf.WriteString("\t")
@@ -150,7 +154,7 @@ func Fmt(
 		}
 		multilineVal = strings.Join(lines, "\n")
 
-		multilineKey = render(termW, multiLineKeyStyle, multilineKey)
+		multilineKey = render(termW, keyStyle, multilineKey)
 		buf.WriteString("\n")
 		buf.WriteString(multilineKey)
 		buf.WriteString("= ")
