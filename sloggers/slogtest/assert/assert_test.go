@@ -44,11 +44,10 @@ func TestErrorContains(t *testing.T) {
 	defer func() {
 		recover()
 		simpleassert.Equal(t, "fatals", 1, tb.fatals)
-
 	}()
 	assert.ErrorContains(tb, "meow", io.ErrClosedPipe, "eof")
-
 }
+
 func TestSuccess(t *testing.T) {
 	t.Parallel()
 

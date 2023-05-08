@@ -89,5 +89,4 @@ func stringContainsFold(errs, sub string) bool {
 	sub = strings.ToLower(sub)
 
 	return strings.Contains(errs, sub)
-
 }

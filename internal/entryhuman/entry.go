@@ -72,7 +72,7 @@ func Fmt(
 	ts := ent.Time.Format(TimeFormat)
 	buf.WriteString(ts + " ")
 
-	level := ent.Level.String()
+	level := strings.ToLower(ent.Level.String())
 	if len(level) > 4 {
 		level = level[:4]
 	}
@@ -162,7 +162,7 @@ var (
 	levelDebugStyle = renderer.NewStyle().Foreground(lipgloss.Color("#ffffff"))
 	levelInfoStyle  = renderer.NewStyle().Foreground(lipgloss.Color("#0091FF"))
 	levelWarnStyle  = renderer.NewStyle().Foreground(lipgloss.Color("#FFCF0D"))
-	levelErrorStyle = renderer.NewStyle().Foreground(lipgloss.Color("#FF5A0D"))
+	levelErrorStyle = renderer.NewStyle().Foreground(lipgloss.Color("#FF5A0D")).Bold(true)
 )
 
 func levelStyle(level slog.Level) lipgloss.Style {
