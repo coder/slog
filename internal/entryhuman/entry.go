@@ -131,12 +131,14 @@ func Fmt(
 	// entries in a fast stream of logs where some are multi-line.
 	// See logrus for an example.
 	keyStyle := levelStyle(ent.Level).Copy().Bold(false)
+	equalsStyle := levelStyle(ent.Level).Copy().Faint(true)
 
 	for i, f := range ent.Fields {
 		if i < len(ent.Fields) {
 			buf.WriteString("\t")
 		}
-		buf.WriteString(render(termW, keyStyle, quoteKey(f.Name)+"="))
+		buf.WriteString(render(termW, keyStyle, quoteKey(f.Name)))
+		buf.WriteString(render(termW, equalsStyle, "="))
 		valueStr := fmt.Sprintf("%+v", f.Value)
 		buf.WriteString(quote(valueStr))
 	}
