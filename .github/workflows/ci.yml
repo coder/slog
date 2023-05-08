@@ -15,7 +15,7 @@ jobs:
   fmt:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: make fmt
         uses: ./ci/image
@@ -25,7 +25,7 @@ jobs:
   lint:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: make lint
         uses: ./ci/image
@@ -35,7 +35,7 @@ jobs:
   test:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: make test
         uses: ./ci/image
