@@ -72,6 +72,7 @@ func Fmt(
 	buf.WriteString(render(termW, timeStyle, ts+" "))
 
 	level := ent.Level.String()
+	level = strings.ToLower(level)
 	if len(level) > 4 {
 		level = level[:4]
 	}
