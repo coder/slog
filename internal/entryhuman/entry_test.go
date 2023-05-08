@@ -145,7 +145,7 @@ func BenchmarkFmt(b *testing.B) {
 				b.ResetTimer()
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					entryhuman.Fmt(io.Discard.(io.StringWriter), w, se)
+					entryhuman.Fmt(bytes.NewBuffer(nil), w, se)
 				}
 			})
 		}

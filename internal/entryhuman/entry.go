@@ -49,6 +49,12 @@ func render(w io.Writer, st lipgloss.Style, s string) string {
 	return s
 }
 
+func reset(w io.Writer, termW io.Writer) {
+	if shouldColor(termW) {
+		fmt.Fprintf(w, termenv.CSI+termenv.ResetSeq+"m")
+	}
+}
+
 // Fmt returns a human readable format for ent.
 //
 // We never return with a trailing newline because Go's testing framework adds one
@@ -56,8 +62,13 @@ func render(w io.Writer, st lipgloss.Style, s string) string {
 // We also do not indent the fields as go's test does that automatically
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
-func Fmt(buf io.StringWriter, termW io.Writer, ent slog.SinkEntry,
+func Fmt(
+	buf interface {
+		io.StringWriter
+		io.Writer
+	}, termW io.Writer, ent slog.SinkEntry,
 ) {
+	reset(buf, termW)
 	ts := ent.Time.Format(TimeFormat)
 	buf.WriteString(ts + " ")
 
@@ -83,9 +94,8 @@ func Fmt(buf io.StringWriter, termW io.Writer, ent slog.SinkEntry,
 		multilineVal = msg
 		msg = "..."
 		msg = quote(msg)
-		buf.WriteString(msg)
-
 	}
+	buf.WriteString(msg)
 
 	if ent.SpanContext != (trace.SpanContext{}) {
 		ent.Fields = append(slog.M(
