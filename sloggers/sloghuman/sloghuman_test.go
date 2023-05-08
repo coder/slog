@@ -3,6 +3,7 @@ package sloghuman_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -25,7 +26,7 @@ func TestMake(t *testing.T) {
 	et, rest, err := entryhuman.StripTimestamp(b.String())
 	assert.Success(t, "strip timestamp", err)
 	assert.False(t, "timestamp", et.IsZero())
-	assert.Equal(t, "entry", " [INFO]\t...\twowow=\"me\\nyou\"\n  msg= line1\n\n       line2\n", rest)
+	assert.Equal(t, "entry", " [info]\t...\twowow=\"me\\nyou\"\n  msg= line1\n\n       line2\n", rest)
 }
 
 func TestVisual(t *testing.T) {
@@ -39,6 +40,6 @@ func TestVisual(t *testing.T) {
 	l.Info(bg, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 	l.Warn(bg, "oops", slog.F("aaa", "mmm"))
 	l = l.Named("sublogger")
-	l.Error(bg, "big oops", slog.F("aaa", "mmm"))
+	l.Error(bg, "big oops", slog.F("aaa", "mmm"), slog.Error(fmt.Errorf("this happened\nand this")))
 	l.Sync()
 }
