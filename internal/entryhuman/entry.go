@@ -127,11 +127,9 @@ func Fmt(
 		multilineVal = s
 	}
 
-	// Basic keyStyle off of the level makes it easy to distinguish individual
-	// entries in a fast stream of logs where some are multi-line.
-	// See logrus for an example.
-	keyStyle := levelStyle(ent.Level).Copy().Bold(false)
-	equalsStyle := levelStyle(ent.Level).Copy().Faint(true)
+	keyStyle := timeStyle.Copy()
+	// Help users distinguish logs by keeping some color in the equal signs.
+	equalsStyle := levelStyle(ent.Level)
 
 	for i, f := range ent.Fields {
 		if i < len(ent.Fields) {
@@ -169,7 +167,7 @@ var (
 	levelDebugStyle = renderer.NewStyle().Foreground(lipgloss.Color("#ffffff"))
 	levelInfoStyle  = renderer.NewStyle().Foreground(lipgloss.Color("#0091FF"))
 	levelWarnStyle  = renderer.NewStyle().Foreground(lipgloss.Color("#FFCF0D"))
-	levelErrorStyle = renderer.NewStyle().Foreground(lipgloss.Color("#FF5A0D")).Bold(true)
+	levelErrorStyle = renderer.NewStyle().Foreground(lipgloss.Color("#FF5A0D"))
 )
 
 func levelStyle(level slog.Level) lipgloss.Style {
