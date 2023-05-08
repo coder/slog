@@ -72,6 +72,15 @@ func TestEntry(t *testing.T) {
 				),
 			},
 		},
+		{
+			"spacey",
+			slog.SinkEntry{
+				Level: slog.LevelWarn,
+				Fields: slog.M(
+					slog.F("space in my key", "value in my value"),
+				),
+			},
+		},
 	}
 	if *updateGoldenFiles {
 		ents, err := os.ReadDir("testdata")

@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
@@ -120,7 +121,7 @@ func Fmt(buf io.StringWriter, termW io.Writer, ent slog.SinkEntry,
 		if i < len(ent.Fields) {
 			buf.WriteString("\t")
 		}
-		buf.WriteString(render(termW, keyStyle, f.Name+"="))
+		buf.WriteString(render(termW, keyStyle, quoteKey(f.Name)+"="))
 		valueStr := fmt.Sprintf("%+v", f.Value)
 		buf.WriteString(quote(valueStr))
 	}
@@ -195,11 +196,18 @@ func quote(key string) string {
 		return `""`
 	}
 
+	var hasSpace bool
+	for _, r := range key {
+		if unicode.IsSpace(r) {
+			hasSpace = true
+			break
+		}
+	}
 	quoted := strconv.Quote(key)
 	// If the key doesn't need to be quoted, don't quote it.
 	// We do not use strconv.CanBackquote because it doesn't
 	// account tabs.
-	if quoted[1:len(quoted)-1] == key {
+	if !hasSpace && quoted[1:len(quoted)-1] == key {
 		return key
 	}
 	return quoted
@@ -207,5 +215,5 @@ func quote(key string) string {
 
 func quoteKey(key string) string {
 	// Replace spaces in the map keys with underscores.
-	return strings.ReplaceAll(key, " ", "_")
+	return quote(strings.ReplaceAll(key, " ", "_"))
 }

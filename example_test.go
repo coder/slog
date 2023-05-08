@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
 	"cdr.dev/slog"
@@ -72,23 +71,13 @@ func Example_testing() {
 		slog.F("field_name", "something or the other"),
 	)
 
-	// t.go:55: 2019-12-05 21:20:31.218 [INFO]	<examples_test.go:42>	my message here	{"field_name": "something or the other"}
-}
-
-func Example_tracing() {
-	log := slog.Make(sloghuman.Sink(os.Stdout))
-
-	ctx, _ := trace.StartSpan(context.Background(), "spanName")
-
-	log.Info(ctx, "my msg", slog.F("hello", "hi"))
-
-	// 2019-12-09 21:59:48.110 [INFO]	<example_test.go:62>	my msg	{"trace": "f143d018d00de835688453d8dc55c9fd", "span": "f214167bf550afc3", "hello": "hi"}
+	// t.go:55: 2019-12-05 21:20:31.218 [INFO]	my message here	field_name="something or the other"
 }
 
 func Example_multiple() {
 	l := slog.Make(sloghuman.Sink(os.Stdout))
 
-	f, err := os.OpenFile("stackdriver", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	f, err := os.OpenFile("stackdriver", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0o644)
 	if err != nil {
 		l.Fatal(context.Background(), "failed to open stackdriver log file", slog.Error(err))
 	}
@@ -97,7 +86,7 @@ func Example_multiple() {
 
 	l.Info(context.Background(), "log to stdout and stackdriver")
 
-	// 2019-12-07 20:59:55.790 [INFO]	<example_test.go:46>	log to stdout and stackdriver
+	// 2019-12-07 20:59:55.790 [INFO]	log to stdout and stackdriver
 }
 
 func ExampleWith() {
@@ -106,7 +95,7 @@ func ExampleWith() {
 	l := slog.Make(sloghuman.Sink(os.Stdout))
 	l.Info(ctx, "msg")
 
-	// 2019-12-07 20:54:23.986 [INFO]	<example_test.go:20>	msg	{"field": 1}
+	// 2019-12-07 20:54:23.986 [INFO]	msg	field=1}
 }
 
 func ExampleStdlib() {
@@ -115,7 +104,7 @@ func ExampleStdlib() {
 
 	l.Print("msg")
 
-	// 2019-12-07 20:54:23.986 [INFO]	(stdlib)	<example_test.go:29>	msg	{"field": 1}
+	// 2019-12-07 20:54:23.986 [INFO]	(stdlib)	msg	field=1
 }
 
 func ExampleLogger_Named() {
@@ -125,7 +114,7 @@ func ExampleLogger_Named() {
 	l = l.Named("http")
 	l.Info(ctx, "received request", slog.F("remote address", net.IPv4(127, 0, 0, 1)))
 
-	// 2019-12-07 21:20:56.974 [INFO]	(http)	<example_test.go:85>	received request	{"remote address": "127.0.0.1"}
+	// 2019-12-07 21:20:56.974 [INFO]	(http)	received request	remote_address=127.0.0.1}
 }
 
 func ExampleLogger_Leveled() {
@@ -139,6 +128,6 @@ func ExampleLogger_Leveled() {
 
 	l.Debug(ctx, "testing2")
 
-	// 2019-12-07 21:26:20.945 [INFO]	<example_test.go:95>	received request
-	// 2019-12-07 21:26:20.945 [DEBUG]	<example_test.go:99>	testing2
+	// 2019-12-07 21:26:20.945 [INFO]	received request
+	// 2019-12-07 21:26:20.945 [DEBU]	testing2
 }
