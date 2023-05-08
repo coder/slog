@@ -134,7 +134,7 @@ func Fmt(buf io.StringWriter, termW io.Writer, ent slog.SinkEntry,
 		lines := strings.Split(multilineVal, "\n")
 		for i, line := range lines[1:] {
 			if line != "" {
-				lines[i+1] = strings.Repeat(" ", len(multilineKey)+4) + line
+				lines[i+1] = strings.Repeat(" ", len(multilineKey)+2) + line
 			}
 		}
 		multilineVal = strings.Join(lines, "\n")
