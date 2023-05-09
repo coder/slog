@@ -64,7 +64,11 @@ func TestEntry(t *testing.T) {
 			"named",
 			slog.SinkEntry{
 				Level:       slog.LevelWarn,
-				LoggerNames: []string{"named", "meow"},
+				LoggerNames: []string{"some", "cat"},
+				Message:     "meow",
+				Fields: slog.M(
+					slog.F("breath", "stinky"),
+				),
 			},
 		},
 		{

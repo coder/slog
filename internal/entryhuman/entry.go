@@ -38,8 +38,7 @@ const TimeFormat = "2006-01-02 15:04:05.000"
 var (
 	renderer = lipgloss.NewRenderer(os.Stdout, termenv.WithUnsafe())
 
-	loggerNameStyle = renderer.NewStyle().Foreground(lipgloss.Color("#A47DFF"))
-	timeStyle       = renderer.NewStyle().Foreground(lipgloss.Color("#606366"))
+	timeStyle = renderer.NewStyle().Foreground(lipgloss.Color("#606366"))
 )
 
 func render(w io.Writer, st lipgloss.Style, s string) string {
@@ -108,9 +107,8 @@ func Fmt(
 	buf.WriteString("  ")
 
 	if len(ent.LoggerNames) > 0 {
-		loggerName := "(" + quoteKey(strings.Join(ent.LoggerNames, ".")) + ")"
-		buf.WriteString(render(termW, loggerNameStyle, loggerName))
-		buf.WriteString(tab)
+		loggerName := quoteKey(strings.Join(ent.LoggerNames, ".")) + ": "
+		buf.WriteString(loggerName)
 	}
 
 	var multilineKey string
