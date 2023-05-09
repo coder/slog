@@ -26,7 +26,7 @@ func TestMake(t *testing.T) {
 	et, rest, err := entryhuman.StripTimestamp(b.String())
 	assert.Success(t, "strip timestamp", err)
 	assert.False(t, "timestamp", et.IsZero())
-	assert.Equal(t, "entry", " [info]\t...\twowow=\"me\\nyou\"\n    msg= line1\n\n         line2\n", rest)
+	assert.Equal(t, "entry", " [info]  ...  wowow=\"me\\nyou\"\n    msg= line1\n\n         line2\n", rest)
 }
 
 func TestVisual(t *testing.T) {

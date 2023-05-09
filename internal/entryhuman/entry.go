@@ -54,6 +54,8 @@ func reset(w io.Writer, termW io.Writer) {
 	}
 }
 
+const tab = "  "
+
 // Fmt returns a human readable format for ent.
 //
 // We never return with a trailing newline because Go's testing framework adds one
@@ -78,12 +80,12 @@ func Fmt(
 	}
 	level = "[" + level + "]"
 	buf.WriteString(render(termW, levelStyle(ent.Level), level))
-	buf.WriteString("\t")
+	buf.WriteString("  ")
 
 	if len(ent.LoggerNames) > 0 {
 		loggerName := "(" + quoteKey(strings.Join(ent.LoggerNames, ".")) + ")"
 		buf.WriteString(render(termW, loggerNameStyle, loggerName))
-		buf.WriteString("\t")
+		buf.WriteString(tab)
 	}
 
 	var multilineKey string
@@ -127,13 +129,13 @@ func Fmt(
 		multilineVal = s
 	}
 
-	keyStyle := timeStyle.Copy()
+	keyStyle := timeStyle
 	// Help users distinguish logs by keeping some color in the equal signs.
-	equalsStyle := levelStyle(ent.Level)
+	equalsStyle := timeStyle
 
 	for i, f := range ent.Fields {
 		if i < len(ent.Fields) {
-			buf.WriteString("\t")
+			buf.WriteString(tab)
 		}
 		buf.WriteString(render(termW, keyStyle, quoteKey(f.Name)))
 		buf.WriteString(render(termW, equalsStyle, "="))
@@ -164,7 +166,7 @@ func Fmt(
 }
 
 var (
-	levelDebugStyle = renderer.NewStyle().Foreground(lipgloss.Color("#ffffff"))
+	levelDebugStyle = timeStyle.Copy()
 	levelInfoStyle  = renderer.NewStyle().Foreground(lipgloss.Color("#0091FF"))
 	levelWarnStyle  = renderer.NewStyle().Foreground(lipgloss.Color("#FFCF0D"))
 	levelErrorStyle = renderer.NewStyle().Foreground(lipgloss.Color("#FF5A0D"))
