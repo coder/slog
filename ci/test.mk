@@ -15,7 +15,7 @@ coveralls: gotest
 	  export CI_PULL_REQUEST="$$(jq .number "$$GITHUB_EVENT_PATH")"
 	  BUILD_NUMBER="$$BUILD_NUMBER-PR-$$CI_PULL_REQUEST"
 	fi
-	goveralls -coverprofile=ci/out/coverage.prof -service=github
+	go run github.com/mattn/goveralls@latest -coverprofile=ci/out/coverage.prof -service=github
 
 gotest:
 	go test -covermode=count -coverprofile=ci/out/coverage.prof -coverpkg=./... $${GOTESTFLAGS-} ./...

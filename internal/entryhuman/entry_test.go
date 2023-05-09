@@ -1,11 +1,13 @@
 package entryhuman_test
 
 import (
-	"io/ioutil"
+	"bytes"
+	"flag"
+	"fmt"
+	"io"
+	"os"
 	"testing"
 	"time"
-
-	"go.opencensus.io/trace"
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/assert"
@@ -14,81 +16,177 @@ import (
 
 var kt = time.Date(2000, time.February, 5, 4, 4, 4, 4, time.UTC)
 
+var updateGoldenFiles = flag.Bool("update-golden-files", false, "update golden files in testdata")
+
+type testObj struct {
+	foo int
+	bar int
+	dra []byte
+}
+
 func TestEntry(t *testing.T) {
 	t.Parallel()
 
-	test := func(t *testing.T, in slog.SinkEntry, exp string) {
-		act := entryhuman.Fmt(ioutil.Discard, in)
-		assert.Equal(t, "entry", exp, act)
+	type tcase struct {
+		name string
+		ent  slog.SinkEntry
 	}
 
-	t.Run("basic", func(t *testing.T) {
-		t.Parallel()
+	ents := []tcase{
+		{
+			"simpleNoFields",
+			slog.SinkEntry{
+				Message: "wowowow\tizi",
+				Time:    kt,
+				Level:   slog.LevelDebug,
 
-		test(t, slog.SinkEntry{
-			Message: "wowowow\tizi",
-			Time:    kt,
-			Level:   slog.LevelDebug,
-
-			File: "myfile",
-			Line: 100,
-			Func: "mypkg.ignored",
-		}, `2000-02-05 04:04:04.000 [DEBUG]	<mypkg/myfile:100>	ignored	"wowowow\tizi"`)
-	})
-
-	t.Run("multilineMessage", func(t *testing.T) {
-		t.Parallel()
-
-		test(t, slog.SinkEntry{
-			Message: "line1\nline2",
-			Level:   slog.LevelInfo,
-		}, `0001-01-01 00:00:00.000 [INFO]	<.:0>		...
-"msg": line1
-       line2`)
-	})
-
-	t.Run("multilineField", func(t *testing.T) {
-		t.Parallel()
-
-		test(t, slog.SinkEntry{
-			Message: "msg",
-			Level:   slog.LevelInfo,
-			Fields:  slog.M(slog.F("field", "line1\nline2")),
-		}, `0001-01-01 00:00:00.000 [INFO]	<.:0>		msg ...
-"field": line1
-         line2`)
-	})
-
-	t.Run("named", func(t *testing.T) {
-		t.Parallel()
-
-		test(t, slog.SinkEntry{
-			Level:       slog.LevelWarn,
-			LoggerNames: []string{"named", "meow"},
-		}, `0001-01-01 00:00:00.000 [WARN]	(named.meow)	<.:0>		""`)
-	})
-
-	t.Run("trace", func(t *testing.T) {
-		t.Parallel()
-
-		test(t, slog.SinkEntry{
-			Level: slog.LevelError,
-			SpanContext: trace.SpanContext{
-				SpanID:  trace.SpanID{0, 1, 2, 3, 4, 5, 6, 7},
-				TraceID: trace.TraceID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+				File: "myfile",
+				Line: 100,
+				Func: "mypkg.ignored",
 			},
-		}, `0001-01-01 00:00:00.000 [ERROR]	<.:0>		""	{"trace": "000102030405060708090a0b0c0d0e0f", "span": "0001020304050607"}`)
-	})
+		},
+		{
+			"multilineMessage",
+			slog.SinkEntry{
+				Message: "line1\nline2",
+				Level:   slog.LevelInfo,
+			},
+		},
+		{
+			"multilineField",
+			slog.SinkEntry{
+				Message: "msg",
+				Level:   slog.LevelInfo,
+				Fields:  slog.M(slog.F("field", "line1\nline2")),
+			},
+		},
+		{
+			"named",
+			slog.SinkEntry{
+				Level:       slog.LevelWarn,
+				LoggerNames: []string{"named", "meow"},
+			},
+		},
+		{
+			"funky",
+			slog.SinkEntry{
+				Level: slog.LevelWarn,
+				Fields: slog.M(
+					slog.F("funky^%&^&^key", "value"),
+					slog.F("funky^%&^&^key2", "@#\t \t \n"),
+				),
+			},
+		},
+		{
+			"spacey",
+			slog.SinkEntry{
+				Level: slog.LevelWarn,
+				Fields: slog.M(
+					slog.F("space in my key", "value in my value"),
+				),
+			},
+		},
+		{
+			"bytes",
+			slog.SinkEntry{
+				Level: slog.LevelWarn,
+				Fields: slog.M(
+					slog.F("somefile", []byte("blah bla\x01h blah")),
+				),
+			},
+		},
+		{
+			"object",
+			slog.SinkEntry{
+				Level: slog.LevelWarn,
+				Fields: slog.M(
+					slog.F("obj", slog.M(
+						slog.F("obj1", testObj{
+							foo: 1,
+							bar: 2,
+							dra: []byte("blah"),
+						}),
+						slog.F("obj2", testObj{
+							foo: 3,
+							bar: 4,
+							dra: []byte("blah"),
+						}),
+					)),
+					slog.F("map", map[string]string{
+						"key1": "value1",
+					}),
+				),
+			},
+		},
+	}
+	if *updateGoldenFiles {
+		ents, err := os.ReadDir("testdata")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, ent := range ents {
+			os.Remove("testdata/" + ent.Name())
+		}
+	}
 
-	t.Run("color", func(t *testing.T) {
-		t.Parallel()
+	for _, tc := range ents {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			goldenPath := fmt.Sprintf("testdata/%s.golden", tc.name)
 
-		act := entryhuman.Fmt(entryhuman.ForceColorWriter, slog.SinkEntry{
-			Level: slog.LevelCritical,
-			Fields: slog.M(
-				slog.F("hey", "hi"),
-			),
+			var gotBuf bytes.Buffer
+			entryhuman.Fmt(&gotBuf, io.Discard, tc.ent)
+
+			if *updateGoldenFiles {
+				err := os.WriteFile(goldenPath, gotBuf.Bytes(), 0o644)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return
+			}
+
+			wantByt, err := os.ReadFile(goldenPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, "entry matches", string(wantByt), gotBuf.String())
 		})
-		assert.Equal(t, "entry", "\x1b[0m\x1b[0m0001-01-01 00:00:00.000 \x1b[91m[CRITICAL]\x1b[0m\t\x1b[36m<.:0>	\x1b[0m\t\"\"\t{\x1b[34m\"hey\"\x1b[0m: \x1b[32m\"hi\"\x1b[0m}", act)
-	})
+	}
+}
+
+func BenchmarkFmt(b *testing.B) {
+	bench := func(b *testing.B, color bool) {
+		nfs := []int{1, 4, 16}
+		for _, nf := range nfs {
+			name := fmt.Sprintf("nf=%v", nf)
+			if color {
+				name = "Colored-" + name
+			}
+			b.Run(name, func(b *testing.B) {
+				fs := make([]slog.Field, nf)
+				for i := 0; i < nf; i++ {
+					fs[i] = slog.F("key", "value")
+				}
+				se := slog.SinkEntry{
+					Level: slog.LevelCritical,
+					Fields: slog.M(
+						fs...,
+					),
+				}
+				w := io.Discard
+				if color {
+					w = entryhuman.ForceColorWriter
+				}
+				b.ResetTimer()
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					entryhuman.Fmt(bytes.NewBuffer(nil), w, se)
+				}
+			})
+		}
+	}
+	bench(b, true)
+	bench(b, false)
 }

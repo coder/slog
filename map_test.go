@@ -187,7 +187,7 @@ func TestMap(t *testing.T) {
 		t.Parallel()
 
 		test(t, slog.M(
-			slog.F("val", time.Date(2000, 02, 05, 4, 4, 4, 0, time.UTC)),
+			slog.F("val", time.Date(2000, 0o2, 0o5, 4, 4, 4, 0, time.UTC)),
 		), `{
 			"val": "2000-02-05T04:04:04Z"
 		}`)
@@ -220,10 +220,6 @@ func TestMap(t *testing.T) {
 			"val": "{meow:hi bar:23 far:600}"
 		}`)
 	})
-}
-
-type meow struct {
-	a int
 }
 
 func indentJSON(t *testing.T, j string) string {
