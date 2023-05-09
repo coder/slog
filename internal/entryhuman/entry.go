@@ -57,6 +57,9 @@ func reset(w io.Writer, termW io.Writer) {
 }
 
 func formatValue(v interface{}) string {
+	if v == nil {
+		return "<nil>"
+	}
 	typ := reflect.TypeOf(v)
 	switch typ.Kind() {
 	case reflect.Struct, reflect.Map:

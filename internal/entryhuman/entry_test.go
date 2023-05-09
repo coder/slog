@@ -87,6 +87,15 @@ func TestEntry(t *testing.T) {
 			},
 		},
 		{
+			"nil",
+			slog.SinkEntry{
+				Level: slog.LevelWarn,
+				Fields: slog.M(
+					slog.F("nan", nil),
+				),
+			},
+		},
+		{
 			"bytes",
 			slog.SinkEntry{
 				Level: slog.LevelWarn,
