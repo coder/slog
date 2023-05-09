@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -18,6 +17,12 @@ import (
 var kt = time.Date(2000, time.February, 5, 4, 4, 4, 4, time.UTC)
 
 var updateGoldenFiles = flag.Bool("update-golden-files", false, "update golden files in testdata")
+
+type testObj struct {
+	foo int
+	bar int
+	dra []byte
+}
 
 func TestEntry(t *testing.T) {
 	t.Parallel()
@@ -81,6 +86,38 @@ func TestEntry(t *testing.T) {
 				),
 			},
 		},
+		{
+			"bytes",
+			slog.SinkEntry{
+				Level: slog.LevelWarn,
+				Fields: slog.M(
+					slog.F("somefile", []byte("blah bla\x01h blah")),
+				),
+			},
+		},
+		{
+			"object",
+			slog.SinkEntry{
+				Level: slog.LevelWarn,
+				Fields: slog.M(
+					slog.F("obj", slog.M(
+						slog.F("obj1", testObj{
+							foo: 1,
+							bar: 2,
+							dra: []byte("blah"),
+						}),
+						slog.F("obj2", testObj{
+							foo: 3,
+							bar: 4,
+							dra: []byte("blah"),
+						}),
+					)),
+					slog.F("map", map[string]string{
+						"key1": "value1",
+					}),
+				),
+			},
+		},
 	}
 	if *updateGoldenFiles {
 		ents, err := os.ReadDir("testdata")
@@ -99,7 +136,7 @@ func TestEntry(t *testing.T) {
 			goldenPath := fmt.Sprintf("testdata/%s.golden", tc.name)
 
 			var gotBuf bytes.Buffer
-			entryhuman.Fmt(&gotBuf, ioutil.Discard, tc.ent)
+			entryhuman.Fmt(&gotBuf, io.Discard, tc.ent)
 
 			if *updateGoldenFiles {
 				err := os.WriteFile(goldenPath, gotBuf.Bytes(), 0o644)

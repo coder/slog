@@ -4,9 +4,11 @@ package entryhuman
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -51,6 +53,26 @@ func render(w io.Writer, st lipgloss.Style, s string) string {
 func reset(w io.Writer, termW io.Writer) {
 	if shouldColor(termW) {
 		fmt.Fprintf(w, termenv.CSI+termenv.ResetSeq+"m")
+	}
+}
+
+func formatValue(v interface{}) string {
+	typ := reflect.TypeOf(v)
+	switch typ.Kind() {
+	case reflect.Struct, reflect.Map:
+		byt, err := json.Marshal(v)
+		if err != nil {
+			panic(err)
+		}
+		return string(byt)
+	case reflect.Slice:
+		// Byte slices are optimistically readable.
+		if typ.Elem().Kind() == reflect.Uint8 {
+			return fmt.Sprintf("%q", v)
+		}
+		fallthrough
+	default:
+		return quote(fmt.Sprintf("%+v", v))
 	}
 }
 
@@ -139,8 +161,8 @@ func Fmt(
 		}
 		buf.WriteString(render(termW, keyStyle, quoteKey(f.Name)))
 		buf.WriteString(render(termW, equalsStyle, "="))
-		valueStr := fmt.Sprintf("%+v", f.Value)
-		buf.WriteString(quote(valueStr))
+		valueStr := formatValue(f.Value)
+		buf.WriteString(valueStr)
 	}
 
 	if multilineVal != "" {
