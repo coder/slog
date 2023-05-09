@@ -74,9 +74,11 @@ func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 		return
 	}
 
-	var s strings.Builder
+	var sb strings.Builder
 	// The testing package logs to stdout and not stderr.
-	entryhuman.Fmt(&s, os.Stdout, ent)
+	entryhuman.Fmt(&sb, os.Stdout, ent)
+
+	s := sb.String()
 
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:
