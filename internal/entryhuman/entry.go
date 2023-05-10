@@ -4,6 +4,7 @@ package entryhuman
 
 import (
 	"bytes"
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -56,6 +57,13 @@ func reset(w io.Writer, termW io.Writer) {
 }
 
 func formatValue(v interface{}) string {
+	if vr, ok := v.(driver.Valuer); ok {
+		var err error
+		v, err = vr.Value()
+		if err != nil {
+			return fmt.Sprintf("error calling Value: %v", err)
+		}
+	}
 	if v == nil {
 		return "<nil>"
 	}

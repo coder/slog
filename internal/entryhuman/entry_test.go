@@ -2,6 +2,7 @@ package entryhuman_test
 
 import (
 	"bytes"
+	"database/sql"
 	"flag"
 	"fmt"
 	"io"
@@ -105,6 +106,16 @@ func TestEntry(t *testing.T) {
 				Level: slog.LevelWarn,
 				Fields: slog.M(
 					slog.F("somefile", []byte("blah bla\x01h blah")),
+				),
+			},
+		},
+		{
+			"driverValue",
+			slog.SinkEntry{
+				Level: slog.LevelWarn,
+				Fields: slog.M(
+					slog.F("val", sql.NullString{String: "dog", Valid: true}),
+					slog.F("inval", sql.NullString{String: "cat", Valid: false}),
 				),
 			},
 		},
