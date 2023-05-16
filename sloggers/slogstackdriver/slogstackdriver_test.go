@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"testing"
 
+	"go.uber.org/goleak"
+
 	"cloud.google.com/go/compute/metadata"
 	"go.opencensus.io/trace"
 	logpbtype "google.golang.org/genproto/googleapis/logging/type"
@@ -17,8 +19,10 @@ import (
 	"cdr.dev/slog/sloggers/slogstackdriver"
 )
 
-var bg = context.Background()
-var _, slogstackdriverTestFile, _, _ = runtime.Caller(0)
+var (
+	bg                               = context.Background()
+	_, slogstackdriverTestFile, _, _ = runtime.Caller(0)
+)
 
 func TestStackdriver(t *testing.T) {
 	t.Parallel()
@@ -33,7 +37,7 @@ func TestStackdriver(t *testing.T) {
 
 	j := entryjson.Filter(b.String(), "timestampSeconds")
 	j = entryjson.Filter(j, "timestampNanos")
-	exp := fmt.Sprintf(`{"logging.googleapis.com/severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":30,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects/%v/traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":false,"wowow":"me\nyou"}
+	exp := fmt.Sprintf(`{"logging.googleapis.com/severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":34,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects/%v/traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":false,"wowow":"me\nyou"}
 `, slogstackdriverTestFile, projectID, s.SpanContext().TraceID, s.SpanContext().SpanID)
 	assert.Equal(t, "entry", exp, j)
 }
@@ -46,4 +50,8 @@ func TestSevMapping(t *testing.T) {
 	assert.Equal(t, "level", logpbtype.LogSeverity_WARNING, slogstackdriver.Sev(slog.LevelWarn))
 	assert.Equal(t, "level", logpbtype.LogSeverity_ERROR, slogstackdriver.Sev(slog.LevelError))
 	assert.Equal(t, "level", logpbtype.LogSeverity_CRITICAL, slogstackdriver.Sev(slog.LevelCritical))
+}
+
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
 }

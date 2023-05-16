@@ -3,9 +3,11 @@
 package sloghuman // import "cdr.dev/slog/sloggers/sloghuman"
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"io"
-	"strings"
+	"sync"
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/entryhuman"
@@ -29,24 +31,40 @@ type humanSink struct {
 	w2 io.Writer
 }
 
+var bufPool = sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer(make([]byte, 0, 256))
+	},
+}
+
 func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
-	str := entryhuman.Fmt(s.w2, ent)
-	lines := strings.Split(str, "\n")
+	buf1 := bufPool.Get().(*bytes.Buffer)
+	buf1.Reset()
+	defer bufPool.Put(buf1)
+
+	buf2 := bufPool.Get().(*bytes.Buffer)
+	buf2.Reset()
+	defer bufPool.Put(buf2)
+
+	entryhuman.Fmt(buf1, s.w2, ent)
+
+	var (
+		i  int
+		sc = bufio.NewScanner(buf1)
+	)
 
 	// We need to add 4 spaces before every field line for readability.
 	// humanfmt doesn't do it for us because the testSink doesn't want
 	// it as *testing.T automatically does it.
-	fieldsLines := lines[1:]
-	for i, line := range fieldsLines {
-		if line == "" {
-			continue
+	for ; sc.Scan(); i++ {
+		if i > 0 && len(sc.Bytes()) > 0 {
+			buf2.Write([]byte("    "))
 		}
-		fieldsLines[i] = strings.Repeat(" ", 2) + line
+		buf2.Write(sc.Bytes())
+		buf2.WriteByte('\n')
 	}
 
-	str = strings.Join(lines, "\n")
-
-	s.w.Write("sloghuman", []byte(str+"\n"))
+	s.w.Write("sloghuman", buf2.Bytes())
 }
 
 func (s humanSink) Sync() {

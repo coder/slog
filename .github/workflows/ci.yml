@@ -12,38 +12,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  fmt:
-    runs-on: ubuntu-20.04
+  go:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-
-      - name: make fmt
-        uses: ./ci/image
+      - uses: actions/checkout@v3
+      - name: Cache npm
+        uses: actions/cache@v3
         with:
-          args: make fmt
-
-  lint:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: make lint
-        uses: ./ci/image
+          path: ~/.npm
+          key: "npm-cache"
+      - uses: actions/setup-go@v4
         with:
-          args: make lint
-
-  test:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: make test
-        uses: ./ci/image
-        with:
-          args: make test
+          go-version: "1.20"
+          cache-dependency-path: go.sum
+      - name: "make"
+        run: |
+          git config --global --add safe.directory /github/workspace
+          make -O -j fmt lint test
         env:
           COVERALLS_TOKEN: ${{ secrets.github_token }}
-
       - name: Upload coverage.html
         uses: actions/upload-artifact@v2
         with:

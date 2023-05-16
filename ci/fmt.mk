@@ -1,4 +1,4 @@
-fmt: modtidy gofmt goimports prettier
+fmt: modtidy gofmt prettier
 ifdef CI
 	if [[ $$(git ls-files --other --modified --exclude-standard) != "" ]]; then
 	  echo "Files need generation or are formatted incorrectly:"
@@ -13,13 +13,10 @@ modtidy: gen
 	go mod tidy
 
 gofmt: gen
-	gofmt -w -s .
-
-goimports: gen
-	goimports -w "-local=$$(go list -m)" .
+	go run mvdan.cc/gofumpt@latest -w .
 
 prettier:
-	prettier --write --print-width=120 --no-semi --trailing-comma=all --loglevel=warn $$(git ls-files "*.yml")
+	npx prettier --write --print-width=120 --no-semi --trailing-comma=all --loglevel=warn $$(git ls-files "*.yml")
 
 gen:
 	go generate ./...

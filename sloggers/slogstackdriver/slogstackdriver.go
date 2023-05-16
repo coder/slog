@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/compute/metadata"
 	"go.opencensus.io/trace"
@@ -22,7 +24,15 @@ import (
 //
 // See https://cloud.google.com/logging/docs/agent
 func Sink(w io.Writer) slog.Sink {
-	projectID, _ := metadata.ProjectID()
+	// When not running in Google Cloud, the default metadata client will
+	// leak a goroutine.
+	//
+	// We use a very short timeout because the metadata server should be
+	// within the same datacenter as the cloud instance.
+	client := metadata.NewClient(&http.Client{
+		Timeout: time.Second * 3,
+	})
+	projectID, _ := client.ProjectID()
 
 	return stackdriverSink{
 		projectID: projectID,

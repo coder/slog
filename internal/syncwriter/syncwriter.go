@@ -55,18 +55,20 @@ func (w *Writer) Sync(sinkName string) {
 		return
 	}
 	err := s.Sync()
-	if _, ok := w.w.(*os.File); ok {
-		// Opened files do not necessarily support syncing.
-		// E.g. stdout and stderr both do not so we need
-		// to ignore these errors.
-		// See https://github.com/uber-go/zap/issues/370
-		// See https://github.com/cdr/slog/pull/43
-		if errorsIsAny(err, syscall.EINVAL, syscall.ENOTTY, syscall.EBADF) {
-			return
+	if err != nil {
+		if _, ok := w.w.(*os.File); ok {
+			// Opened files do not necessarily support syncing.
+			// E.g. stdout and stderr both do not so we need
+			// to ignore these errors.
+			// See https://github.com/uber-go/zap/issues/370
+			// See https://github.com/cdr/slog/pull/43
+			if errorsIsAny(err, syscall.EINVAL, syscall.ENOTTY, syscall.EBADF) {
+				return
+			}
 		}
-	}
 
-	w.errorf("failed to sync %v: %+v", sinkName, err)
+		w.errorf("failed to sync %v: %+v", sinkName, err)
+	}
 }
 
 func errorsIsAny(err error, errs ...error) bool {

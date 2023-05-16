@@ -9,6 +9,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 
@@ -73,8 +74,11 @@ func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 		return
 	}
 
+	var sb strings.Builder
 	// The testing package logs to stdout and not stderr.
-	s := entryhuman.Fmt(os.Stdout, ent)
+	entryhuman.Fmt(&sb, os.Stdout, ent)
+
+	s := sb.String()
 
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:
