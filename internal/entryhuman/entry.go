@@ -64,6 +64,13 @@ func formatValue(v interface{}) string {
 			return fmt.Sprintf("error calling Value: %v", err)
 		}
 	}
+	if _, ok := v.(slog.Map); ok {
+		byt, err := json.Marshal(v)
+		if err != nil {
+			panic(err)
+		}
+		return string(byt)
+	}
 	if v == nil {
 		return "<nil>"
 	}
