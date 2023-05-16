@@ -80,21 +80,46 @@ func Make(sinks ...Sink) Logger {
 }
 
 // Debug logs the msg and fields at LevelDebug.
-func (l Logger) Debug(ctx context.Context, msg string, fields ...Field) {
+// See Info for information on the fields argument.
+func (l Logger) Debug(ctx context.Context, msg string, fields ...any) {
 	l.log(ctx, LevelDebug, msg, fields)
 }
 
 // Info logs the msg and fields at LevelInfo.
-func (l Logger) Info(ctx context.Context, msg string, fields ...Field) {
+// Fields may contain any combination of key value pairs, Field, and Map.
+// For example:
+//
+//	log.Info(ctx, "something happened", "user", "alex", slog.F("age", 20))
+//
+// is equivalent to:
+//
+//	log.Info(ctx, "something happened", slog.F("user", "alex"), slog.F("age", 20))
+//
+// is equivalent to:
+//
+//	log.Info(ctx, "something happened", slog.M(
+//		slog.F("user", "alex"),
+//		slog.F("age", 20),
+//	))
+//
+// is equivalent to:
+//
+//	log.Info(ctx, "something happened", "user", "alex", "age", 20)
+//
+// In general, prefer using key value pairs over Field and Map, as that is how
+// the standard library's slog package works.
+func (l Logger) Info(ctx context.Context, msg string, fields ...any) {
 	l.log(ctx, LevelInfo, msg, fields)
 }
 
 // Warn logs the msg and fields at LevelWarn.
+// See Info() for information on the fields argument.
 func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
 	l.log(ctx, LevelWarn, msg, fields)
 }
 
 // Error logs the msg and fields at LevelError.
+// See Info() for information on the fields argument.
 //
 // It will then Sync().
 func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
@@ -103,6 +128,7 @@ func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
 }
 
 // Critical logs the msg and fields at LevelCritical.
+// See Info() for information on the fields argument.
 //
 // It will then Sync().
 func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
@@ -155,7 +181,7 @@ func (l Logger) AppendSinks(s ...Sink) Logger {
 	return l
 }
 
-func (l Logger) log(ctx context.Context, level Level, msg string, fields Map) {
+func (l Logger) log(ctx context.Context, level Level, msg string, fields []any) {
 	ent := l.entry(ctx, level, msg, fields)
 	l.Log(ctx, ent)
 }
