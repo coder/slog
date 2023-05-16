@@ -114,7 +114,7 @@ func (l Logger) Info(ctx context.Context, msg string, fields ...any) {
 
 // Warn logs the msg and fields at LevelWarn.
 // See Info() for information on the fields argument.
-func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Warn(ctx context.Context, msg string, fields ...any) {
 	l.log(ctx, LevelWarn, msg, fields)
 }
 
@@ -122,7 +122,7 @@ func (l Logger) Warn(ctx context.Context, msg string, fields ...Field) {
 // See Info() for information on the fields argument.
 //
 // It will then Sync().
-func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Error(ctx context.Context, msg string, fields ...any) {
 	l.log(ctx, LevelError, msg, fields)
 	l.Sync()
 }
@@ -131,15 +131,16 @@ func (l Logger) Error(ctx context.Context, msg string, fields ...Field) {
 // See Info() for information on the fields argument.
 //
 // It will then Sync().
-func (l Logger) Critical(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Critical(ctx context.Context, msg string, fields ...any) {
 	l.log(ctx, LevelCritical, msg, fields)
 	l.Sync()
 }
 
 // Fatal logs the msg and fields at LevelFatal.
+// See Info() for information on the fields argument.
 //
 // It will then Sync() and os.Exit(1).
-func (l Logger) Fatal(ctx context.Context, msg string, fields ...Field) {
+func (l Logger) Fatal(ctx context.Context, msg string, fields ...any) {
 	l.log(ctx, LevelFatal, msg, fields)
 	l.Sync()
 
@@ -181,7 +182,32 @@ func (l Logger) AppendSinks(s ...Sink) Logger {
 	return l
 }
 
-func (l Logger) log(ctx context.Context, level Level, msg string, fields []any) {
+func (l Logger) log(ctx context.Context, level Level, msg string, rawFields []any) {
+	fields := make(Map, 0, len(rawFields))
+	var wipField Field
+	for i, f := range rawFields {
+		if wipField.Name != "" {
+			wipField.Value = f
+			fields = append(fields, wipField)
+			wipField = Field{}
+			continue
+		}
+		switch f := f.(type) {
+		case Field:
+			fields = append(fields, f)
+		case Map:
+			fields = append(fields, f...)
+		case string:
+			wipField.Name = f
+		default:
+			panic(fmt.Sprintf("unexpected field type %T at index %v (does it have a key?)", f, i))
+		}
+	}
+
+	if wipField.Name != "" {
+		panic(fmt.Sprintf("field %q has no value", wipField.Name))
+	}
+
 	ent := l.entry(ctx, level, msg, fields)
 	l.Log(ctx, ent)
 }
