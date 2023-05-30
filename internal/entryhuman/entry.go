@@ -12,7 +12,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 	"unicode"
 
@@ -226,25 +225,9 @@ func isTTY(w io.Writer) bool {
 	if w == forceColorWriter {
 		return true
 	}
-	// SyscallConn is safe during file close.
-	if sc, ok := w.(interface {
-		SyscallConn() (syscall.RawConn, error)
-	}); ok {
-		conn, err := sc.SyscallConn()
-		if err != nil {
-			return false
-		}
-		var isTerm bool
-		err = conn.Control(func(fd uintptr) {
-			isTerm = terminal.IsTerminal(int(fd))
-		})
-		if err != nil {
-			return false
-		}
-		return isTerm
-	}
-	// Fallback to unsafe Fd.
-	f, ok := w.(interface{ Fd() uintptr })
+	f, ok := w.(interface {
+		Fd() uintptr
+	})
 	return ok && terminal.IsTerminal(int(f.Fd()))
 }
 
