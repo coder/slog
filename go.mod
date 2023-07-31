@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/logging v1.7.0
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/google/go-cmp v0.5.9
-	github.com/muesli/termenv v0.15.1
+	github.com/muesli/termenv v0.15.2
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.opentelemetry.io/otel/trace v1.16.0
 	go.uber.org/goleak v1.2.1
@@ -24,7 +24,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
