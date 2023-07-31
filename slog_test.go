@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"go.opencensus.io/trace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/assert"
@@ -92,7 +92,11 @@ func TestLogger(t *testing.T) {
 		l = l.Named("hello")
 		l = l.Named("hello2")
 
-		ctx, span := trace.StartSpan(bg, "trace")
+		tp := sdktrace.NewTracerProvider()
+		tracer := tp.Tracer("tracer")
+		ctx, span := tracer.Start(bg, "trace")
+		span.End()
+		_ = tp.Shutdown(bg)
 		ctx = slog.With(ctx, slog.F("ctx", io.EOF))
 		l = l.With(slog.F("with", 2))
 
@@ -109,7 +113,7 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func3",
-			Line: 99,
+			Line: 103,
 
 			SpanContext: span.SpanContext(),
 

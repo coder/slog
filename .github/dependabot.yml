@@ -21,3 +21,7 @@ updates:
       timezone: "America/Chicago"
     commit-message:
       prefix: "chore"
+    groups:
+      otel:
+        patterns:
+          - "go.opentelemetry.io/*"

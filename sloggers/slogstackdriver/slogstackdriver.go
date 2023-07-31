@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
-	"go.opencensus.io/trace"
+	"cloud.google.com/go/logging/apiv2/loggingpb"
+	"go.opentelemetry.io/otel/trace"
 	logpbtype "google.golang.org/genproto/googleapis/logging/type"
-	logpb "google.golang.org/genproto/googleapis/logging/v2"
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/syncwriter"
@@ -29,10 +29,14 @@ func Sink(w io.Writer) slog.Sink {
 	//
 	// We use a very short timeout because the metadata server should be
 	// within the same datacenter as the cloud instance.
-	client := metadata.NewClient(&http.Client{
-		Timeout: time.Second * 3,
-	})
+	tp := http.DefaultTransport.(*http.Transport).Clone()
+	httpClient := &http.Client{
+		Timeout:   time.Second * 3,
+		Transport: tp,
+	}
+	client := metadata.NewClient(httpClient)
 	projectID, _ := client.ProjectID()
+	httpClient.CloseIdleConnections()
 
 	return stackdriverSink{
 		projectID: projectID,
@@ -56,7 +60,7 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 		// Unfortunately, both of these fields are required.
 		slog.F("timestampSeconds", ent.Time.Unix()),
 		slog.F("timestampNanos", ent.Time.UnixNano()%1e9),
-		slog.F("logging.googleapis.com/sourceLocation", &logpb.LogEntrySourceLocation{
+		slog.F("logging.googleapis.com/sourceLocation", &loggingpb.LogEntrySourceLocation{
 			File:     ent.File,
 			Line:     int64(ent.Line),
 			Function: ent.Func,
@@ -64,15 +68,15 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	)
 
 	if len(ent.LoggerNames) > 0 {
-		e = append(e, slog.F("logging.googleapis.com/operation", &logpb.LogEntryOperation{
+		e = append(e, slog.F("logging.googleapis.com/operation", &loggingpb.LogEntryOperation{
 			Producer: strings.Join(ent.LoggerNames, "."),
 		}))
 	}
 
-	if ent.SpanContext != (trace.SpanContext{}) {
+	if ent.SpanContext.IsValid() {
 		e = append(e,
-			slog.F("logging.googleapis.com/trace", s.traceField(ent.SpanContext.TraceID)),
-			slog.F("logging.googleapis.com/spanId", ent.SpanContext.SpanID.String()),
+			slog.F("logging.googleapis.com/trace", s.traceField(ent.SpanContext.TraceID())),
+			slog.F("logging.googleapis.com/spanId", ent.SpanContext.SpanID().String()),
 			slog.F("logging.googleapis.com/trace_sampled", ent.SpanContext.IsSampled()),
 		)
 	}

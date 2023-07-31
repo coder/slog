@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"io"
 
-	"go.opencensus.io/trace"
-
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/syncwriter"
 )
@@ -57,10 +55,10 @@ func (s jsonSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 		m = append(m, slog.F("logger_names", ent.LoggerNames))
 	}
 
-	if ent.SpanContext != (trace.SpanContext{}) {
+	if ent.SpanContext.IsValid() {
 		m = append(m,
-			slog.F("trace", ent.SpanContext.TraceID),
-			slog.F("span", ent.SpanContext.SpanID),
+			slog.F("trace", ent.SpanContext.TraceID()),
+			slog.F("span", ent.SpanContext.SpanID()),
 		)
 	}
 
