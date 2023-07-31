@@ -17,7 +17,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 	"golang.org/x/xerrors"
 
 	"cdr.dev/slog"
@@ -227,7 +227,7 @@ func isTTY(w io.Writer) bool {
 	f, ok := w.(interface {
 		Fd() uintptr
 	})
-	return ok && terminal.IsTerminal(int(f.Fd()))
+	return ok && term.IsTerminal(int(f.Fd()))
 }
 
 func shouldColor(w io.Writer) bool {
