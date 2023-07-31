@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/google/go-cmp v0.5.9
-	github.com/muesli/termenv v0.15.1
+	github.com/muesli/termenv v0.15.2
 	go.opencensus.io v0.24.0
 	go.uber.org/goleak v1.2.1
 	golang.org/x/crypto v0.11.0
@@ -22,7 +22,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
