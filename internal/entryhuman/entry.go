@@ -17,7 +17,6 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
-	"go.opencensus.io/trace"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/xerrors"
 
@@ -130,7 +129,7 @@ func Fmt(
 	}
 	buf.WriteString(msg)
 
-	if ent.SpanContext != (trace.SpanContext{}) {
+	if ent.SpanContext.IsValid() {
 		ent.Fields = append(slog.M(
 			slog.F("trace", ent.SpanContext.TraceID),
 			slog.F("span", ent.SpanContext.SpanID),

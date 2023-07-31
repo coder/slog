@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var defaultExitFn = os.Exit
@@ -218,7 +218,7 @@ func (l Logger) entry(ctx context.Context, level Level, msg string, fields Map) 
 		Level:       level,
 		Message:     msg,
 		Fields:      fieldsFromContext(ctx).append(fields),
-		SpanContext: trace.FromContext(ctx).SpanContext(),
+		SpanContext: trace.SpanContextFromContext(ctx),
 	}
 	ent = ent.fillLoc(l.skip + 3)
 	return ent

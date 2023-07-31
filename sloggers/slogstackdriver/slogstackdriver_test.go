@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"runtime"
 	"testing"
+	"time"
 
 	"go.uber.org/goleak"
 
 	"cloud.google.com/go/compute/metadata"
-	"go.opencensus.io/trace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	logpbtype "google.golang.org/genproto/googleapis/logging/type"
 
 	"cdr.dev/slog"
@@ -27,18 +29,22 @@ var (
 func TestStackdriver(t *testing.T) {
 	t.Parallel()
 
-	ctx, s := trace.StartSpan(bg, "meow")
+	tp := sdktrace.NewTracerProvider()
+	tracer := tp.Tracer("tracer")
+	ctx, span := tracer.Start(bg, "trace")
+	span.End()
+	tp.Shutdown(bg)
 	b := &bytes.Buffer{}
 	l := slog.Make(slogstackdriver.Sink(b))
 	l = l.Named("meow")
 	l.Error(ctx, "line1\n\nline2", slog.F("wowow", "me\nyou"))
 
-	projectID, _ := metadata.ProjectID()
+	projectID, _ := metadataClient(t).ProjectID()
 
 	j := entryjson.Filter(b.String(), "timestampSeconds")
 	j = entryjson.Filter(j, "timestampNanos")
-	exp := fmt.Sprintf(`{"logging.googleapis.com/severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":34,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects/%v/traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":false,"wowow":"me\nyou"}
-`, slogstackdriverTestFile, projectID, s.SpanContext().TraceID, s.SpanContext().SpanID)
+	exp := fmt.Sprintf(`{"logging.googleapis.com/severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":40,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects/%v/traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":%v,"wowow":"me\nyou"}
+`, slogstackdriverTestFile, projectID, span.SpanContext().TraceID(), span.SpanContext().SpanID(), span.SpanContext().IsSampled())
 	assert.Equal(t, "entry", exp, j)
 }
 
@@ -54,4 +60,20 @@ func TestSevMapping(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	goleak.VerifyTestMain(m)
+}
+
+func metadataClient(t testing.TB) *metadata.Client {
+	// When not running in Google Cloud, the default metadata client will
+	// leak a goroutine.
+	//
+	// We use a very short timeout because the metadata server should be
+	// within the same datacenter as the cloud instance.
+	tp := http.DefaultTransport.(*http.Transport).Clone()
+	httpClient := &http.Client{
+		Timeout:   time.Second * 3,
+		Transport: tp,
+	}
+	client := metadata.NewClient(httpClient)
+	t.Cleanup(httpClient.CloseIdleConnections)
+	return client
 }
