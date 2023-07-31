@@ -26,7 +26,7 @@ func TestMake(t *testing.T) {
 	tracer := tp.Tracer("tracer")
 	ctx, span := tracer.Start(bg, "trace")
 	span.End()
-	tp.Shutdown(bg)
+	_ = tp.Shutdown(bg)
 	b := &bytes.Buffer{}
 	l := slog.Make(slogjson.Sink(b))
 	l = l.Named("named")

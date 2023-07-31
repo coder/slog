@@ -96,7 +96,7 @@ func TestLogger(t *testing.T) {
 		tracer := tp.Tracer("tracer")
 		ctx, span := tracer.Start(bg, "trace")
 		span.End()
-		tp.Shutdown(bg)
+		_ = tp.Shutdown(bg)
 		ctx = slog.With(ctx, slog.F("ctx", io.EOF))
 		l = l.With(slog.F("with", 2))
 
