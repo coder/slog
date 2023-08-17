@@ -178,6 +178,34 @@ func TestEntry(t *testing.T) {
 			assert.Equal(t, "entry matches", string(wantByt), gotBuf.String())
 		})
 	}
+
+	t.Run("isTTY during file close", func(t *testing.T) {
+		t.Parallel()
+
+		tmpdir := t.TempDir()
+		f, err := os.CreateTemp(tmpdir, "slog")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		done := make(chan struct{}, 2)
+		go func() {
+			entryhuman.Fmt(new(bytes.Buffer), f, slog.SinkEntry{
+				Level: slog.LevelCritical,
+				Fields: slog.M(
+					slog.F("hey", "hi"),
+				),
+			})
+			done <- struct{}{}
+		}()
+		go func() {
+			_ = f.Close()
+			done <- struct{}{}
+		}()
+		<-done
+		<-done
+	})
 }
 
 func BenchmarkFmt(b *testing.B) {
