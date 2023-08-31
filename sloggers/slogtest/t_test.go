@@ -55,7 +55,7 @@ func TestCleanup(t *testing.T) {
 		fn()
 	}
 
-	// This shoud not log since the logger was cleaned up.
+	// This should not log since the logger was cleaned up.
 	l.Info(bg, "hello")
 	assert.Equal(t, "no logs", 0, tb.logs)
 }

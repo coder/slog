@@ -7,6 +7,7 @@ package slogtest // import "cdr.dev/slog/sloggers/slogtest"
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -78,19 +79,19 @@ func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	// The testing package logs to stdout and not stderr.
 	entryhuman.Fmt(&sb, os.Stdout, ent)
 
-	s := sb.String()
-
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:
-		ts.tb.Log(s)
-	case slog.LevelError, slog.LevelCritical:
-		if ts.opts.IgnoreErrors {
-			ts.tb.Log(s)
+		ts.tb.Log(sb.String())
+	case slog.LevelError, slog.LevelCritical, slog.LevelFatal:
+		if ts.opts.IgnoreErrors && ent.Level != slog.LevelFatal {
+			ts.tb.Log(sb.String())
 		} else {
-			ts.tb.Error(s)
+			sb.WriteString(fmt.Sprintf(
+				"\n *** slogtest: log detected at level %s; TEST FAILURE ***",
+				ent.Level,
+			))
+			ts.tb.Error(sb.String())
 		}
-	case slog.LevelFatal:
-		ts.tb.Fatal(s)
 	}
 }
 
