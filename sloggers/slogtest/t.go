@@ -82,8 +82,8 @@ func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:
 		ts.tb.Log(sb.String())
-	case slog.LevelError, slog.LevelCritical, slog.LevelFatal:
-		if ts.opts.IgnoreErrors && ent.Level != slog.LevelFatal {
+	case slog.LevelError, slog.LevelCritical:
+		if ts.opts.IgnoreErrors {
 			ts.tb.Log(sb.String())
 		} else {
 			sb.WriteString(fmt.Sprintf(
@@ -92,6 +92,9 @@ func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 			))
 			ts.tb.Error(sb.String())
 		}
+	case slog.LevelFatal:
+		sb.WriteString("\n *** slogtest: FATAL log detected; TEST FAILURE ***")
+		ts.tb.Fatal(sb.String())
 	}
 }
 
