@@ -43,7 +43,7 @@ func TestStackdriver(t *testing.T) {
 
 	j := entryjson.Filter(b.String(), "timestampSeconds")
 	j = entryjson.Filter(j, "timestampNanos")
-	exp := fmt.Sprintf(`{"logging.googleapis.com/severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":40,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects/%v/traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":%v,"wowow":"me\nyou"}
+	exp := fmt.Sprintf(`{"logging.googleapis.com/severity":"ERROR","severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":40,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects/%v/traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":%v,"wowow":"me\nyou"}
 `, slogstackdriverTestFile, projectID, span.SpanContext().TraceID(), span.SpanContext().SpanID(), span.SpanContext().IsSampled())
 	assert.Equal(t, "entry", exp, j)
 }

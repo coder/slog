@@ -56,6 +56,7 @@ func (s stackdriverSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	// https://cloud.google.com/stackdriver/docs/solutions/agents/ops-agent/configuration#special-fields
 	e := slog.M(
 		slog.F("logging.googleapis.com/severity", sev(ent.Level)),
+		slog.F("severity", sev(ent.Level)),
 		slog.F("message", ent.Message),
 		// Unfortunately, both of these fields are required.
 		slog.F("timestampSeconds", ent.Time.Unix()),
