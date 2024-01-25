@@ -14,6 +14,8 @@ import (
 	"sync"
 	"testing"
 
+	"golang.org/x/xerrors"
+
 	"cdr.dev/slog"
 	"cdr.dev/slog/internal/entryhuman"
 	"cdr.dev/slog/sloggers/sloghuman"
@@ -36,12 +38,26 @@ type Options struct {
 	// conditions exist when t.Log is called concurrently of a test exiting. Set
 	// to true if you don't need this behavior.
 	SkipCleanup bool
+	// IgnoredErrorValues causes the test logger not to error the test on Error
+	// if the SinkEntry contains one of the listed errors in its "error" Field.
+	// Errors are matched using xerrors.Is().
+	//
+	// By default, context.Canceled and context.DeadlineExceeded are included,
+	// as these are nearly always benign in testing. Override to []error{} (zero
+	// length error slice) to disable the whitelist entirely.
+	IgnoredErrorIs []error
 }
 
 // Make creates a Logger that writes logs to tb in a human readable format.
 func Make(tb testing.TB, opts *Options) slog.Logger {
 	if opts == nil {
 		opts = &Options{}
+	}
+	if opts.IgnoredErrorIs == nil {
+		opts.IgnoredErrorIs = []error{
+			context.Canceled,
+			context.DeadlineExceeded,
+		}
 	}
 
 	sink := &testSink{
@@ -83,7 +99,7 @@ func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:
 		ts.tb.Log(sb.String())
 	case slog.LevelError, slog.LevelCritical:
-		if ts.opts.IgnoreErrors {
+		if ts.shouldIgnoreError(ent) {
 			ts.tb.Log(sb.String())
 		} else {
 			sb.WriteString(fmt.Sprintf(
@@ -96,6 +112,24 @@ func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 		sb.WriteString("\n *** slogtest: FATAL log detected; TEST FAILURE ***")
 		ts.tb.Fatal(sb.String())
 	}
+}
+
+func (ts *testSink) shouldIgnoreError(ent slog.SinkEntry) bool {
+	if ts.opts.IgnoreErrors {
+		return true
+	}
+	for _, f := range ent.Fields {
+		if f.Name == "error" {
+			if err, ok := f.Value.(error); ok {
+				for _, ig := range ts.opts.IgnoredErrorIs {
+					if xerrors.Is(err, ig) {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (ts *testSink) Sync() {}
