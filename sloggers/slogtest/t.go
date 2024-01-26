@@ -38,7 +38,7 @@ type Options struct {
 	// conditions exist when t.Log is called concurrently of a test exiting. Set
 	// to true if you don't need this behavior.
 	SkipCleanup bool
-	// IgnoredErrorValues causes the test logger not to error the test on Error
+	// IgnoredErrorIs causes the test logger not to error the test on Error
 	// if the SinkEntry contains one of the listed errors in its "error" Field.
 	// Errors are matched using xerrors.Is().
 	//
@@ -48,16 +48,15 @@ type Options struct {
 	IgnoredErrorIs []error
 }
 
-// Make creates a Logger that writes logs to tb in a human readable format.
+var DefaultIgnoredErrorIs = []error{context.Canceled, context.DeadlineExceeded}
+
+// Make creates a Logger that writes logs to tb in a human-readable format.
 func Make(tb testing.TB, opts *Options) slog.Logger {
 	if opts == nil {
 		opts = &Options{}
 	}
 	if opts.IgnoredErrorIs == nil {
-		opts.IgnoredErrorIs = []error{
-			context.Canceled,
-			context.DeadlineExceeded,
-		}
+		opts.IgnoredErrorIs = DefaultIgnoredErrorIs
 	}
 
 	sink := &testSink{
@@ -82,7 +81,7 @@ type testSink struct {
 	testDone bool
 }
 
-func (ts *testSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
+func (ts *testSink) LogEntry(_ context.Context, ent slog.SinkEntry) {
 	ts.mu.RLock()
 	defer ts.mu.RUnlock()
 
