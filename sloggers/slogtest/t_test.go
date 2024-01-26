@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"golang.org/x/xerrors"
+
+	"cdr.dev/slog"
 	"cdr.dev/slog/internal/assert"
 	"cdr.dev/slog/sloggers/slogtest"
 )
@@ -14,6 +17,12 @@ func TestStateless(t *testing.T) {
 	tb := &fakeTB{}
 	slogtest.Debug(tb, "hello")
 	slogtest.Info(tb, "hello")
+
+	slogtest.Error(tb, "canceled", slog.Error(xerrors.Errorf("test %w:", context.Canceled)))
+	assert.Equal(t, "errors", 0, tb.errors)
+
+	slogtest.Error(tb, "deadline", slog.Error(xerrors.Errorf("test %w:", context.DeadlineExceeded)))
+	assert.Equal(t, "errors", 0, tb.errors)
 
 	slogtest.Error(tb, "hello")
 	assert.Equal(t, "errors", 1, tb.errors)
@@ -43,6 +52,60 @@ func TestIgnoreErrors(t *testing.T) {
 	}()
 
 	l.Fatal(bg, "hello")
+}
+
+func TestIgnoreErrorIs_Default(t *testing.T) {
+	t.Parallel()
+
+	tb := &fakeTB{}
+	l := slogtest.Make(tb, nil)
+
+	l.Error(bg, "canceled", slog.Error(xerrors.Errorf("test %w:", context.Canceled)))
+	assert.Equal(t, "errors", 0, tb.errors)
+
+	l.Error(bg, "deadline", slog.Error(xerrors.Errorf("test %w:", context.DeadlineExceeded)))
+	assert.Equal(t, "errors", 0, tb.errors)
+
+	l.Error(bg, "new", slog.Error(xerrors.New("test")))
+	assert.Equal(t, "errors", 1, tb.errors)
+
+	defer func() {
+		recover()
+		assert.Equal(t, "fatals", 1, tb.fatals)
+	}()
+
+	l.Fatal(bg, "hello", slog.Error(xerrors.Errorf("fatal %w:", context.Canceled)))
+}
+
+func TestIgnoreErrorIs_Explicit(t *testing.T) {
+	t.Parallel()
+
+	tb := &fakeTB{}
+	ignored := xerrors.New("ignored")
+	notIgnored := xerrors.New("not ignored")
+	l := slogtest.Make(tb, &slogtest.Options{IgnoredErrorIs: []error{ignored}})
+
+	l.Error(bg, "ignored", slog.Error(xerrors.Errorf("test %w:", ignored)))
+	assert.Equal(t, "errors", 0, tb.errors)
+
+	l.Error(bg, "not ignored", slog.Error(xerrors.Errorf("test %w:", notIgnored)))
+	assert.Equal(t, "errors", 1, tb.errors)
+
+	l.Error(bg, "canceled", slog.Error(xerrors.Errorf("test %w:", context.Canceled)))
+	assert.Equal(t, "errors", 2, tb.errors)
+
+	l.Error(bg, "deadline", slog.Error(xerrors.Errorf("test %w:", context.DeadlineExceeded)))
+	assert.Equal(t, "errors", 3, tb.errors)
+
+	l.Error(bg, "new", slog.Error(xerrors.New("test")))
+	assert.Equal(t, "errors", 4, tb.errors)
+
+	defer func() {
+		recover()
+		assert.Equal(t, "fatals", 1, tb.fatals)
+	}()
+
+	l.Fatal(bg, "hello", slog.Error(xerrors.Errorf("test %w:", ignored)))
 }
 
 func TestCleanup(t *testing.T) {
