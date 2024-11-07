@@ -13,7 +13,8 @@ modtidy: gen
 	go mod tidy
 
 gofmt: gen
-	go run mvdan.cc/gofumpt@latest -w .
+	# gofumpt v0.7.0 requires Go 1.22 or later.
+	go run mvdan.cc/gofumpt@v0.6.0 -w .
 
 prettier:
 	npx prettier --write --print-width=120 --no-semi --trailing-comma=all --loglevel=warn $$(git ls-files "*.yml")
