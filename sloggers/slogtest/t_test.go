@@ -2,6 +2,7 @@ package slogtest_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"golang.org/x/xerrors"
@@ -108,6 +109,46 @@ func TestIgnoreErrorIs_Explicit(t *testing.T) {
 	l.Fatal(bg, "hello", slog.Error(xerrors.Errorf("test %w:", ignored)))
 }
 
+func TestIgnoreErrorFn(t *testing.T) {
+	t.Parallel()
+
+	tb := &fakeTB{}
+	ignored := testCodedError{code: 777}
+	notIgnored := testCodedError{code: 911}
+	l := slogtest.Make(tb, &slogtest.Options{IgnoreErrorFn: func(ent slog.SinkEntry) bool {
+		err, ok := slogtest.FindFirstError(ent)
+		if !ok {
+			t.Error("did not contain an error")
+			return false
+		}
+		ce := testCodedError{}
+		if !xerrors.As(err, &ce) {
+			return false
+		}
+		return ce.code != 911
+	}})
+
+	l.Error(bg, "ignored", slog.Error(xerrors.Errorf("test %w:", ignored)))
+	assert.Equal(t, "errors", 0, tb.errors)
+
+	l.Error(bg, "not ignored", slog.Error(xerrors.Errorf("test %w:", notIgnored)))
+	assert.Equal(t, "errors", 1, tb.errors)
+
+	// still ignored by default for IgnoredErrorIs
+	l.Error(bg, "canceled", slog.Error(xerrors.Errorf("test %w:", context.Canceled)))
+	assert.Equal(t, "errors", 1, tb.errors)
+
+	l.Error(bg, "new", slog.Error(xerrors.New("test")))
+	assert.Equal(t, "errors", 2, tb.errors)
+
+	defer func() {
+		recover()
+		assert.Equal(t, "fatals", 1, tb.fatals)
+	}()
+
+	l.Fatal(bg, "hello", slog.Error(xerrors.Errorf("test %w:", ignored)))
+}
+
 func TestCleanup(t *testing.T) {
 	t.Parallel()
 
@@ -162,4 +203,12 @@ func (tb *fakeTB) Fatal(v ...interface{}) {
 
 func (tb *fakeTB) Cleanup(fn func()) {
 	tb.cleanups = append(tb.cleanups, fn)
+}
+
+type testCodedError struct {
+	code int
+}
+
+func (e testCodedError) Error() string {
+	return fmt.Sprintf("code: %d", e.code)
 }
