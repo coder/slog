@@ -46,6 +46,13 @@ type Options struct {
 	// as these are nearly always benign in testing. Override to []error{} (zero
 	// length error slice) to disable the whitelist entirely.
 	IgnoredErrorIs []error
+	// IgnoreErrorFn, if non-nil, defines a function that should return true if
+	// the given SinkEntry should not error the test on Error or Critical.  The
+	// result of this function is logically ORed with ignore directives defined
+	// by IgnoreErrors and IgnoredErrorIs. To depend exclusively on
+	// IgnoreErrorFn, set IgnoreErrors=false and IgnoredErrorIs=[]error{} (zero
+	// length error slice).
+	IgnoreErrorFn func(slog.SinkEntry) bool
 }
 
 var DefaultIgnoredErrorIs = []error{context.Canceled, context.DeadlineExceeded}
@@ -117,16 +124,15 @@ func (ts *testSink) shouldIgnoreError(ent slog.SinkEntry) bool {
 	if ts.opts.IgnoreErrors {
 		return true
 	}
-	for _, f := range ent.Fields {
-		if f.Name == "error" {
-			if err, ok := f.Value.(error); ok {
-				for _, ig := range ts.opts.IgnoredErrorIs {
-					if xerrors.Is(err, ig) {
-						return true
-					}
-				}
+	if err, ok := FindFirstError(ent); ok {
+		for _, ig := range ts.opts.IgnoredErrorIs {
+			if xerrors.Is(err, ig) {
+				return true
 			}
 		}
+	}
+	if ts.opts.IgnoreErrorFn != nil {
+		return ts.opts.IgnoreErrorFn(ent)
 	}
 	return false
 }
@@ -161,4 +167,17 @@ func Error(t testing.TB, msg string, fields ...any) {
 func Fatal(t testing.TB, msg string, fields ...any) {
 	slog.Helper()
 	l(t).Fatal(ctx, msg, fields...)
+}
+
+// FindFirstError finds the first slog.Field named "error" that contains an
+// error value.
+func FindFirstError(ent slog.SinkEntry) (err error, ok bool) {
+	for _, f := range ent.Fields {
+		if f.Name == "error" {
+			if err, ok = f.Value.(error); ok {
+				return err, true
+			}
+		}
+	}
+	return nil, false
 }
