@@ -2,6 +2,7 @@ package slog
 
 import (
 	"bytes"
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -70,6 +71,14 @@ func marshalList(rv reflect.Value) []byte {
 }
 
 func encode(v interface{}) []byte {
+	if vr, ok := v.(driver.Valuer); ok {
+		var err error
+		v, err = vr.Value()
+		if err != nil {
+			return encodeJSON(fmt.Sprintf("error calling Value: %v", err))
+		}
+	}
+
 	switch v := v.(type) {
 	case json.Marshaler:
 		return encodeJSON(v)
