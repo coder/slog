@@ -53,10 +53,14 @@ func TestNoDriverValue(t *testing.T) {
 		String: "dog",
 		Valid:  false,
 	}
-	l.Error(bg, "error!", slog.F("inval", invalidField), slog.F("val", validField))
+	validInt := sql.NullInt64{
+		Int64: 42,
+		Valid: true,
+	}
+	l.Error(bg, "error!", slog.F("inval", invalidField), slog.F("val", validField), slog.F("int", validInt))
 
 	j := entryjson.Filter(b.String(), "ts")
-	exp := fmt.Sprintf(`{"level":"ERROR","msg":"error!","caller":"%v:56","func":"cdr.dev/slog/sloggers/slogjson_test.TestNoDriverValue","logger_names":["named"],"fields":{"inval":null,"val":"cat"}}
+	exp := fmt.Sprintf(`{"level":"ERROR","msg":"error!","caller":"%v:60","func":"cdr.dev/slog/sloggers/slogjson_test.TestNoDriverValue","logger_names":["named"],"fields":{"inval":null,"val":"cat","int":42}}
 `, slogjsonTestFile)
 	assert.Equal(t, "entry", exp, j)
 }
