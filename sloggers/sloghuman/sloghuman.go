@@ -3,7 +3,6 @@
 package sloghuman // import "cdr.dev/slog/sloggers/sloghuman"
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"io"
@@ -42,26 +41,45 @@ func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	buf1.Reset()
 	defer bufPool.Put(buf1)
 
+	entryhuman.OptimizedFmt(buf1, s.w2, ent)
+	by := buf1.Bytes()
+
+	// Prepare output buffer and indent lines after the first.
 	buf2 := bufPool.Get().(*bytes.Buffer)
 	buf2.Reset()
 	defer bufPool.Put(buf2)
 
-	entryhuman.Fmt(buf1, s.w2, ent)
+	// Pre-grow: worst-case add 4 spaces per non-empty line after the first.
+	newlines := bytes.Count(by, []byte{'\n'})
+	buf2.Grow(len(by) + newlines*4)
 
-	var (
-		i  int
-		sc = bufio.NewScanner(buf1)
-	)
-
-	// We need to add 4 spaces before every field line for readability.
-	// humanfmt doesn't do it for us because the testSink doesn't want
-	// it as *testing.T automatically does it.
-	for ; sc.Scan(); i++ {
-		if i > 0 && len(sc.Bytes()) > 0 {
-			buf2.Write([]byte("    "))
+	start := 0
+	lineIdx := 0
+	for {
+		idx := bytes.IndexByte(by[start:], '\n')
+		var line []byte
+		if idx >= 0 {
+			line = by[start : start+idx]
+		} else {
+			line = by[start:]
 		}
-		buf2.Write(sc.Bytes())
+
+		if lineIdx > 0 && len(line) > 0 {
+			buf2.WriteString("    ")
+		}
+		buf2.Write(line)
 		buf2.WriteByte('\n')
+
+		if idx < 0 {
+			break
+		}
+		start += idx + 1
+		lineIdx++
+		if start >= len(by) {
+			// The original logic always wrote a trailing newline
+			// even for an empty last line; we already wrote it.
+			break
+		}
 	}
 
 	s.w.Write("sloghuman", buf2.Bytes())

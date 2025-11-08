@@ -88,6 +88,8 @@ func formatValue(v interface{}) string {
 
 const tab = "  "
 
+// bracketedLevel is an optimization to avoid extra allocations and calls to strings.ToLower
+// when we want to translate/print the lowercase version of a log level.
 func bracketedLevel(l slog.Level) string {
 	switch l {
 	case slog.LevelDebug:
@@ -107,76 +109,76 @@ func bracketedLevel(l slog.Level) string {
 	}
 }
 
-// returns true if handled without using formatValue
-func writeValueFast(w io.Writer, v interface{}) bool {
+// Optimization to avoid allocation of heap allocations/temporary strings via formatValue when dealing with primitive types.
+// It returns (handled, error). When handled is false, the caller should fall back to formatValue.
+func writeValueFast(w io.Writer, v interface{}) (bool, error) {
 	switch x := v.(type) {
 	case bool:
 		if x {
-			io.WriteString(w, "true")
-		} else {
-			io.WriteString(w, "false")
+			_, err := w.Write([]byte("true"))
+			return true, err
 		}
-		return true
+		_, err := w.Write([]byte("false"))
+		return true, err
+
+	// signed ints
 	case int:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendInt(a[:0], int64(x), 10))
-		return true
+		_, err := w.Write(strconv.AppendInt(a[:0], int64(x), 10))
+		return true, err
 	case int8:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendInt(a[:0], int64(x), 10))
-		return true
+		_, err := w.Write(strconv.AppendInt(a[:0], int64(x), 10))
+		return true, err
 	case int16:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendInt(a[:0], int64(x), 10))
-		return true
+		_, err := w.Write(strconv.AppendInt(a[:0], int64(x), 10))
+		return true, err
 	case int32:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendInt(a[:0], int64(x), 10))
-		return true
+		_, err := w.Write(strconv.AppendInt(a[:0], int64(x), 10))
+		return true, err
 	case int64:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendInt(a[:0], x, 10))
-		return true
+		_, err := w.Write(strconv.AppendInt(a[:0], x, 10))
+		return true, err
+
+	// unsigned ints
 	case uint:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
-		return true
+		_, err := w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
+		return true, err
 	case uint8:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
-		return true
+		_, err := w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
+		return true, err
 	case uint16:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
-		return true
+		_, err := w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
+		return true, err
 	case uint32:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
-		return true
+		_, err := w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
+		return true, err
 	case uint64:
 		var a [20]byte
-		_, _ = w.Write(strconv.AppendUint(a[:0], x, 10))
-		return true
+		_, err := w.Write(strconv.AppendUint(a[:0], x, 10))
+		return true, err
+
+	// floats: prefer 'g' to keep output bounded (matches fmt default)
 	case float32:
 		var a [32]byte
-		_, _ = w.Write(strconv.AppendFloat(a[:0], float64(x), 'f', -1, 32))
-		return true
+		_, err := w.Write(strconv.AppendFloat(a[:0], float64(x), 'g', -1, 32))
+		return true, err
 	case float64:
 		var a [32]byte
-		_, _ = w.Write(strconv.AppendFloat(a[:0], x, 'f', -1, 64))
-		return true
+		_, err := w.Write(strconv.AppendFloat(a[:0], x, 'g', -1, 64))
+		return true, err
 	default:
-		return false
+		return false, nil
 	}
 }
 
-// Fmt returns a human readable format for ent.
-//
-// We never return with a trailing newline because Go's testing framework adds one
-// automatically and if we include one, then we'll get two newlines.
-// We also do not indent the fields as go's test does that automatically
-// for extra lines in a log so if we did it here, the fields would be indented
-// twice in test logs. So the Stderr logger indents all the fields itself.
 func Fmt(
 	buf interface {
 		io.StringWriter
@@ -185,21 +187,20 @@ func Fmt(
 ) {
 	reset(buf, termW)
 	ts := ent.Time.Format(TimeFormat)
-	buf.WriteString(render(termW, timeStyle, ts))
-	buf.WriteString(" ")
+	buf.WriteString(render(termW, timeStyle, ts+" "))
 
-	lvl := bracketedLevel(ent.Level)
-	buf.WriteString(render(termW, levelStyle(ent.Level), lvl))
+	level := ent.Level.String()
+	level = strings.ToLower(level)
+	if len(level) > 4 {
+		level = level[:4]
+	}
+	level = "[" + level + "]"
+	buf.WriteString(render(termW, levelStyle(ent.Level), level))
 	buf.WriteString("  ")
 
 	if len(ent.LoggerNames) > 0 {
-		for i, name := range ent.LoggerNames {
-			if i > 0 {
-				buf.WriteString(".")
-			}
-			buf.WriteString(quoteKey(name))
-		}
-		buf.WriteString(": ")
+		loggerName := quoteKey(strings.Join(ent.LoggerNames, ".")) + ": "
+		buf.WriteString(loggerName)
 	}
 
 	var multilineKey string
@@ -213,22 +214,173 @@ func Fmt(
 	}
 	buf.WriteString(msg)
 
+	if ent.SpanContext.IsValid() {
+		ent.Fields = append(slog.M(
+			slog.F("trace", ent.SpanContext.TraceID),
+			slog.F("span", ent.SpanContext.SpanID),
+		), ent.Fields...)
+	}
+
+	for i, f := range ent.Fields {
+		if multilineVal != "" {
+			break
+		}
+
+		var s string
+		switch v := f.Value.(type) {
+		case string:
+			s = v
+		case error, xerrors.Formatter:
+			s = fmt.Sprintf("%+v", v)
+		}
+		s = strings.TrimSpace(s)
+		if !strings.Contains(s, "\n") {
+			continue
+		}
+
+		// Remove this field.
+		ent.Fields = append(ent.Fields[:i], ent.Fields[i+1:]...)
+		multilineKey = f.Name
+		multilineVal = s
+	}
+
 	keyStyle := timeStyle
 	// Help users distinguish logs by keeping some color in the equal signs.
 	equalsStyle := timeStyle
 
-	if ent.SpanContext.IsValid() {
-		buf.WriteString(tab)
-		buf.WriteString(render(termW, keyStyle, quoteKey("trace")))
+	for i, f := range ent.Fields {
+		if i < len(ent.Fields) {
+			buf.WriteString(tab)
+		}
+		buf.WriteString(render(termW, keyStyle, quoteKey(f.Name)))
 		buf.WriteString(render(termW, equalsStyle, "="))
-		buf.WriteString(ent.SpanContext.TraceID().String())
-
-		buf.WriteString(tab)
-		buf.WriteString(render(termW, keyStyle, quoteKey("span")))
-		buf.WriteString(render(termW, equalsStyle, "="))
-		buf.WriteString(ent.SpanContext.SpanID().String())
+		valueStr := formatValue(f.Value)
+		buf.WriteString(valueStr)
 	}
 
+	if multilineVal != "" {
+		if msg != "..." {
+			buf.WriteString(" ...")
+		}
+
+		// Proper indentation.
+		lines := strings.Split(multilineVal, "\n")
+		for i, line := range lines[1:] {
+			if line != "" {
+				lines[i+1] = strings.Repeat(" ", len(multilineKey)+2) + line
+			}
+		}
+		multilineVal = strings.Join(lines, "\n")
+
+		multilineKey = render(termW, keyStyle, multilineKey)
+		buf.WriteString("\n")
+		buf.WriteString(multilineKey)
+		buf.WriteString("= ")
+		buf.WriteString(multilineVal)
+	}
+}
+
+// OptimizedFmt returns a human readable format for ent. Assumes we have a bytes.Buffer
+// which we will more easily be able to assume underlying reallocation of it's size is possible
+// if neceesary than for an arbitrary io.Writer/io.StringWriter
+//
+// We never return with a trailing newline because Go's testing framework adds one
+// automatically and if we include one, then we'll get two newlines.
+// We also do not indent the fields as go's test does that automatically
+// for extra lines in a log so if we did it here, the fields would be indented
+// twice in test logs. So the Stderr logger indents all the fields itself.
+func OptimizedFmt(
+	buf *bytes.Buffer,
+	termW io.Writer,
+	ent slog.SinkEntry,
+) error {
+	writeString := func(s string) error {
+		_, err := buf.WriteString(s)
+		return err
+	}
+
+	reset(buf, termW)
+
+	// Timestamp + space
+	if err := writeString(render(termW, timeStyle, ent.Time.Format(TimeFormat))); err != nil {
+		return err
+	}
+	if err := writeString(" "); err != nil {
+		return err
+	}
+
+	// Level label + two spaces
+	lvl := bracketedLevel(ent.Level) // e.g. "[debu]", "[info]"
+	if err := writeString(render(termW, levelStyle(ent.Level), lvl)); err != nil {
+		return err
+	}
+	if err := writeString("  "); err != nil {
+		return err
+	}
+
+	// Logger names: name1.name2.name3: (no strings.Join allocation)
+	if len(ent.LoggerNames) > 0 {
+		for i, name := range ent.LoggerNames {
+			if i > 0 {
+				if err := writeString("."); err != nil {
+					return err
+				}
+			}
+			if err := writeString(quoteKey(name)); err != nil {
+				return err
+			}
+		}
+		if err := writeString(": "); err != nil {
+			return err
+		}
+	}
+
+	// Message (detect multiline)
+	var multilineKey string
+	var multilineVal string
+	msg := strings.TrimSpace(ent.Message)
+	if strings.Contains(msg, "\n") {
+		multilineKey = "msg"
+		multilineVal = msg
+		msg = quote("...")
+	}
+	if err := writeString(msg); err != nil {
+		return err
+	}
+
+	keyStyle := timeStyle
+	equalsStyle := timeStyle
+
+	// Write trace/span directly (do not mutate ent.Fields)
+	if ent.SpanContext.IsValid() {
+		if err := writeString(tab); err != nil {
+			return err
+		}
+		if err := writeString(render(termW, keyStyle, quoteKey("trace"))); err != nil {
+			return err
+		}
+		if err := writeString(render(termW, equalsStyle, "=")); err != nil {
+			return err
+		}
+		if err := writeString(ent.SpanContext.TraceID().String()); err != nil {
+			return err
+		}
+
+		if err := writeString(tab); err != nil {
+			return err
+		}
+		if err := writeString(render(termW, keyStyle, quoteKey("span"))); err != nil {
+			return err
+		}
+		if err := writeString(render(termW, equalsStyle, "=")); err != nil {
+			return err
+		}
+		if err := writeString(ent.SpanContext.SpanID().String()); err != nil {
+			return err
+		}
+	}
+
+	// Find a multiline field without mutating ent.Fields.
 	multiIdx := -1
 	for i, f := range ent.Fields {
 		if multilineVal != "" {
@@ -251,54 +403,90 @@ func Fmt(
 		break
 	}
 
+	// Print fields (skip multiline field index).
 	for i, f := range ent.Fields {
 		if i == multiIdx {
 			continue
 		}
 		if i < len(ent.Fields) {
-			buf.WriteString(tab)
+			if err := writeString(tab); err != nil {
+				return err
+			}
 		}
-		buf.WriteString(render(termW, keyStyle, quoteKey(f.Name)))
-		buf.WriteString(render(termW, equalsStyle, "="))
-		if !writeValueFast(buf, f.Value) {
-			buf.WriteString(formatValue(f.Value))
+		if err := writeString(render(termW, keyStyle, quoteKey(f.Name))); err != nil {
+			return err
+		}
+		if err := writeString(render(termW, equalsStyle, "=")); err != nil {
+			return err
+		}
+
+		if ok, err := writeValueFast(buf, f.Value); err != nil {
+			return err
+		} else if !ok {
+			if err := writeString(formatValue(f.Value)); err != nil {
+				return err
+			}
 		}
 	}
 
+	// Multiline value block
 	if multilineVal != "" {
 		if msg != "..." {
-			buf.WriteString(" ...")
-		}
-
-		// Proper indentation without allocations.
-		buf.WriteString("\n")
-		mKey := render(termW, keyStyle, multilineKey)
-		buf.WriteString(mKey)
-		buf.WriteString("= ")
-
-		b := []byte(multilineVal)
-		if n := bytes.IndexByte(b, '\n'); n >= 0 {
-			buf.Write(b[:n])
-			b = b[n+1:]
-		} else {
-			buf.Write(b)
-			b = nil
-		}
-		indent := strings.Repeat(" ", len(multilineKey)+2)
-		for len(b) > 0 {
-			buf.WriteString("\n")
-			if b[0] != '\n' {
-				buf.WriteString(indent)
+			if err := writeString(" ..."); err != nil {
+				return err
 			}
-			if n := bytes.IndexByte(b, '\n'); n >= 0 {
-				buf.Write(b[:n])
-				b = b[n+1:]
+		}
+
+		if err := writeString("\n"); err != nil {
+			return err
+		}
+		if err := writeString(render(termW, keyStyle, multilineKey)); err != nil {
+			return err
+		}
+		if err := writeString("= "); err != nil {
+			return err
+		}
+
+		// First line up to first newline
+		s := multilineVal
+		if n := strings.IndexByte(s, '\n'); n >= 0 {
+			if err := writeString(s[:n]); err != nil {
+				return err
+			}
+			s = s[n+1:]
+		} else {
+			if err := writeString(s); err != nil {
+				return err
+			}
+			s = ""
+		}
+
+		indent := strings.Repeat(" ", len(multilineKey)+2)
+		for len(s) > 0 {
+			if err := writeString("\n"); err != nil {
+				return err
+			}
+			// Only indent non-empty lines.
+			if s[0] != '\n' {
+				if err := writeString(indent); err != nil {
+					return err
+				}
+			}
+			if n := strings.IndexByte(s, '\n'); n >= 0 {
+				if err := writeString(s[:n]); err != nil {
+					return err
+				}
+				s = s[n+1:]
 			} else {
-				buf.Write(b)
+				if err := writeString(s); err != nil {
+					return err
+				}
 				break
 			}
 		}
 	}
+
+	return nil
 }
 
 var (
