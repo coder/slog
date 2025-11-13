@@ -27,7 +27,6 @@ func multiline(n int) string {
 }
 
 // Benchmarks target the human sink path: humanSink.LogEntry -> entryhuman.Fmt -> bufio.Scanner indent.
-
 func BenchmarkHumanSinkLogEntry_SingleLine(b *testing.B) {
 	s := sloghuman.Sink(io.Discard)
 	ent := slog.SinkEntry{
@@ -127,7 +126,7 @@ func BenchmarkFmt_SingleLine(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		entryhuman.Fmt(bytes.NewBuffer(nil), w, ent)
+		entryhuman.OptimizedFmt(bytes.NewBuffer(nil), w, ent)
 	}
 }
 
@@ -145,7 +144,7 @@ func BenchmarkFmt_MultilineField_Small(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		entryhuman.Fmt(bytes.NewBuffer(nil), w, ent)
+		entryhuman.OptimizedFmt(bytes.NewBuffer(nil), w, ent)
 	}
 }
 
@@ -163,7 +162,7 @@ func BenchmarkFmt_MultilineField_Large(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		entryhuman.Fmt(bytes.NewBuffer(nil), w, ent)
+		entryhuman.OptimizedFmt(bytes.NewBuffer(nil), w, ent)
 	}
 }
 
@@ -178,7 +177,7 @@ func BenchmarkFmt_MultilineMessage(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		entryhuman.Fmt(bytes.NewBuffer(nil), w, ent)
+		entryhuman.OptimizedFmt(bytes.NewBuffer(nil), w, ent)
 	}
 }
 
@@ -194,7 +193,7 @@ func BenchmarkFmt_WithNames(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		entryhuman.Fmt(bytes.NewBuffer(nil), w, ent)
+		entryhuman.OptimizedFmt(bytes.NewBuffer(nil), w, ent)
 	}
 }
 
@@ -209,7 +208,7 @@ func BenchmarkFmt_WithSpan(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		entryhuman.Fmt(bytes.NewBuffer(nil), w, ent)
+		entryhuman.OptimizedFmt(bytes.NewBuffer(nil), w, ent)
 	}
 }
 
@@ -233,6 +232,6 @@ func BenchmarkFmt_WithValidSpan(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		entryhuman.Fmt(bytes.NewBuffer(nil), w, ent)
+		entryhuman.OptimizedFmt(bytes.NewBuffer(nil), w, ent)
 	}
 }

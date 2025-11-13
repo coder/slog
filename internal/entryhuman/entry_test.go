@@ -208,7 +208,8 @@ func TestEntry(t *testing.T) {
 	})
 }
 
-// we can remove this if we are okay with removing the existing Fmt function and replacing it with OptimizedFmt (can return an error)
+// Verifies that OptimizedFmt returtns the same result as Fmt.
+// We can remove this if we are okay with removing the existing Fmt function and replacing it with OptimizedFmt (can return an error).
 func TestEntry_Optimized(t *testing.T) {
 	t.Parallel()
 
@@ -326,43 +327,80 @@ func TestEntry_Optimized(t *testing.T) {
 				),
 			},
 		},
-	}
-	if *updateGoldenFiles {
-		ents, err := os.ReadDir("testdata")
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, ent := range ents {
-			os.Remove("testdata/" + ent.Name())
-		}
+		{
+			"primitiveTypes",
+			slog.SinkEntry{
+				Level:   slog.LevelInfo,
+				Message: "primitives",
+				Time:    kt,
+				Fields: slog.M(
+					slog.F("bool_true", true),
+					slog.F("bool_false", false),
+					slog.F("int", 42),
+					slog.F("int8", int8(-8)),
+					slog.F("int16", int16(-16)),
+					slog.F("int32", int32(-32)),
+					slog.F("int64", int64(-64)),
+					slog.F("uint", uint(42)),
+					slog.F("uint8", uint8(8)),
+					slog.F("uint16", uint16(16)),
+					slog.F("uint32", uint32(32)),
+					slog.F("uint64", uint64(64)),
+					slog.F("float32", float32(3.14)),
+					slog.F("float64", 2.71828),
+				),
+			},
+		},
+		{
+			"primitiveEdgeCases",
+			slog.SinkEntry{
+				Level:   slog.LevelWarn,
+				Message: "edge cases",
+				Time:    kt,
+				Fields: slog.M(
+					slog.F("zero_int", 0),
+					slog.F("neg_int", -999),
+					slog.F("max_int64", int64(9223372036854775807)),
+					slog.F("min_int64", int64(-9223372036854775808)),
+					slog.F("max_uint64", uint64(18446744073709551615)),
+					slog.F("zero_float", 0.0),
+					slog.F("neg_float", -123.456),
+				),
+			},
+		},
+		{
+			"mixedPrimitiveAndComplex",
+			slog.SinkEntry{
+				Level:   slog.LevelDebug,
+				Message: "mixed types",
+				Time:    kt,
+				Fields: slog.M(
+					slog.F("count", 100),
+					slog.F("name", "test"),
+					slog.F("enabled", true),
+					slog.F("ratio", 0.95),
+					slog.F("data", []byte("bytes")),
+					slog.F("nil_val", nil),
+				),
+			},
+		},
 	}
 
 	for _, tc := range ents {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			goldenPath := fmt.Sprintf("testdata/%s.golden", tc.name)
 
-			var gotBuf bytes.Buffer
-			err := entryhuman.OptimizedFmt(&gotBuf, io.Discard, tc.ent)
+			var fmtBuf bytes.Buffer
+			var optBuf bytes.Buffer
+
+			entryhuman.Fmt(&fmtBuf, io.Discard, tc.ent)
+			err := entryhuman.OptimizedFmt(&optBuf, io.Discard, tc.ent)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if *updateGoldenFiles {
-				err := os.WriteFile(goldenPath, gotBuf.Bytes(), 0o644)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return
-			}
-
-			wantByt, err := os.ReadFile(goldenPath)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			assert.Equal(t, "entry matches", string(wantByt), gotBuf.String())
+			assert.Equal(t, "outputs match", fmtBuf.String(), optBuf.String())
 		})
 	}
 
@@ -378,7 +416,7 @@ func TestEntry_Optimized(t *testing.T) {
 
 		done := make(chan struct{}, 2)
 		go func() {
-			entryhuman.Fmt(new(bytes.Buffer), f, slog.SinkEntry{
+			entryhuman.OptimizedFmt(new(bytes.Buffer), f, slog.SinkEntry{
 				Level: slog.LevelCritical,
 				Fields: slog.M(
 					slog.F("hey", "hi"),
