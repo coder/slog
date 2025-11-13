@@ -86,7 +86,6 @@ func BenchmarkHumanSinkLogEntry(b *testing.B) {
 			}
 		})
 	}
-
 }
 
 func genMultiline(n int) string {
@@ -186,5 +185,4 @@ func BenchmarkFmt(b *testing.B) {
 			}
 		})
 	}
-
 }
