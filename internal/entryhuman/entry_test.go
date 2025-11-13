@@ -384,6 +384,22 @@ func TestEntry_Optimized(t *testing.T) {
 				),
 			},
 		},
+		{
+			"allLogLevels",
+			slog.SinkEntry{
+				Level:   slog.LevelCritical, // Test Critical
+				Message: "critical",
+				Time:    kt,
+			},
+		},
+		{
+			"fatalLevel",
+			slog.SinkEntry{
+				Level:   slog.LevelFatal, // Test Fatal
+				Message: "fatal",
+				Time:    kt,
+			},
+		},
 	}
 
 	for _, tc := range ents {
