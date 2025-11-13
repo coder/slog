@@ -411,10 +411,7 @@ func TestEntry_Optimized(t *testing.T) {
 			var optBuf bytes.Buffer
 
 			entryhuman.Fmt(&fmtBuf, io.Discard, tc.ent)
-			err := entryhuman.OptimizedFmt(&optBuf, io.Discard, tc.ent)
-			if err != nil {
-				t.Fatal(err)
-			}
+			entryhuman.OptimizedFmt(&optBuf, io.Discard, tc.ent)
 
 			assert.Equal(t, "outputs match", fmtBuf.String(), optBuf.String())
 		})
