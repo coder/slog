@@ -179,108 +179,7 @@ func writeValueFast(w io.Writer, v interface{}) (bool, error) {
 	}
 }
 
-func Fmt(
-	buf interface {
-		io.StringWriter
-		io.Writer
-	}, termW io.Writer, ent slog.SinkEntry,
-) {
-	reset(buf, termW)
-	ts := ent.Time.Format(TimeFormat)
-	buf.WriteString(render(termW, timeStyle, ts+" "))
-
-	level := ent.Level.String()
-	level = strings.ToLower(level)
-	if len(level) > 4 {
-		level = level[:4]
-	}
-	level = "[" + level + "]"
-	buf.WriteString(render(termW, levelStyle(ent.Level), level))
-	buf.WriteString("  ")
-
-	if len(ent.LoggerNames) > 0 {
-		loggerName := quoteKey(strings.Join(ent.LoggerNames, ".")) + ": "
-		buf.WriteString(loggerName)
-	}
-
-	var multilineKey string
-	var multilineVal string
-	msg := strings.TrimSpace(ent.Message)
-	if strings.Contains(msg, "\n") {
-		multilineKey = "msg"
-		multilineVal = msg
-		msg = "..."
-		msg = quote(msg)
-	}
-	buf.WriteString(msg)
-
-	if ent.SpanContext.IsValid() {
-		ent.Fields = append(slog.M(
-			slog.F("trace", ent.SpanContext.TraceID),
-			slog.F("span", ent.SpanContext.SpanID),
-		), ent.Fields...)
-	}
-
-	for i, f := range ent.Fields {
-		if multilineVal != "" {
-			break
-		}
-
-		var s string
-		switch v := f.Value.(type) {
-		case string:
-			s = v
-		case error, xerrors.Formatter:
-			s = fmt.Sprintf("%+v", v)
-		}
-		s = strings.TrimSpace(s)
-		if !strings.Contains(s, "\n") {
-			continue
-		}
-
-		// Remove this field.
-		ent.Fields = append(ent.Fields[:i], ent.Fields[i+1:]...)
-		multilineKey = f.Name
-		multilineVal = s
-	}
-
-	keyStyle := timeStyle
-	// Help users distinguish logs by keeping some color in the equal signs.
-	equalsStyle := timeStyle
-
-	for i, f := range ent.Fields {
-		if i < len(ent.Fields) {
-			buf.WriteString(tab)
-		}
-		buf.WriteString(render(termW, keyStyle, quoteKey(f.Name)))
-		buf.WriteString(render(termW, equalsStyle, "="))
-		valueStr := formatValue(f.Value)
-		buf.WriteString(valueStr)
-	}
-
-	if multilineVal != "" {
-		if msg != "..." {
-			buf.WriteString(" ...")
-		}
-
-		// Proper indentation.
-		lines := strings.Split(multilineVal, "\n")
-		for i, line := range lines[1:] {
-			if line != "" {
-				lines[i+1] = strings.Repeat(" ", len(multilineKey)+2) + line
-			}
-		}
-		multilineVal = strings.Join(lines, "\n")
-
-		multilineKey = render(termW, keyStyle, multilineKey)
-		buf.WriteString("\n")
-		buf.WriteString(multilineKey)
-		buf.WriteString("= ")
-		buf.WriteString(multilineVal)
-	}
-}
-
-// OptimizedFmt returns a human readable format for ent. Assumes we have a bytes.Buffer
+// Fmt returns a human readable format for ent. Assumes we have a bytes.Buffer
 // which we will more easily be able to assume underlying reallocation of it's size is possible
 // if necessary than for an arbitrary io.Writer/io.StringWriter
 // Note that while bytes.Buffer can in theory return an error for writes, it only does so if the buffer size will
@@ -292,7 +191,7 @@ func Fmt(
 // We also do not indent the fields as go's test does that automatically
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
-func OptimizedFmt(buf *bytes.Buffer, termW io.Writer, ent slog.SinkEntry) {
+func Fmt(buf *bytes.Buffer, termW io.Writer, ent slog.SinkEntry) {
 	reset(buf, termW)
 
 	// Timestamp + space

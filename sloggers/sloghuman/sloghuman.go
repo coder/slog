@@ -41,7 +41,7 @@ func (s humanSink) LogEntry(ctx context.Context, ent slog.SinkEntry) {
 	buf1.Reset()
 	defer bufPool.Put(buf1)
 
-	entryhuman.OptimizedFmt(buf1, s.w2, ent)
+	entryhuman.Fmt(buf1, s.w2, ent)
 	by := buf1.Bytes()
 
 	// Prepare output buffer and indent lines after the first.
