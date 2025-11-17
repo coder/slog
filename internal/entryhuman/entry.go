@@ -113,6 +113,9 @@ func bracketedLevel(l slog.Level) string {
 // It returns (handled, error). When handled is false, the caller should fall back to formatValue.
 func writeValueFast(w io.Writer, v interface{}) (bool, error) {
 	switch x := v.(type) {
+	case string:
+		_, err := w.Write([]byte(quote(x)))
+		return true, err
 	case bool:
 		if x {
 			_, err := w.Write([]byte("true"))

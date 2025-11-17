@@ -75,6 +75,24 @@ func BenchmarkHumanSinkLogEntry(b *testing.B) {
 				Fields:  nil,
 			},
 		},
+		{
+			"StringHeavy",
+			slog.SinkEntry{
+				Time:    time.Unix(0, 0),
+				Level:   slog.LevelInfo,
+				Message: "user action",
+				Fields: slog.M(
+					slog.F("user_id", "abc-123-def-456-ghi-789"),
+					slog.F("action", "login"),
+					slog.F("ip_address", "192.168.1.100"),
+					slog.F("user_agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"),
+					slog.F("session_id", "sess_9d8f7a6b5c4e3d2a1b0c"),
+					slog.F("request_id", "req_1a2b3c4d5e6f7g8h9i0j"),
+					slog.F("endpoint", "/api/v1/users/login"),
+					slog.F("method", "POST"),
+				),
+			},
+		},
 	}
 	for _, tc := range testcases {
 		b.Run(tc.name, func(b *testing.B) {
