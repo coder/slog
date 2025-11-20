@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"testing"
 	"time"
@@ -140,6 +141,81 @@ func TestEntry(t *testing.T) {
 						"key1": "value1",
 					}),
 				),
+			},
+		},
+		{
+			"primitiveTypes",
+			slog.SinkEntry{
+				Level:   slog.LevelInfo,
+				Message: "primitives",
+				Time:    kt,
+				Fields: slog.M(
+					slog.F("bool_true", true),
+					slog.F("bool_false", false),
+					slog.F("int", 42),
+					slog.F("int8", int8(-8)),
+					slog.F("int16", int16(-16)),
+					slog.F("int32", int32(-32)),
+					slog.F("int64", int64(-64)),
+					slog.F("uint", uint(42)),
+					slog.F("uint8", uint8(8)),
+					slog.F("uint16", uint16(16)),
+					slog.F("uint32", uint32(32)),
+					slog.F("uint64", uint64(64)),
+					slog.F("float32", float32(3.14)),
+					slog.F("float64", 2.71828),
+				),
+			},
+		},
+		{
+			"primitiveEdgeCases",
+			slog.SinkEntry{
+				Level:   slog.LevelWarn,
+				Message: "edge cases",
+				Time:    kt,
+				Fields: slog.M(
+					slog.F("zero_int", 0),
+					slog.F("neg_int", -999),
+					slog.F("max_int64", math.MaxInt64),
+					slog.F("min_int64", math.MinInt64),
+					// math.MaxUint64 is an untyped constant, and by default the compiler will assume a number
+					// value is an int, so we need an explicit cast to uint64 here.
+					slog.F("max_uint64", uint64(math.MaxUint64)),
+					slog.F("zero_float", 0.0),
+					slog.F("neg_float", -123.456),
+				),
+			},
+		},
+		{
+			"mixedPrimitiveAndComplex",
+			slog.SinkEntry{
+				Level:   slog.LevelDebug,
+				Message: "mixed types",
+				Time:    kt,
+				Fields: slog.M(
+					slog.F("count", 100),
+					slog.F("name", "test"),
+					slog.F("enabled", true),
+					slog.F("ratio", 0.95),
+					slog.F("data", []byte("bytes")),
+					slog.F("nil_val", nil),
+				),
+			},
+		},
+		{
+			"allLogLevels",
+			slog.SinkEntry{
+				Level:   slog.LevelCritical, // Test Critical
+				Message: "critical",
+				Time:    kt,
+			},
+		},
+		{
+			"fatalLevel",
+			slog.SinkEntry{
+				Level:   slog.LevelFatal, // Test Fatal
+				Message: "fatal",
+				Time:    kt,
 			},
 		},
 	}

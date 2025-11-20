@@ -1,0 +1,1 @@
+2000-02-05 04:04:04.000 [warn]  edge cases  zero_int=0  neg_int=-999  max_int64=9223372036854775807  min_int64=-9223372036854775808  max_uint64=18446744073709551615  zero_float=0  neg_float=-123.456

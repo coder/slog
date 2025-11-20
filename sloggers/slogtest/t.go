@@ -6,11 +6,11 @@
 package slogtest // import "cdr.dev/slog/sloggers/slogtest"
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"sync"
 	"testing"
 
@@ -97,7 +97,7 @@ func (ts *testSink) LogEntry(_ context.Context, ent slog.SinkEntry) {
 		return
 	}
 
-	var sb strings.Builder
+	var sb bytes.Buffer
 	// The testing package logs to stdout and not stderr.
 	entryhuman.Fmt(&sb, os.Stdout, ent)
 

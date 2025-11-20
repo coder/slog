@@ -1,0 +1,1 @@
+2000-02-05 04:04:04.000 [info]  primitives  bool_true=true  bool_false=false  int=42  int8=-8  int16=-16  int32=-32  int64=-64  uint=42  uint8=8  uint16=16  uint32=32  uint64=64  float32=3.14  float64=2.71828
