@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"testing"
 	"time"
@@ -175,9 +176,11 @@ func TestEntry(t *testing.T) {
 				Fields: slog.M(
 					slog.F("zero_int", 0),
 					slog.F("neg_int", -999),
-					slog.F("max_int64", int64(9223372036854775807)),
-					slog.F("min_int64", int64(-9223372036854775808)),
-					slog.F("max_uint64", uint64(18446744073709551615)),
+					slog.F("max_int64", math.MaxInt64),
+					slog.F("min_int64", math.MinInt64),
+					// math.MaxUint64 is an untyped constant, and by default the compiler will assume a number
+					// value is an int, so we need an explicit cast to uint64 here.
+					slog.F("max_uint64", uint64(math.MaxUint64)),
 					slog.F("zero_float", 0.0),
 					slog.F("neg_float", -123.456),
 				),

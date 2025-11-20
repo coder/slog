@@ -109,6 +109,18 @@ func bracketedLevel(l slog.Level) string {
 	}
 }
 
+func writeSignedInt(w io.Writer, n int64) (bool, error) {
+	var a [20]byte
+	_, err := w.Write(strconv.AppendInt(a[:0], n, 10))
+	return true, err
+}
+
+func writeUnsignedInt(w io.Writer, n uint64) (bool, error) {
+	var a [20]byte
+	_, err := w.Write(strconv.AppendUint(a[:0], n, 10))
+	return true, err
+}
+
 // Optimization to avoid allocation of heap allocations/temporary strings via formatValue when dealing with primitive types.
 // It returns (handled, error). When handled is false, the caller should fall back to formatValue.
 func writeValueFast(w io.Writer, v interface{}) (bool, error) {
@@ -126,47 +138,27 @@ func writeValueFast(w io.Writer, v interface{}) (bool, error) {
 
 	// signed ints
 	case int:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendInt(a[:0], int64(x), 10))
-		return true, err
+		return writeSignedInt(w, int64(x))
 	case int8:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendInt(a[:0], int64(x), 10))
-		return true, err
+		return writeSignedInt(w, int64(x))
 	case int16:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendInt(a[:0], int64(x), 10))
-		return true, err
+		return writeSignedInt(w, int64(x))
 	case int32:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendInt(a[:0], int64(x), 10))
-		return true, err
+		return writeSignedInt(w, int64(x))
 	case int64:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendInt(a[:0], x, 10))
-		return true, err
+		return writeSignedInt(w, x)
 
 	// unsigned ints
 	case uint:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
-		return true, err
+		return writeUnsignedInt(w, uint64(x))
 	case uint8:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
-		return true, err
+		return writeUnsignedInt(w, uint64(x))
 	case uint16:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
-		return true, err
+		return writeUnsignedInt(w, uint64(x))
 	case uint32:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendUint(a[:0], uint64(x), 10))
-		return true, err
+		return writeUnsignedInt(w, uint64(x))
 	case uint64:
-		var a [20]byte
-		_, err := w.Write(strconv.AppendUint(a[:0], x, 10))
-		return true, err
+		return writeUnsignedInt(w, x)
 
 	// floats: prefer 'g' to keep output bounded (matches fmt default)
 	case float32:
