@@ -72,7 +72,8 @@ func formatValue(v interface{}) string {
 	case reflect.Struct, reflect.Map:
 		byt, err := json.Marshal(v)
 		if err != nil {
-			panic(err)
+			// don't panic
+			return "!! Error while marshalling value !!"
 		}
 		return string(byt)
 	case reflect.Slice:
@@ -334,7 +335,8 @@ func levelStyle(level slog.Level) lipgloss.Style {
 	case slog.LevelError, slog.LevelFatal, slog.LevelCritical:
 		return levelErrorStyle
 	default:
-		panic("unknown level")
+		// don't panic
+		return levelErrorStyle
 	}
 }
 
