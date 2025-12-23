@@ -56,16 +56,16 @@ func reset(w io.Writer, termW io.Writer) {
 	}
 }
 
-func formatValue(v interface{}) string {
+func formatValue(v interface{}) (string, error) {
 	if vr, ok := v.(driver.Valuer); ok {
 		var err error
 		v, err = vr.Value()
 		if err != nil {
-			return fmt.Sprintf("error calling Value: %v", err)
+			return "", xerrors.Errorf("error calling Value: %w", err)
 		}
 	}
 	if v == nil {
-		return "<nil>"
+		return "<nil>", nil
 	}
 	typ := reflect.TypeOf(v)
 	switch typ.Kind() {
@@ -73,17 +73,17 @@ func formatValue(v interface{}) string {
 		byt, err := json.Marshal(v)
 		if err != nil {
 			// don't panic
-			return "!! Error while marshalling value !!"
+			return "", xerrors.Errorf("error marshalling value: %w", err)
 		}
-		return string(byt)
+		return string(byt), nil
 	case reflect.Slice:
 		// Byte slices are optimistically readable.
 		if typ.Elem().Kind() == reflect.Uint8 {
-			return fmt.Sprintf("%q", v)
+			return fmt.Sprintf("%q", v), nil
 		}
 		fallthrough
 	default:
-		return quote(fmt.Sprintf("%+v", v))
+		return quote(fmt.Sprintf("%+v", v)), nil
 	}
 }
 
@@ -175,6 +175,10 @@ func writeValueFast(w io.Writer, v interface{}) (bool, error) {
 	}
 }
 
+type Formatter struct {
+	ErrorCallback func(slog.Field, error)
+}
+
 // Fmt returns a human readable format for ent. Assumes we have a bytes.Buffer
 // which we will more easily be able to assume underlying reallocation of it's size is possible
 // if necessary than for an arbitrary io.Writer/io.StringWriter
@@ -188,6 +192,10 @@ func writeValueFast(w io.Writer, v interface{}) (bool, error) {
 // for extra lines in a log so if we did it here, the fields would be indented
 // twice in test logs. So the Stderr logger indents all the fields itself.
 func Fmt(buf *bytes.Buffer, termW io.Writer, ent slog.SinkEntry) {
+	Formatter{}.Fmt(buf, termW, ent)
+}
+
+func (f Formatter) Fmt(buf *bytes.Buffer, termW io.Writer, ent slog.SinkEntry) {
 	reset(buf, termW)
 
 	// Timestamp + space
@@ -239,12 +247,12 @@ func Fmt(buf *bytes.Buffer, termW io.Writer, ent slog.SinkEntry) {
 
 	// Find a multiline field without mutating ent.Fields.
 	multiIdx := -1
-	for i, f := range ent.Fields {
+	for i, fld := range ent.Fields {
 		if multilineVal != "" {
 			break
 		}
 		var s string
-		switch v := f.Value.(type) {
+		switch v := fld.Value.(type) {
 		case string:
 			s = v
 		case error, xerrors.Formatter:
@@ -255,13 +263,13 @@ func Fmt(buf *bytes.Buffer, termW io.Writer, ent slog.SinkEntry) {
 			continue
 		}
 		multiIdx = i
-		multilineKey = f.Name
+		multilineKey = fld.Name
 		multilineVal = s
 		break
 	}
 
 	// Print fields (skip multiline field index).
-	for i, f := range ent.Fields {
+	for i, fld := range ent.Fields {
 		if i == multiIdx {
 			continue
 		}
@@ -269,13 +277,21 @@ func Fmt(buf *bytes.Buffer, termW io.Writer, ent slog.SinkEntry) {
 			buf.WriteString(tab)
 		}
 
-		buf.WriteString(render(termW, keyStyle, quoteKey(f.Name)))
+		buf.WriteString(render(termW, keyStyle, quoteKey(fld.Name)))
 		buf.WriteString(render(termW, equalsStyle, "="))
 
-		if ok, err := writeValueFast(buf, f.Value); err != nil {
-			// return err
+		if ok, err := writeValueFast(buf, fld.Value); err != nil && f.ErrorCallback != nil {
+			f.ErrorCallback(fld, err)
 		} else if !ok {
-			buf.WriteString(formatValue(f.Value))
+			s, err := formatValue(fld.Value)
+			if err != nil {
+				if f.ErrorCallback != nil {
+					f.ErrorCallback(fld, err)
+				}
+				buf.WriteString(err.Error())
+				continue
+			}
+			buf.WriteString(s)
 		}
 	}
 

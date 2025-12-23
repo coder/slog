@@ -99,7 +99,12 @@ func (ts *testSink) LogEntry(_ context.Context, ent slog.SinkEntry) {
 
 	var sb bytes.Buffer
 	// The testing package logs to stdout and not stderr.
-	entryhuman.Fmt(&sb, os.Stdout, ent)
+	f := entryhuman.Formatter{
+		ErrorCallback: func(field slog.Field, err error) {
+			ts.tb.Errorf("failed to log field %q: %v", field.Name, err)
+		},
+	}
+	f.Fmt(&sb, os.Stdout, ent)
 
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:
