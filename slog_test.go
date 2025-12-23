@@ -2,7 +2,6 @@ package slog_test
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"runtime"
 	"testing"
@@ -76,7 +75,7 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func2",
-			Line: 68,
+			Line: 67,
 
 			Fields: slog.M(
 				slog.F("ctx", 1024),
@@ -113,7 +112,7 @@ func TestLogger(t *testing.T) {
 
 			File: slogTestFile,
 			Func: "cdr.dev/slog_test.TestLogger.func3",
-			Line: 103,
+			Line: 102,
 
 			SpanContext: span.SpanContext(),
 
@@ -153,36 +152,6 @@ func TestLogger(t *testing.T) {
 		assert.Equal(t, "level", slog.LevelCritical, s.entries[4].Level)
 		assert.Equal(t, "level", slog.LevelFatal, s.entries[5].Level)
 		assert.Equal(t, "exits", 1, exits)
-	})
-
-	t.Run("kv", func(t *testing.T) {
-		s := &fakeSink{}
-		l := slog.Make(s)
-
-		// All of these formats should be equivalent.
-		formats := [][]any{
-			{"animal", "cat", "weight", 15},
-			{slog.F("animal", "cat"), "weight", 15},
-			{slog.M(
-				slog.F("animal", "cat"),
-				slog.F("weight", 15),
-			)},
-			{slog.F("animal", "cat"), slog.F("weight", 15)},
-		}
-
-		for _, format := range formats {
-			l.Info(bg, "msg", format...)
-		}
-
-		assert.Len(t, "entries", 4, s.entries)
-
-		for i := range s.entries {
-			assert.Equal(
-				t, fmt.Sprintf("%v", i),
-				s.entries[0].Fields,
-				s.entries[i].Fields,
-			)
-		}
 	})
 }
 

@@ -3,6 +3,7 @@ package slogtest_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"golang.org/x/xerrors"
@@ -175,6 +176,23 @@ func TestSkipCleanup(t *testing.T) {
 	assert.Len(t, "no cleanups", 0, tb.cleanups)
 }
 
+func TestUnmarshalable(t *testing.T) {
+	t.Parallel()
+	tb := &fakeTB{}
+	l := slogtest.Make(tb, &slogtest.Options{})
+	s := &selfRef{}
+	s.Ref = s
+	s2 := selfRef{Ref: s} // unmarshalable because it contains a cyclic ref
+	l.Info(bg, "hello", slog.F("self", s2))
+	assert.Equal(t, "errors", 1, tb.errors)
+	assert.Len(t, "len errorfs", 1, tb.errorfs)
+	assert.True(t, "errorfs", strings.Contains(tb.errorfs[0], "failed to log field \"self\":"))
+}
+
+type selfRef struct {
+	Ref *selfRef
+}
+
 var bg = context.Background()
 
 type fakeTB struct {
@@ -182,6 +200,7 @@ type fakeTB struct {
 
 	logs     int
 	errors   int
+	errorfs  []string
 	fatals   int
 	cleanups []func()
 }
@@ -194,6 +213,11 @@ func (tb *fakeTB) Log(v ...interface{}) {
 
 func (tb *fakeTB) Error(v ...interface{}) {
 	tb.errors++
+}
+
+func (tb *fakeTB) Errorf(msg string, v ...interface{}) {
+	tb.errors++
+	tb.errorfs = append(tb.errorfs, fmt.Sprintf(msg, v...))
 }
 
 func (tb *fakeTB) Fatal(v ...interface{}) {

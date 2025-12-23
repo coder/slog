@@ -99,7 +99,12 @@ func (ts *testSink) LogEntry(_ context.Context, ent slog.SinkEntry) {
 
 	var sb bytes.Buffer
 	// The testing package logs to stdout and not stderr.
-	entryhuman.Fmt(&sb, os.Stdout, ent)
+	f := entryhuman.Formatter{
+		ErrorCallback: func(field slog.Field, err error) {
+			ts.tb.Errorf("failed to log field %q: %v", field.Name, err)
+		},
+	}
+	f.Fmt(&sb, os.Stdout, ent)
 
 	switch ent.Level {
 	case slog.LevelDebug, slog.LevelInfo, slog.LevelWarn:
@@ -146,25 +151,25 @@ func l(t testing.TB) slog.Logger {
 }
 
 // Debug logs the given msg and fields to t via t.Log at the debug level.
-func Debug(t testing.TB, msg string, fields ...any) {
+func Debug(t testing.TB, msg string, fields ...slog.Field) {
 	slog.Helper()
 	l(t).Debug(ctx, msg, fields...)
 }
 
 // Info logs the given msg and fields to t via t.Log at the info level.
-func Info(t testing.TB, msg string, fields ...any) {
+func Info(t testing.TB, msg string, fields ...slog.Field) {
 	slog.Helper()
 	l(t).Info(ctx, msg, fields...)
 }
 
 // Error logs the given msg and fields to t via t.Error at the error level.
-func Error(t testing.TB, msg string, fields ...any) {
+func Error(t testing.TB, msg string, fields ...slog.Field) {
 	slog.Helper()
 	l(t).Error(ctx, msg, fields...)
 }
 
 // Fatal logs the given msg and fields to t via t.Fatal at the fatal level.
-func Fatal(t testing.TB, msg string, fields ...any) {
+func Fatal(t testing.TB, msg string, fields ...slog.Field) {
 	slog.Helper()
 	l(t).Fatal(ctx, msg, fields...)
 }
