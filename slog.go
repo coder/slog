@@ -40,7 +40,14 @@ func (l Logger) Log(ctx context.Context, e SinkEntry) {
 		return
 	}
 
-	e.Fields = l.fields.append(e.Fields)
+	filteredFields := make(Map, 0, len(e.Fields))
+	for _, fs := range l.fields.append(e.Fields) {
+		if fs.LevelFilter != nil && !fs.LevelFilter(l.level) {
+			continue
+		}
+		filteredFields = append(filteredFields, fs)
+	}
+	e.Fields = filteredFields
 	e.LoggerNames = appendNames(l.names, e.LoggerNames...)
 
 	for _, s := range l.sinks {
@@ -227,8 +234,22 @@ func appendNames(names []string, names2 ...string) []string {
 
 // Field represents a log field.
 type Field struct {
-	Name  string
-	Value interface{}
+	Name  string      `json:"name,omitempty"`
+	Value interface{} `json:"value,omitempty"`
+
+	// LevelFilter, if set, instructs the logger to only process this field
+	// if it processing entries at the given level.
+	LevelFilter func(Level) bool `json:"-"`
+}
+
+// DebugF is a convenience constructor for Field, with LevelFilter only
+// allowing Debug level entries.
+func DebugF(name string, value interface{}) Field {
+	f := F(name, value)
+	f.LevelFilter = func(l Level) bool {
+		return l == LevelDebug
+	}
+	return f
 }
 
 // F is a convenience constructor for Field.
