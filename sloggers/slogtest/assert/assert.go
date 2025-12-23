@@ -3,7 +3,7 @@
 // On failure, every assertion will fatal the test.
 //
 // The name parameter is available in each assertion for easier debugging.
-package assert // import "cdr.dev/slog/sloggers/slogtest/assert"
+package assert // import "cdr.dev/slog/v3/sloggers/slogtest/assert"
 
 import (
 	"strings"
@@ -11,9 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/sloggers/slogtest"
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/internal/assert"
+	"cdr.dev/slog/v3/sloggers/slogtest"
 )
 
 // Equal asserts exp == act.

@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/entryhuman"
-	"cdr.dev/slog/sloggers/sloghuman"
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/internal/entryhuman"
+	"cdr.dev/slog/v3/sloggers/sloghuman"
 )
 
 func multiline(n int) string {

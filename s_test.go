@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"testing"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/internal/entryhuman"
-	"cdr.dev/slog/sloggers/sloghuman"
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/internal/assert"
+	"cdr.dev/slog/v3/internal/entryhuman"
+	"cdr.dev/slog/v3/sloggers/sloghuman"
 )
 
 func TestStdlib(t *testing.T) {

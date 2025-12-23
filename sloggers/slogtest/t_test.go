@@ -8,9 +8,9 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/sloggers/slogtest"
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/internal/assert"
+	"cdr.dev/slog/v3/sloggers/slogtest"
 )
 
 func TestStateless(t *testing.T) {

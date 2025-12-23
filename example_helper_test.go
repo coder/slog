@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/sloggers/sloghuman"
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/sloggers/sloghuman"
 )
 
 func httpLogHelper(ctx context.Context, status int) {

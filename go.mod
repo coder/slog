@@ -1,4 +1,4 @@
-module cdr.dev/slog
+module cdr.dev/slog/v3
 
 go 1.20
 
