@@ -8,7 +8,7 @@
 // Logger implements Sink as well to allow composition.
 //
 // Implementations of the Sink interface are available in the sloggers subdirectory.
-package slog // import "cdr.dev/slog"
+package slog // import "cdr.dev/slog/v3"
 
 import (
 	"context"

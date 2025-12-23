@@ -3,7 +3,7 @@
 //
 // If imported, then all logs that go through the stdlib's
 // default logger will go through slog.
-package slogtest // import "cdr.dev/slog/sloggers/slogtest"
+package slogtest // import "cdr.dev/slog/v3/sloggers/slogtest"
 
 import (
 	"bytes"
@@ -16,9 +16,9 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/entryhuman"
-	"cdr.dev/slog/sloggers/sloghuman"
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/internal/entryhuman"
+	"cdr.dev/slog/v3/sloggers/sloghuman"
 )
 
 // Ensure all stdlib logs go through slog.

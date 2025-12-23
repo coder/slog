@@ -1,5 +1,5 @@
 // Package slogstackdriver contains the slogger for google cloud's stackdriver.
-package slogstackdriver // import "cdr.dev/slog/sloggers/slogstackdriver"
+package slogstackdriver // import "cdr.dev/slog/v3/sloggers/slogstackdriver"
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	logpbtype "google.golang.org/genproto/googleapis/logging/type"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/syncwriter"
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/internal/syncwriter"
 )
 
 // Sink creates a slog.Sink configured to write JSON logs

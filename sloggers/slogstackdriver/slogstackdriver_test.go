@@ -15,10 +15,10 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	logpbtype "google.golang.org/genproto/googleapis/logging/type"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
-	"cdr.dev/slog/internal/entryjson"
-	"cdr.dev/slog/sloggers/slogstackdriver"
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/internal/assert"
+	"cdr.dev/slog/v3/internal/entryjson"
+	"cdr.dev/slog/v3/sloggers/slogstackdriver"
 )
 
 var (
@@ -43,7 +43,7 @@ func TestStackdriver(t *testing.T) {
 
 	j := entryjson.Filter(b.String(), "timestampSeconds")
 	j = entryjson.Filter(j, "timestampNanos")
-	exp := fmt.Sprintf(`{"logging.googleapis.com/severity":"ERROR","severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":40,"function":"cdr.dev/slog/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects/%v/traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":%v,"wowow":"me\nyou"}
+	exp := fmt.Sprintf(`{"logging.googleapis.com/severity":"ERROR","severity":"ERROR","message":"line1\n\nline2","logging.googleapis.com/sourceLocation":{"file":"%v","line":40,"function":"cdr.dev/slog/v3/sloggers/slogstackdriver_test.TestStackdriver"},"logging.googleapis.com/operation":{"producer":"meow"},"logging.googleapis.com/trace":"projects/%v/traces/%v","logging.googleapis.com/spanId":"%v","logging.googleapis.com/trace_sampled":%v,"wowow":"me\nyou"}
 `, slogstackdriverTestFile, projectID, span.SpanContext().TraceID(), span.SpanContext().SpanID(), span.SpanContext().IsSampled())
 	assert.Equal(t, "entry", exp, j)
 }

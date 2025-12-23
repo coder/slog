@@ -8,8 +8,8 @@ import (
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
-	"cdr.dev/slog"
-	"cdr.dev/slog/internal/assert"
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/internal/assert"
 )
 
 var _, slogTestFile, _, _ = runtime.Caller(0)
@@ -74,7 +74,7 @@ func TestLogger(t *testing.T) {
 			Message: "logging in helper",
 
 			File: slogTestFile,
-			Func: "cdr.dev/slog_test.TestLogger.func2",
+			Func: "cdr.dev/slog/v3_test.TestLogger.func2",
 			Line: 67,
 
 			Fields: slog.M(
@@ -111,7 +111,7 @@ func TestLogger(t *testing.T) {
 			LoggerNames: []string{"hello", "hello2"},
 
 			File: slogTestFile,
-			Func: "cdr.dev/slog_test.TestLogger.func3",
+			Func: "cdr.dev/slog/v3_test.TestLogger.func3",
 			Line: 102,
 
 			SpanContext: span.SpanContext(),

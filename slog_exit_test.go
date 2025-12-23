@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"cdr.dev/slog/internal/assert"
+	"cdr.dev/slog/v3/internal/assert"
 )
 
 func TestExit(t *testing.T) {

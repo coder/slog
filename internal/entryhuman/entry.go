@@ -21,7 +21,7 @@ import (
 	"golang.org/x/term"
 	"golang.org/x/xerrors"
 
-	"cdr.dev/slog"
+	"cdr.dev/slog/v3"
 )
 
 // StripTimestamp strips the timestamp from entry and returns
