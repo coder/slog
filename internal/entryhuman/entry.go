@@ -67,6 +67,10 @@ func formatValue(v interface{}) (string, error) {
 	if v == nil {
 		return "<nil>", nil
 	}
+	switch v.(type) {
+	case error, fmt.Stringer:
+		return quote(fmt.Sprintf("%+v", v)), nil
+	}
 	typ := reflect.TypeOf(v)
 	switch typ.Kind() {
 	case reflect.Struct, reflect.Map:

@@ -2,6 +2,7 @@ package slog_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"runtime"
@@ -62,12 +63,12 @@ func TestMap(t *testing.T) {
 				{
 					"msg": "wrap1",
 					"fun": "cdr.dev/slog/v3_test.TestMap.func2",
-					"loc": "`+mapTestFile+`:41"
+					"loc": "`+mapTestFile+`:42"
 				},
 				{
 					"msg": "wrap2",
 					"fun": "cdr.dev/slog/v3_test.TestMap.func2",
-					"loc": "`+mapTestFile+`:42"
+					"loc": "`+mapTestFile+`:43"
 				},
 				"EOF"
 			],
@@ -218,6 +219,26 @@ func TestMap(t *testing.T) {
 			}),
 		), `{
 			"val": "{meow:hi bar:23 far:600}"
+		}`)
+	})
+
+	t.Run("contextDeadlineExceeded", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.Error(context.DeadlineExceeded),
+		), `{
+			"error": "context deadline exceeded"
+		}`)
+	})
+
+	t.Run("contextCanceled", func(t *testing.T) {
+		t.Parallel()
+
+		test(t, slog.M(
+			slog.Error(context.Canceled),
+		), `{
+			"error": "context canceled"
 		}`)
 	})
 }

@@ -2,12 +2,14 @@ package entryhuman_test
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"flag"
 	"fmt"
 	"io"
 	"math"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -282,6 +284,52 @@ func TestEntry(t *testing.T) {
 		<-done
 		<-done
 	})
+}
+
+func TestContextErrorFormatting(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		err      error
+		expected string
+	}{
+		{
+			name:     "DeadlineExceeded",
+			err:      context.DeadlineExceeded,
+			expected: "context deadline exceeded",
+		},
+		{
+			name:     "Canceled",
+			err:      context.Canceled,
+			expected: "context canceled",
+		},
+		{
+			name:     "WrappedDeadlineExceeded",
+			err:      fmt.Errorf("request failed: %w", context.DeadlineExceeded),
+			expected: "request failed: context deadline exceeded",
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var buf bytes.Buffer
+			entryhuman.Fmt(&buf, io.Discard, slog.SinkEntry{
+				Level:   slog.LevelError,
+				Message: "something failed",
+				Fields: slog.M(
+					slog.Error(tc.err),
+				),
+			})
+
+			got := buf.String()
+			assert.False(t, "error not empty object", strings.Contains(got, "error={}"))
+			assert.True(t, "error contains expected string", strings.Contains(got, tc.expected))
+		})
+	}
 }
 
 func BenchmarkFmt(b *testing.B) {
