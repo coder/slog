@@ -3,6 +3,7 @@ package syncwriter
 import (
 	"io"
 	"os"
+	"strings"
 	"testing"
 
 	"cdr.dev/slog/v3/internal/assert"
@@ -72,6 +73,34 @@ func TestWriter_Sync(t *testing.T) {
 		})
 		sw.Write("hello", nil)
 	})
+}
+
+// The default handler must report through the os.Stderr variable, not the
+// builtin println that bypasses it. Reverting to println fails this test.
+//
+// Not parallel: it swaps the process-wide os.Stderr.
+func TestWriter_defaultErrorReportsThroughStderr(t *testing.T) {
+	r, w, err := os.Pipe()
+	assert.Success(t, "pipe", err)
+
+	tw := New(syncWriter{
+		wf: func([]byte) (int, error) { return 0, io.EOF },
+		sf: func() error { return nil },
+	})
+
+	orig := os.Stderr
+	os.Stderr = w
+	tw.Write("sinkname", []byte("entry"))
+	os.Stderr = orig
+	assert.Success(t, "close", w.Close())
+
+	out, err := io.ReadAll(r)
+	assert.Success(t, "read", err)
+
+	got := string(out)
+	assert.True(t, "reported via stderr", strings.Contains(got, "sinkname: failed to write entry"))
+	assert.True(t, "single trailing newline", strings.HasSuffix(got, "\n"))
+	assert.Equal(t, "newline count", 1, strings.Count(got, "\n"))
 }
 
 func Test_errorsIsAny(t *testing.T) {

@@ -24,7 +24,9 @@ func New(w io.Writer) *Writer {
 		w: w,
 
 		errorf: func(f string, v ...interface{}) {
-			println(fmt.Sprintf(f, v...))
+			// Avoid the builtin println, which writes to fd 2
+			// unsynchronized and can corrupt concurrent go test output.
+			fmt.Fprintf(os.Stderr, f+"\n", v...)
 		},
 	}
 }
