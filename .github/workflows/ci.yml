@@ -21,9 +21,9 @@ jobs:
         with:
           path: ~/.npm
           key: "npm-cache"
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: "1.20"
+          go-version: "1.25.0"
           cache-dependency-path: go.sum
       - name: "make"
         run: |
