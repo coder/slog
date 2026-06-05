@@ -51,6 +51,23 @@ func TestLogger(t *testing.T) {
 		assert.Equal(t, "sinks", s1, s2)
 	})
 
+	t.Run("levelFilter", func(t *testing.T) {
+		t.Parallel()
+
+		s := &fakeSink{}
+		l := slog.Make(s)
+
+		l.Info(bg, "wow", slog.Error(io.EOF), slog.DebugF("nosee", "me"))
+
+		assert.Len(t, "entries", 1, s.entries)
+		assert.Len(t, "fields", 1, s.entries[0].Fields)
+
+		l = l.Leveled(slog.LevelDebug)
+		l.Info(bg, "wow", slog.Error(io.EOF), slog.DebugF("nosee", "me"))
+		assert.Len(t, "entries", 2, s.entries)
+		assert.Len(t, "fields", 2, s.entries[1].Fields)
+	})
+
 	t.Run("helper", func(t *testing.T) {
 		t.Parallel()
 
