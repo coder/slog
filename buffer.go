@@ -27,6 +27,15 @@ type Buffer struct {
 
 var _ Sink = (*Buffer)(nil)
 
+// Flusher is implemented by sinks that defer entries and can emit them on
+// demand, such as Buffer. It lets callers trigger a flush without depending on
+// the concrete sink type.
+type Flusher interface {
+	Flush(ctx context.Context)
+}
+
+var _ Flusher = (*Buffer)(nil)
+
 // NewBuffer returns a Buffer that forwards entries at or above level to next
 // immediately and holds up to size lower-level entries in memory until Flush is
 // called. If size is <= 0, lower-level entries are dropped and Buffer only

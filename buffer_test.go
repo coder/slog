@@ -119,6 +119,18 @@ func TestBuffer(t *testing.T) {
 		b.Sync()
 		assert.Equal(t, "syncs", 1, s.syncs)
 	})
+
+	t.Run("UsableAsFlusher", func(t *testing.T) {
+		t.Parallel()
+
+		s := &fakeSink{}
+		// Callers can hold a Buffer as a Flusher without knowing the concrete type.
+		var f slog.Flusher = slog.NewBuffer(slog.LevelInfo, 8, s)
+		f.(slog.Sink).LogEntry(bg, debugEntry("debug"))
+		f.Flush(bg)
+
+		assert.Len(t, "flushed", 1, s.entries)
+	})
 }
 
 // TestBufferWithLogger exercises Buffer through a Logger to confirm the logger
