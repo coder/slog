@@ -7,7 +7,7 @@ import (
 	"cdr.dev/slog/v3/internal/assert"
 )
 
-func TestBuffer(t *testing.T) {
+func TestFlightRecorder(t *testing.T) {
 	t.Parallel()
 
 	debugEntry := func(msg string) slog.SinkEntry {
@@ -21,7 +21,7 @@ func TestBuffer(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		b := slog.NewBuffer(slog.LevelInfo, 8, s)
+		b := slog.NewFlightRecorder(slog.LevelInfo, 8, s)
 
 		b.LogEntry(bg, infoEntry("info"))
 		b.LogEntry(bg, slog.SinkEntry{Level: slog.LevelError, Message: "error"})
@@ -35,7 +35,7 @@ func TestBuffer(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		b := slog.NewBuffer(slog.LevelInfo, 8, s)
+		b := slog.NewFlightRecorder(slog.LevelInfo, 8, s)
 
 		b.LogEntry(bg, debugEntry("debug1"))
 		b.LogEntry(bg, debugEntry("debug2"))
@@ -52,7 +52,7 @@ func TestBuffer(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		b := slog.NewBuffer(slog.LevelInfo, 8, s)
+		b := slog.NewFlightRecorder(slog.LevelInfo, 8, s)
 
 		b.LogEntry(bg, debugEntry("debug"))
 		b.LogEntry(bg, infoEntry("info"))
@@ -69,7 +69,7 @@ func TestBuffer(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		b := slog.NewBuffer(slog.LevelInfo, 2, s)
+		b := slog.NewFlightRecorder(slog.LevelInfo, 2, s)
 
 		b.LogEntry(bg, debugEntry("debug1"))
 		b.LogEntry(bg, debugEntry("debug2"))
@@ -86,7 +86,7 @@ func TestBuffer(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		b := slog.NewBuffer(slog.LevelInfo, 8, s)
+		b := slog.NewFlightRecorder(slog.LevelInfo, 8, s)
 
 		b.LogEntry(bg, debugEntry("debug"))
 		b.Flush(bg)
@@ -99,7 +99,7 @@ func TestBuffer(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		b := slog.NewBuffer(slog.LevelInfo, 0, s)
+		b := slog.NewFlightRecorder(slog.LevelInfo, 0, s)
 
 		b.LogEntry(bg, debugEntry("debug"))
 		b.LogEntry(bg, infoEntry("info"))
@@ -114,7 +114,7 @@ func TestBuffer(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		b := slog.NewBuffer(slog.LevelInfo, 8, s)
+		b := slog.NewFlightRecorder(slog.LevelInfo, 8, s)
 
 		b.Sync()
 		assert.Equal(t, "syncs", 1, s.syncs)
@@ -124,8 +124,9 @@ func TestBuffer(t *testing.T) {
 		t.Parallel()
 
 		s := &fakeSink{}
-		// Callers can hold a Buffer as a Flusher without knowing the concrete type.
-		var f slog.Flusher = slog.NewBuffer(slog.LevelInfo, 8, s)
+		// Callers can hold a FlightRecorder as a Flusher without knowing the
+		// concrete type.
+		var f slog.Flusher = slog.NewFlightRecorder(slog.LevelInfo, 8, s)
 		f.(slog.Sink).LogEntry(bg, debugEntry("debug"))
 		f.Flush(bg)
 
@@ -133,15 +134,16 @@ func TestBuffer(t *testing.T) {
 	})
 }
 
-// TestBufferWithLogger exercises Buffer through a Logger to confirm the logger
-// must run at the buffered level for lower-level entries to reach the sink.
-func TestBufferWithLogger(t *testing.T) {
+// TestFlightRecorderWithLogger exercises FlightRecorder through a Logger to
+// confirm the logger must run at the buffered level for lower-level entries to
+// reach the sink.
+func TestFlightRecorderWithLogger(t *testing.T) {
 	t.Parallel()
 
 	s := &fakeSink{}
-	b := slog.NewBuffer(slog.LevelInfo, 8, s)
+	b := slog.NewFlightRecorder(slog.LevelInfo, 8, s)
 	// The logger must be at LevelDebug so it does not drop debug entries before
-	// they reach the buffer.
+	// they reach the flight recorder.
 	log := slog.Make(b).Leveled(slog.LevelDebug)
 
 	log.Debug(bg, "debug")
