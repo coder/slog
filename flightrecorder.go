@@ -5,113 +5,107 @@ import (
 	"sync"
 )
 
-// FlightRecorder is a Sink that holds entries below Level in a fixed-size,
-// in-memory ring buffer instead of forwarding them. Entries at or above Level
-// are forwarded to the wrapped sinks immediately. Flush forwards the currently
-// buffered entries to the wrapped sinks, oldest first, and empties the buffer.
+// FlightRecorder returns a Logger that records entries below its level in a
+// fixed-size, in-memory ring buffer instead of dropping them, while still
+// forwarding entries at or above its level to the sinks as usual. The recorded
+// entries are forwarded to the sinks ("flushed") automatically whenever an entry
+// at LevelError or above is logged, and can be flushed manually with
+// Logger.Flush.
 //
-// FlightRecorder lets a program run its Logger at a low level
-// (e.g. LevelDebug) so that verbose entries are captured, while only emitting
-// those entries on demand, such as when an error or connection failure occurs.
-// When the buffer is full, the oldest held entry is dropped to make room for
-// the newest.
+// This keeps verbose (e.g. debug) logs available for diagnosing a failure
+// without emitting them during normal operation: run the Logger at LevelInfo
+// with a flight recorder, and the debug entries leading up to an error are
+// emitted only when the error occurs. When the buffer is full, the oldest
+// recorded entry is dropped to make room for the newest.
 //
-// FlightRecorder is safe for concurrent use.
-type FlightRecorder struct {
-	level Level
-	next  []Sink
-
-	mu    sync.Mutex
-	ring  []SinkEntry
-	start int
+// Enabling flight recording is independent of the Logger's level, so
+// Make(sink).Leveled(LevelInfo).FlightRecorder(n) and
+// Make(sink).FlightRecorder(n).Leveled(LevelInfo) are equivalent. If size is
+// <= 0, no entries are recorded.
+//
+// The returned Logger and any Loggers derived from it share the same underlying
+// buffer.
+func (l Logger) FlightRecorder(size int) Logger {
+	l.flightRecorder = newFlightRecorder(size)
+	return l
 }
 
-var _ Sink = (*FlightRecorder)(nil)
-
-// Flusher is implemented by sinks that defer entries and can emit them on
-// demand, such as FlightRecorder. It lets callers trigger a flush without
-// depending on the concrete sink type.
-type Flusher interface {
-	Flush(ctx context.Context)
+// Flush forwards the entries currently held by the Logger's flight recorder to
+// its sinks, oldest first, and empties the buffer. It is a no-op when flight
+// recording is not enabled. Flushing also happens automatically when an entry at
+// LevelError or above is logged.
+func (l Logger) Flush(ctx context.Context) {
+	if l.flightRecorder != nil {
+		l.flightRecorder.flush(ctx, l.sinks)
+	}
 }
 
-var _ Flusher = (*FlightRecorder)(nil)
+// flightRecorder keeps a rolling history of entries in a fixed-size ring buffer
+// until they are flushed. It is safe for concurrent use.
+type flightRecorder struct {
+	size int
 
-// NewFlightRecorder returns a FlightRecorder that forwards entries at or above
-// level to next immediately and holds up to size lower-level entries in memory
-// until Flush is called. If size is <= 0, lower-level entries are dropped and
-// FlightRecorder only forwards entries at or above level.
-func NewFlightRecorder(level Level, size int, next ...Sink) *FlightRecorder {
+	mu      sync.Mutex
+	ring    []SinkEntry
+	written int
+}
+
+func newFlightRecorder(size int) *flightRecorder {
 	if size < 0 {
 		size = 0
 	}
-	return &FlightRecorder{
-		level: level,
-		next:  next,
-		ring:  make([]SinkEntry, 0, size),
+	return &flightRecorder{
+		size: size,
+		ring: make([]SinkEntry, size),
 	}
 }
 
-// LogEntry implements Sink. Entries at or above the flight recorder's level
-// are forwarded to the wrapped sinks immediately; lower-level entries are held
-// until Flush.
-func (b *FlightRecorder) LogEntry(ctx context.Context, e SinkEntry) {
-	if e.Level >= b.level {
-		for _, s := range b.next {
-			s.LogEntry(ctx, e)
-		}
+// record stores e in the ring, overwriting the oldest entry once full.
+func (f *flightRecorder) record(e SinkEntry) {
+	if f.size == 0 {
 		return
 	}
-
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	if cap(b.ring) == 0 {
-		return
-	}
-	if len(b.ring) < cap(b.ring) {
-		b.ring = append(b.ring, e)
-		return
-	}
-	// The ring is full, so overwrite the oldest entry and advance start.
-	b.ring[b.start] = e
-	b.start = (b.start + 1) % cap(b.ring)
+	f.mu.Lock()
+	// A running write index means the write path never has to branch on whether
+	// the ring is full: writes always land at written%size, and drain derives
+	// the entry count and oldest position from written.
+	f.ring[f.written%f.size] = e
+	f.written++
+	f.mu.Unlock()
 }
 
-// Flush forwards the buffered entries to the wrapped sinks, oldest first, and
-// empties the buffer. It is safe to call multiple times; a second call with no
-// intervening entries forwards nothing.
-func (b *FlightRecorder) Flush(ctx context.Context) {
-	b.mu.Lock()
-	entries := b.drain()
-	b.mu.Unlock()
+// flush forwards the recorded entries to sinks, oldest first, and empties the
+// buffer.
+func (f *flightRecorder) flush(ctx context.Context, sinks []Sink) {
+	f.mu.Lock()
+	entries := f.drain()
+	f.mu.Unlock()
 
 	for _, e := range entries {
-		for _, s := range b.next {
+		for _, s := range sinks {
 			s.LogEntry(ctx, e)
 		}
 	}
 }
 
-// drain returns the buffered entries oldest first and resets the ring. It must
-// be called with b.mu held.
-func (b *FlightRecorder) drain() []SinkEntry {
-	n := len(b.ring)
+// drain returns the recorded entries oldest first and resets the buffer. It must
+// be called with f.mu held.
+func (f *flightRecorder) drain() []SinkEntry {
+	n := f.written
+	if n > f.size {
+		n = f.size
+	}
 	if n == 0 {
 		return nil
 	}
+	oldest := 0
+	if f.written > f.size {
+		oldest = f.written % f.size
+	}
 	entries := make([]SinkEntry, 0, n)
 	for i := 0; i < n; i++ {
-		entries = append(entries, b.ring[(b.start+i)%cap(b.ring)])
+		entries = append(entries, f.ring[(oldest+i)%f.size])
 	}
-	b.ring = b.ring[:0]
-	b.start = 0
+	f.written = 0
 	return entries
-}
-
-// Sync implements Sink by syncing the wrapped sinks. It does not flush buffered
-// entries; call Flush for that.
-func (b *FlightRecorder) Sync() {
-	for _, s := range b.next {
-		s.Sync()
-	}
 }

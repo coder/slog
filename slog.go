@@ -37,11 +37,24 @@ type Sink interface {
 // It extends the entry with the set fields and names.
 func (l Logger) Log(ctx context.Context, e SinkEntry) {
 	if e.Level < l.level {
+		// Below the level: normally dropped, but a flight recorder keeps a
+		// rolling history of these entries so they can be emitted later.
+		if l.flightRecorder != nil {
+			e.Fields = l.fields.append(e.Fields)
+			e.LoggerNames = appendNames(l.names, e.LoggerNames...)
+			l.flightRecorder.record(e)
+		}
 		return
 	}
 
 	e.Fields = l.fields.append(e.Fields)
 	e.LoggerNames = appendNames(l.names, e.LoggerNames...)
+
+	// When an error is logged, flush the recorded lower-level history first so
+	// it precedes the error that triggered the flush.
+	if l.flightRecorder != nil && e.Level >= LevelError {
+		l.flightRecorder.flush(ctx, l.sinks)
+	}
 
 	for _, s := range l.sinks {
 		s.LogEntry(ctx, e)
@@ -61,6 +74,10 @@ func (l Logger) Sync() {
 type Logger struct {
 	sinks []Sink
 	level Level
+
+	// flightRecorder, when set, keeps a rolling history of below-level entries
+	// so they can be flushed on demand. See Logger.FlightRecorder.
+	flightRecorder *flightRecorder
 
 	names  []string
 	fields Map
