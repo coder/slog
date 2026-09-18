@@ -43,11 +43,15 @@ func (l Logger) Flush(ctx context.Context) {
 // flightRecorder keeps a rolling history of entries in a fixed-size ring buffer
 // until they are flushed. It is safe for concurrent use.
 type flightRecorder struct {
-	size int
+	capacity int
 
-	mu      sync.Mutex
-	ring    []SinkEntry
-	written int
+	mu   sync.Mutex
+	ring []SinkEntry
+	// pos is the index the next entry is written to; length is the number of
+	// entries currently held. Both stay bounded by capacity, so neither grows
+	// without limit.
+	pos    int
+	length int
 }
 
 func newFlightRecorder(size int) *flightRecorder {
@@ -55,22 +59,22 @@ func newFlightRecorder(size int) *flightRecorder {
 		size = 0
 	}
 	return &flightRecorder{
-		size: size,
-		ring: make([]SinkEntry, size),
+		capacity: size,
+		ring:     make([]SinkEntry, size),
 	}
 }
 
 // record stores e in the ring, overwriting the oldest entry once full.
 func (f *flightRecorder) record(e SinkEntry) {
-	if f.size == 0 {
+	if f.capacity == 0 {
 		return
 	}
 	f.mu.Lock()
-	// A running write index means the write path never has to branch on whether
-	// the ring is full: writes always land at written%size, and drain derives
-	// the entry count and oldest position from written.
-	f.ring[f.written%f.size] = e
-	f.written++
+	f.ring[f.pos] = e
+	f.pos = (f.pos + 1) % f.capacity
+	if f.length < f.capacity {
+		f.length++
+	}
 	f.mu.Unlock()
 }
 
@@ -91,21 +95,20 @@ func (f *flightRecorder) flush(ctx context.Context, sinks []Sink) {
 // drain returns the recorded entries oldest first and resets the buffer. It must
 // be called with f.mu held.
 func (f *flightRecorder) drain() []SinkEntry {
-	n := f.written
-	if n > f.size {
-		n = f.size
-	}
-	if n == 0 {
+	if f.length == 0 {
 		return nil
 	}
+	// Once the ring is full, pos points at the oldest entry; before that the
+	// oldest entry is at index 0.
 	oldest := 0
-	if f.written > f.size {
-		oldest = f.written % f.size
+	if f.length == f.capacity {
+		oldest = f.pos
 	}
-	entries := make([]SinkEntry, 0, n)
-	for i := 0; i < n; i++ {
-		entries = append(entries, f.ring[(oldest+i)%f.size])
+	entries := make([]SinkEntry, 0, f.length)
+	for i := 0; i < f.length; i++ {
+		entries = append(entries, f.ring[(oldest+i)%f.capacity])
 	}
-	f.written = 0
+	f.length = 0
+	f.pos = 0
 	return entries
 }
