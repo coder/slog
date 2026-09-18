@@ -1,1 +1,1 @@
-0001-01-01 00:00:00.000 [warn]    obj="[{Name:obj1 Value:{foo:1 bar:2 dra:[98 108 97 104]}} {Name:obj2 Value:{foo:3 bar:4 dra:[98 108 97 104]}}]"  map={"key1":"value1"}
+0001-01-01 00:00:00.000 [warn]    obj={"obj1":"{foo:1 bar:2 dra:[98 108 97 104]}","obj2":"{foo:3 bar:4 dra:[98 108 97 104]}"}  map={"key1":"value1"}
